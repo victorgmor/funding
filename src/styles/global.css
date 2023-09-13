@@ -7,15 +7,21 @@
 }
 
 :root {
-  --astro-code-color-text: #000000;
-  --astro-code-color-background: #ffffff;
-  --astro-code-token-constant: #00000080;
-  --astro-code-token-string: #00000050;
-  --astro-code-token-comment: #00000060;
-  --astro-code-token-keyword: black;
+  --astro-code-color-text: #ffffff;
+  --astro-code-color-background: #131313;
+  --astro-code-token-constant: #888888;
+  --astro-code-token-string: #fafafa;
+  --astro-code-token-comment: #ffffff70;
+  --astro-code-token-keyword:#ffffff;
   --astro-code-token-parameter: #ffffff;
-  --astro-code-token-function: black;
-  --astro-code-token-string-expression: #fe351b;
+  --astro-code-token-function: #ffffff80;
+  --astro-code-token-string-expression: #fafafa;
   --astro-code-token-punctuation: #ffffff;
   --astro-code-token-link: #ffffff;
+}
+
+
+
+.prose-styles {
+  @apply prose prose-blockquote:border-l-white prose-a:text-zinc-500 hover:prose-a:text-white prose-headings:font-normal prose-headings:text-white prose-li:marker:text-zinc-500 text-zinc-300 prose-code:text-white prose-blockquote:text-white/70 max-w-3xl prose-strong:font-normal prose-pre:ring-1 prose-pre:ring-zinc-800 prose-strong:text-white prose-pre:rounded-none prose-headings:font-display;
 }

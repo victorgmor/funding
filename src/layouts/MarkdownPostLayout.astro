@@ -39,23 +39,50 @@ import { AstroSeo } from "@astrolib/seo";
   }}
 />
 <BaseLayout>
-  <div
-    class="mx-auto hover:prose-a:text-black prose prose-a:text-accent-500 prose-blockquote:border-l-black prose-blockquote:text-gray-500 prose-code:text-black prose-headings:font-bold prose-headings:text-black prose-headings:tracking-tighter prose-li:marker:text-accent-500 text-gray-500 py-24 prose-pre:border">
-    <p>{frontmatter.pubDate.toString().slice(0, 10)}</p>
-
-    <p>{frontmatter.title}</p>
-    <p><em>{frontmatter.description}</em></p>
-    <p>Written by: {frontmatter.author}</p>
-    <div class="flex flex-wrap gap-3 mt-12">
-      {
-        frontmatter.tags.map((tag) => (
-          <span class="inline-flex items-center text-sm font-light text-black dark:text-white  underline hover:text-accent-300">
-            <a href={`/tags/${tag}`}>{tag}</a>
-          </span>
-        ))
-      }
+  <section>
+    <div
+      class="items-center w-full px-8 md:px-12 py-12 lg:pt-32 mx-auto 2xl:max-w-7xl">
+      <div class="border-t border-zinc-800 pt-2">
+        <img
+          class="border border-zinc-800 w-full h-96"
+          src={frontmatter.image.url}
+          alt={frontmatter.image.alt}
+        />
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-0 mt-2">
+          <p class="text-white text-base tracking-wide font-display uppercase">
+            {frontmatter.title}
+          </p>
+          <p class="text-white text-base tracking-wide font-display uppercase">
+            {frontmatter.pubDate.toString().slice(0, 10)} ⏤ by: {
+              frontmatter.author
+            }
+          </p>
+          <p
+            class="text-base uppercase md:text-3xl mt-32 lg:text-6xl font-display tracking-tight text-white col-span-full">
+            {frontmatter.description}
+          </p>
+          <ol
+            role="list"
+            class="flex flex-wrap gap-3 mt-32 font-display uppercase tracking-wide text-white text-xs">
+            {
+              frontmatter.tags.map((tag) => (
+                <li class="inline-flex items-center ">
+                  <a
+                    class="hover:text-zinc-500 duration-200"
+                    href={`/tags/${tag}`}>
+                    {tag}
+                  </a>
+                </li>
+              ))
+            }
+          </ol>
+        </div>
+        <div class="pt-2 mt-32 border-t border-zinc-800">
+          <div class="prose-styles">
+            <slot />
+          </div>
+        </div>
+      </div>
     </div>
-    <img src={frontmatter.image.url} alt={frontmatter.image.alt} />
-    <slot />
-  </div>
+  </section>
 </BaseLayout>
