@@ -6,22 +6,6 @@ module.exports = {
   theme: {
 
    fontSize: {
-      growingSmall: [
-          "9vw",
-
-      ],
-      growingMedium: [
-          "10vw",
-
-      ],
-      growingLarge: [
-          "11vw",
-
-      ],
-      growingMassive: [
-          "11.5vw",
-
-      ],
       xs: [
           "0.75rem",
           {
@@ -136,7 +120,6 @@ module.exports = {
       sm: "540px",
       md: "768px",
       lg: "1024px",
-      "2lg": "1120px",
       xl: "1280px",
       "2xl": "1536px",
     },

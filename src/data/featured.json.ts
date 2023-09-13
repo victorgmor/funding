@@ -49,7 +49,7 @@ const five: Template = {
   company: "Google",
   place: "Remote",
   description: "Google LLC is an American multinational technology company focusing on artificial intelligence, online advertising, search engine technology, cloud computing, computer software, quantum computing, e-commerce, and consumer electronics.",
-  title: "Back End Developer",
+  title: "Back End Dev",
   applicants: "150 ",
 }
 const six: Template = {
@@ -76,7 +76,7 @@ const eight: Template = {
   company: "App Store",
   place: "Remote",
   description: "The App Store is an app marketplace developed and maintained by Apple Inc., for mobile apps on its iOS and iPadOS operating systems. The store allows users to browse and download approved apps developed within Apple's iOS SDK",
-  title: "Front End  Developer",
+  title: "Front End  Dev",
   applicants: "150 ",
 }
 const nine: Template = {
@@ -105,7 +105,7 @@ const eleven: Template = {
   company: "Tesla",
   place: "Palo Alto, USA",
   description: "Tesla, Inc. is an American electric vehicle and clean energy company. Tesla's current products include electric cars, battery energy storage from home to grid-scale, solar panels and solar roof tiles, as well as other related products and services.",
-  title: "Electrical Engineer",
+  title: " Engineer",
   applicants: "380",
 }
 
@@ -115,7 +115,7 @@ const twelve: Template = {
   company: "Facebook",
   place: "Menlo Park, USA",
   description: "Meta Platforms, Inc., formerly known as Facebook, Inc., is an American technology conglomerate that develops, grows, and invests in an extensive portfolio of internet-based products and services.",
-  title: "Social Media Manager",
+  title: "Social Media MNG",
   applicants: "420",
 }
 
@@ -145,7 +145,7 @@ const fifteen: Template = {
   company: "Microsoft",
   place: "Redmond, USA",
   description: "Microsoft Corporation is an American multinational technology corporation which produces, licenses, supports, and sells computer software, consumer electronics, personal computers, and related services.",
-  title: "Software Engineer",
+  title: "Software Eng.",
   applicants: "500",
 }
 
@@ -155,7 +155,7 @@ const sixteen: Template = {
   company: "Airbnb",
   place: "San Francisco, USA",
   description: "Airbnb, Inc. is an American vacation rental online marketplace company based in San Francisco, California, United States. Airbnb offers arrangement for lodging, primarily homestays, or tourism experiences.",
-  title: "Hospitality Coordinator",
+  title: "Hospitality ",
   applicants: "120",
 }
 
@@ -165,7 +165,7 @@ const seventeen: Template = {
   company: "Twitter",
   place: "San Francisco, USA",
   description: "Twitter, Inc. is an American microblogging and social networking service on which users post and interact with messages known as tweets. Registered users can post, like, and retweet tweets.",
-  title: "Social Media Specialist",
+  title: "Social Media Spec.",
   applicants: "220",
 }
 

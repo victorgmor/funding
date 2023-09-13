@@ -35,17 +35,20 @@ import { categories } from "../../data/categories.json";
                     href={template.url}
                     title={template.title}
                     class="grid grid-cols-1 md:grid-cols-2 w-full lg:grid-cols-2 text-sm text-white hover:text-zinc-500 duration-200">
-                    <div class=" flex flex-col lg:flex-row gap-4">
+                    <div class=" flex flex-row gap-4">
                       <p class="tracking-wide font-display ">
                         {template.title}
                       </p>
                       ⏤
                       <p class="  tracking-tight ">
-                        <span class="font-mono">{template.applicants}</span>{" "}
+                        <span class="font-mono">{template.applicants}</span>
                         Applicants
                       </p>
                     </div>
-                    <span class="font-display text-right"> &rarr;</span>
+                    <span class="font-display hidden md:block text-right">
+                      {" "}
+                      &rarr;
+                    </span>
                   </a>
                 </li>
               </>
