@@ -1,47 +1,35 @@
 ---
 import BaseLayout from "./BaseLayout.astro";
 const { frontmatter } = Astro.props;
-import { AstroSeo } from "@astrolib/seo";
 ---
 
-<AstroSeo
-  title={frontmatter.title}
-  description={frontmatter.description}
-  canonical="https://www.lexingtonthemes.com"
-  openGraph={{
-    url: "https://www.lexingtonthemes.com",
-    title: "Title}",
-    description: "{frontmatter.description}",
-    images: [
-      {
-        url: "https://www.lexingtonthemes.com/opengraph/social-og.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Social open graph",
-        type: "image/jpeg",
-      },
-      {
-        url: "https://www.lexingtonthemes.com/opengraph/twitter-og.jpg",
-        width: 4096,
-        height: 4096,
-        alt: "Twitter open graph",
-        type: "image/jpeg",
-      },
-      { url: "https://www.lexingtonthemes.com/opengraph/social-og.jpg" },
-      { url: "https://www.lexingtonthemes.com/opengraph/twitter-og.jpg" },
-    ],
-    site_name: "YourSitesName",
-  }}
-  twitter={{
-    handle: "@TwitterHandle",
-    site: "@site",
-    cardType: "summary_large_image",
-  }}
-/>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const headings = document.querySelectorAll(" h2,  h3");
+    const tocContainer = document.getElementById("table-of-contents");
+    if (tocContainer && headings.length > 0) {
+      const tocList = document.createElement("ul");
+      tocList.classList.add("space-y-1", "list-disc", "text-white","pl-4");
+      headings.forEach((heading) => {
+        const listItem = document.createElement("li");
+        const link = document.createElement("a");
+        link.textContent = heading.textContent;
+        link.href = `#${heading.id}`;
+        link.classList.add("text-white", "uppercase", "hover:text-zinc-500","duration-200","font-display","tracking-wide","text-xs");
+        listItem.appendChild(link);
+        tocList.appendChild(listItem);
+      });
+      tocContainer.appendChild(tocList);
+      tocContainer.classList.remove("hidden");
+    }
+  });
+</script>
+
 <BaseLayout>
   <section>
     <div
-      class="items-center w-full px-8 md:px-12 py-12 lg:pt-32 mx-auto 2xl:max-w-7xl">
+      class="items-center w-full px-8 md:px-12 py-12 lg:pt-32 mx-auto 2xl:max-w-7xl"
+    >
       <div class="border-t border-zinc-800 pt-2">
         <img
           class="border border-zinc-800 w-full h-96"
@@ -58,18 +46,21 @@ import { AstroSeo } from "@astrolib/seo";
             }
           </p>
           <p
-            class="text-base uppercase md:text-3xl mt-32 lg:text-6xl font-display tracking-tight text-white col-span-full">
+            class="text-base uppercase md:text-3xl mt-32 lg:text-6xl font-display tracking-tight text-white col-span-full"
+          >
             {frontmatter.description}
           </p>
           <ol
             role="list"
-            class="flex flex-wrap gap-3 mt-32 font-display uppercase tracking-wide text-white text-xs">
+            class="flex flex-wrap gap-3 mt-32 font-display uppercase tracking-wide text-white text-xs"
+          >
             {
               frontmatter.tags.map((tag) => (
                 <li class="inline-flex items-center ">
                   <a
                     class="hover:text-zinc-500 duration-200"
-                    href={`/tags/${tag}`}>
+                    href={`/tags/${tag}`}
+                  >
                     {tag}
                   </a>
                 </li>
@@ -77,9 +68,22 @@ import { AstroSeo } from "@astrolib/seo";
             }
           </ol>
         </div>
-        <div class="pt-2 mt-32 border-t border-zinc-800">
-          <div class="prose-styles">
-            <slot />
+        <div
+          class="pt-2 mt-32 border-t border-zinc-800 grid grid-cols-1 lg:grid-cols-12"
+        >
+          <div class="lg:col-span-9">
+            <div class="prose-styles">
+              <slot />
+            </div>
+          </div>
+          <div class="lg:col-span-3">
+            <div
+              id="table-of-contents"
+              class="hidden lg:block lg:sticky lg:top-20 space-y-12"
+            >
+            <p class="text-white uppercase font-display">Table of contents</p>
+              <!-- Your table of contents content here -->
+            </div>
           </div>
         </div>
       </div>
