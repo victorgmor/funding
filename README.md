@@ -6,6 +6,8 @@
 - @astrojs/mdx - https://docs.astro.build/en/guides/markdown-content/
 - @astrojs/rss - https://docs.astro.build/en/guides/rss/
 - @astrojs/prism - https://docs.astro.build/en/reference/api-reference/#prism-
+
+
 ## Template Structure
 
 Inside of your Astro project, you'll see the following folders and files:

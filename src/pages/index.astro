@@ -1,7 +1,14 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import Overview from "@/components/system/Overview.astro";
+import Hero from "@/components/landing/Hero.astro";
+import Featured from "@/components/landing/Featured.astro";
+import Latest from "@/components/landing/Latest.astro";
+import PostJobs from "@/components/ctas/PostJobs.astro";
 ---
+
 <BaseLayout>
-  <Overview />
+  <Hero />
+  <Featured />
+  <Latest />
+  <PostJobs />
 </BaseLayout>

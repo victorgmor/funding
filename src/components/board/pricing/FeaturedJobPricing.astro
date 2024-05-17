@@ -1,0 +1,102 @@
+---
+const pricingPlans = [
+  {
+    credits: "10",
+    price: "10/Credits",
+    description:
+      "Receive 10 credits for featuring a job, allowing you to highlight a single job opening.",
+    features: [
+      "1 credit for featuring a single job opening",
+      "Support inclusion",
+      "Job featured for 1 week",
+      "Job published for 2 months.",
+      "1-day approval process",
+      "Verified company status",
+    ],
+  },
+  {
+    credits: "150",
+    price: "150/Credits",
+    description:
+      "Receive 150 credits for featuring a job, allowing you to highlight a single job opening.",
+    features: [
+      "3 credits for featuring 3 job openings.",
+      "Hirewise support inclusion",
+      "Each job featured for 1 week.",
+      "Job published for 4 months",
+      "24h approval process",
+      "Verified company status",
+    ],
+  },
+  {
+    credits: "300",
+    price: "300/Credits",
+    description:
+      "Receive 150 credits for featuring a job, allowing you to highlight a single job opening.",
+    features: [
+      "10 credits for featuring 3 job openings.",
+      "Hirewise support inclusion",
+      "Each job featured for 1 month.",
+      "Job published for 1 year",
+      "Inmediate approval process",
+      "Verified company status",
+    ],
+  },
+];
+---
+
+<section>
+  <div
+    class="items-center w-full px-8 md:px-12 py-12 lg:pt-32 mx-auto 2xl:max-w-7xl">
+    <div class="border-t border-zinc-300 pt-2">
+      <div class="flex flex-col gap-8 lg:gap-0">
+        <p
+          class="text-base font-medium text-black uppercase font-display">
+          Featured positions
+        </p>
+        <div>
+          <p
+            class="text-base md:text-3xl mt-32 lg:text-6xl font-display uppercase text-black text-balance">
+            Discover a wide range of thrilling job opportunities that align with
+            your interests and chosen field of study.
+          </p>
+        </div>
+        <ul
+          class="flex flex-col mt-2 col-span-full divide-y border-y divide-zinc-300 border-zinc-300"
+          role="list">
+          {
+            pricingPlans.map((plan) => (
+              <li class="w-full py-2">
+                <div class="flex flex-col gap-8 lg:gap-0 w-full text-black">
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:items-end lg:gap-0 mt-32">
+                    <div class="flex-shrink-0 block">
+                      <p class="text-base  font-medium  text-black uppercase text-pretty font-display">
+                        {plan.description}
+                      </p>
+                      <div class="flex flex-col gap-2 mt-12 pt-2 border-t border-zinc-200 text-base font-medium  text-black uppercase font-display">
+                        {plan.features.map((feature) => (
+                          <span>·  {feature}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div class="lg:col-span-2 lg:ml-auto">
+                      <p class="text-base md:text-3xl lg:text-6xl font-display uppercase text-black text-balance">
+                        {plan.price}
+                      </p>
+                    </div>
+                    <div class="col-span-full mt-12">
+                      <button class="flex items-center ring-2 ring-black rounded-full font-medium w-full h-10 px-4 py-2 uppercase text-black transition-all bg-white hover:bg-black duration-500 focus:ring-2 hover:text-white focus:ring-black focus:ring-offset-white focus:ring-offset-2 justify-between">
+                        Get started
+                        <span>&rarr;</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>

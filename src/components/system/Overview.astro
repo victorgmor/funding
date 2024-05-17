@@ -1,161 +1,114 @@
+---
+const pageData = [
+  {
+    title: "All pages",
+    sections: [
+      {
+        title: "Landing Pages",
+        links: [
+          { label: "Home", href: "/" },
+          { label: "About", href: "/about" },
+          { label: "404", href: "/infopages/404" },
+        ],
+      },
+      {
+        title: "Pricing",
+        links: [
+          { label: "Pricing table", href: "/pricing/featured-job-pricing" },
+          { label: "Post job offer", href: "/board/post-job" },
+        ],
+      },
+      {
+        title: "Board",
+        links: [
+          { label: "Level", href: "/board/level" },
+          { label: "Location", href: "/board/location" },
+          { label: "Category", href: "/board/category" },
+        ],
+      },
+      {
+        title: "System",
+        links: [{ label: "Style Guide", href: "/system/style-guide" }],
+      },
+    ],
+  },
+  {
+    title: "Content collections",
+    sections: [
+      {
+        title: "Blog",
+        links: [
+          { label: "RSS", href: "/rss.xml" },
+          { label: "Blog", href: "/blog/home" },
+          { label: "Blog Post", href: "/blog/posts/1" },
+          { label: "Tags index", href: "/blog/tags" },
+          { label: "Tags category", href: "/blog/tags/HTML" },
+        ],
+      },
+      {
+        title: "Board",
+        links: [{ label: "Job offer post", href: "/openjobs/1" }],
+      },
+      {
+        title: "Companies",
+        links: [
+          { label: "Home", href: "/board/all-companies" },
+          { label: "Details", href: "/companies/1" },
+        ],
+      },
+      {
+        title: "Info Pages",
+        links: [
+          { label: "Contact", href: "/contact" },
+          { label: "Terms Of use", href: "/infopages/terms" },
+          { label: "Privacy Policy", href: "/infopages/privacy" },
+        ],
+      },
+    ],
+  },
+];
+---
+
 <section>
   <div
     class="items-center w-full px-8 md:px-12 py-12 lg:pt-32 mx-auto 2xl:max-w-7xl">
-    <div class="flex flex-col gap-2">
-      <div
-        class="border-t border-zinc-800 text-white text-xs uppercase font-display tracking-wide pt-2">
-        <div
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-0">
-          <p class="text-xs uppercase">Overview</p>
-          <div
-            class="font-display uppercase tracking-wide text-white text-xs flex flex-col gap-2">
-            <a class="hover:text-zinc-500 duration-200" href="/">Overview</a>
-            <a class="hover:text-zinc-500 duration-200" href="/styleguide"
-              >Styleguide</a
-            >
-          </div>
-          <div
-            class="font-display uppercase tracking-wide text-white text-xs flex flex-col gap-2">
-            <a href="https://lexingtonthemes.lemonsqueezy.com/checkout/buy/2c490f1d-6e5c-4690-9ade-038b802e07a0" class="hover:text-zinc-500"> Buy Carriera</a>
-          </div>
-        </div>
-      </div>
-      <div
-        class="border-t border-zinc-800 text-white text-xs uppercase font-display tracking-wide pt-2">
-        <div
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-0">
-          <p class="text-xs uppercase">Landing pages</p>
-          <div
-            class="font-display uppercase tracking-wide text-white text-xs flex flex-col gap-2">
-            <a
-              class="hover:text-zinc-500 duration-200"
-              href="/landings/landing-one">Landing One</a
-            >
-            <a
-              class="hover:text-zinc-500 duration-200"
-              href="/landings/landing-two">Landing Two</a
-            >
-          </div>
-        </div>
-      </div>
-      <div
-        class="border-t border-zinc-800 text-white text-xs uppercase font-display tracking-wide pt-2">
-        <div
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-0">
-          <p class="text-xs uppercase">pricing</p>
-          <div
-            class="font-display uppercase tracking-wide text-white text-xs flex flex-col gap-2">
-            <a
-              class="hover:text-zinc-500 duration-200"
-              href="/pricing/pricing-simple">Pricing simple</a
-            >
-            <a
-              class="hover:text-zinc-500 duration-200"
-              href="/pricing/pricing-tiers">Pricing tiers</a
-            >
-          </div>
-        </div>
-      </div>
-      <div
-        class="border-t border-zinc-800 text-white text-xs uppercase font-display tracking-wide pt-2">
-        <div
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-0">
-          <p class="text-xs uppercase">board</p>
-          <div
-            class="font-display uppercase tracking-wide text-white text-xs flex flex-col gap-2">
-            <a
-              class="hover:text-zinc-500 duration-200"
-              href="/board/all-categories"
-              >All Categories
-            </a>
-            <a class="hover:text-zinc-500 duration-200" href="/board/all-jobs"
-              >all Jobs</a
-            >
-            <a
-              class="hover:text-zinc-500 duration-200"
-              href="/board/job-details">Job Details</a
-            >
-            <a
-              class="hover:text-zinc-500 duration-200"
-              href="/board/company-profile">company profile</a
-            >
-
-            <a
-              class="hover:text-zinc-500 duration-200"
-              href="/board/application">application</a
-            >
-          </div>
-        </div>
-      </div>
-      <div
-        class="border-t border-zinc-800 text-white text-xs uppercase font-display tracking-wide pt-2">
-        <div
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-0">
-          <p>Blog</p>
-          <div class="flex flex-col gap-2">
-            <a class="hover:text-zinc-500 duration-200" href="/blog/blog-one"
-              >Blog One</a
-            >
-            <a class="hover:text-zinc-500 duration-200" href="/blog/blog-two"
-              >Blog two</a
-            >
-
-            <a class="hover:text-zinc-500 duration-200" href="/posts/1"
-              >Blog post</a
-            >
-            <a class="hover:text-zinc-500 duration-200" href="/tags"
-              >Tag index</a
-            >
-            <a class="hover:text-zinc-500 duration-200" href="/tags/Tailwind"
-              >Tag category</a
-            >
-            <a class="hover:text-zinc-500 duration-200" href="/rss.xml">rss</a>
-          </div>
-        </div>
-      </div>
-      <div
-        class="border-t border-zinc-800 text-white text-xs uppercase font-display tracking-wide pt-2">
-        <div
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-0">
-          <p class="text-xs uppercase">info pages</p>
-          <div
-            class="font-display uppercase tracking-wide text-white text-xs flex flex-col gap-2">
-            <a class="hover:text-zinc-500 duration-200" href="/infopages/about"
-              >About</a
-            >
-            <a class="hover:text-zinc-500 duration-200" href="/infopages/terms"
-              >Terms of service</a
-            >
-            <a
-              class="hover:text-zinc-500 duration-200"
-              href="/infopages/privacy">privacy policy</a
-            >
-            <a class="hover:text-zinc-500 duration-200" href="/404">404</a>
-          </div>
-        </div>
-      </div>
-      <div
-        class="border-t border-zinc-800 text-white text-xs uppercase font-display tracking-wide pt-2">
-        <div
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-0">
-          <p class="text-xs uppercase">forms</p>
-          <div
-            class="font-display uppercase tracking-wide text-white text-xs flex flex-col gap-2">
-            <a class="hover:text-zinc-500 duration-200" href="/forms/contact"
-              >Contact</a
-            >
-            <a class="hover:text-zinc-500 duration-200" href="/forms/login"
-              >Login</a
-            >
-            <a class="hover:text-zinc-500 duration-200" href="/forms/signup"
-              >Signup</a
-            >
-            <a class="hover:text-zinc-500 duration-200" href="/forms/reset"
-              >reset password</a
-            >
-          </div>
-        </div>
+    <div class="border-t border-zinc-300 pt-2">
+      <div class="flex flex-col gap-8 lg:gap-0">
+        <p class="text-base font-medium text-black uppercase font-display">
+          Overview
+        </p>
+        <h1
+          class="text-base md:text-3xl mt-32 lg:text-6xl font-display uppercase text-black text-balance">
+          Explore all pages
+        </h1>
       </div>
     </div>
+  </div>
+  <div class="items-center w-full px-8 md:px-12 py-12 mx-auto 2xl:max-w-7xl">
+    {
+      pageData.map((page) => (
+        <div class="flex flex-col gap-2 mt-32">
+          <p class="text-base font-medium text-black uppercase font-display">
+            {page.title}
+          </p>
+          {page.sections.map((section) => (
+            <div class="border-t border-zinc-300 text-base font-medium text-black uppercase font-display   pt-2">
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-0">
+                <p>{section.title}</p>
+                <div class="  flex flex-col gap-2">
+                  {section.links.map((link) => (
+                    <a
+                      class="hover:text-zinc-500 duration-200"
+                      href={link.href}>
+                      {link.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ))
+    }
   </div>
 </section>

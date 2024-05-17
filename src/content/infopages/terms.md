@@ -1,6 +1,7 @@
 ---
 page: Terms
 pubDate: 2023-12-22
+description:   All the terms that you agree to when you sign up for a Lexington product
 ---
 This privacy policy sets out how Unwrapped AB collects, processes and uses your Personal Information through your use of our Services.
 

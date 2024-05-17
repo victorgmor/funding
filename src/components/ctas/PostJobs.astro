@@ -1,0 +1,49 @@
+---
+const jobOffers = [
+  {
+    title: "Post a featured job offer",
+    description:
+      "Boost your job listing, Gain maximum exposure by posting it as a featured opportunity",
+    buttonText: "Post a featured job offer",
+    buttonLink: "/pricing/featured-job-pricing",
+  },
+  {
+    title: "Post a free job offer",
+    description:
+      "Amplify your job listing, Increase visibility by posting it as a featured opportunity, free of charge",
+    buttonText: "Post a free job offer",
+    buttonLink: "/board/post-job",
+  },
+];
+---
+
+<section>
+  <div
+    class="items-center w-full px-8 md:px-12 py-12 lg:pt-32 mx-auto 2xl:max-w-7xl">
+    <div class="space-y-32">
+      {
+        jobOffers.map((offer) => (
+          <div class="border-t border-zinc-300 pt-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-0">
+              <p class="text-base font-medium text-black uppercase font-display">
+                {offer.title}
+              </p>
+              <div class="lg:col-span-2">
+                <p class="text-base uppercase md:text-3xl lg:text-6xl font-display tracking-tight text-black">
+                  {offer.description}
+                </p>
+                <p class="mt-32">
+                  <a
+                    href={offer.buttonLink}
+                    class="text-base font-medium text-black uppercase font-display hover:text-zinc-500">
+                    {offer.buttonText}
+                  </a>
+                </p>
+              </div>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>

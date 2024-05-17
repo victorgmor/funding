@@ -1,0 +1,100 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+const { frontmatter } = Astro.props;
+---
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const headings = document.querySelectorAll(
+      ".prose-styles h2 ,.prose-styles h3"
+    );
+    const tocContainer = document.getElementById("table-of-contents");
+    if (tocContainer && headings.length > 0) {
+      const tocList = document.createElement("ul");
+      tocList.classList.add("space-y-1", "list-disc", "text-white", "pl-4");
+      headings.forEach((heading) => {
+        const listItem = document.createElement("li");
+        const link = document.createElement("a");
+        link.textContent = heading.textContent;
+        link.href = `#${heading.id}`;
+        link.classList.add(
+          "text-sm",
+          "uppercase",
+          "text-black",
+          "font-medium",
+          "duration-200",
+          "font-display",
+          "tracking-wide",
+          "hover:text-zinc-500",
+        );
+        listItem.appendChild(link);
+        tocList.appendChild(listItem);
+      });
+      tocContainer.appendChild(tocList);
+      tocContainer.classList.remove("hidden");
+    }
+  });
+</script>
+
+<BaseLayout>
+  <section>
+    <div
+      class="items-center w-full px-8 md:px-12 py-12 lg:pt-32 mx-auto 2xl:max-w-7xl">
+      <div class="border-t border-zinc-300 pt-2">
+        <img
+          class="border border-zinc-300 w-full h-96 bg-[#0f0f0f]"
+          src={frontmatter.image.url}
+          alt={frontmatter.image.alt}
+        />
+        <div class="flex flex-col gap-8 lg:gap-0 mt-2">
+          <p class="text-base font-medium text-black uppercase font-display">
+            {frontmatter.title}
+          </p>
+          <p class="text-base font-medium text-black uppercase font-display">
+            {frontmatter.pubDate.toString().slice(0, 10)} ⏤ by: {
+              frontmatter.author
+            }
+          </p>
+          <p
+            class="text-base md:text-3xl mt-32 lg:text-6xl font-display uppercase text-black text-balance col-span-full">
+            {frontmatter.description}
+          </p>
+          <ol
+            role="list"
+            class="flex flex-wrap gap-3 mt-32 text-base font-medium text-black uppercase font-display">
+            {
+              frontmatter.tags.map((tag) => (
+                <li class="inline-flex items-center ">
+                  <a
+                    class="hover:text-zinc-500 duration-200"
+                    href={`/blog/tags/${tag}`}>
+                    {tag}
+                  </a>
+                </li>
+              ))
+            }
+          </ol>
+        </div>
+        <div
+          class="pt-2 mt-32 border-t border-zinc-300 grid grid-cols-1 lg:grid-cols-12">
+          <div class="lg:col-span-9">
+            <div class="prose-styles">
+              <slot />
+            </div>
+          </div>
+          <div class="lg:col-span-3 ">
+            <div
+              id="table-of-contents"
+              class="hidden lg:block lg:sticky lg:top-20 space-y-12 ">
+              <p
+                class="text-base font-medium text-black uppercase font-display ml-4">
+                Table of contents
+              </p>
+              <!-- Your table of contents content here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

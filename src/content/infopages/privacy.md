@@ -1,6 +1,7 @@
 ---
 page: Privacy
 pubDate: 2023-12-22
+description:   All the terms that you agree to when you sign up for a Lexington product
 ---
 If you are a California resident, the California Consumer Privacy Act, as amended by the California Privacy Rights Act of 2020 (“**CCPA**”), requires us to provide some additional information to California residents. This Section only applies to you if you are a California resident, although please note that this information and the rights afforded herein are the same as offered to our other users in our main Privacy Policy. This Section does not apply to personal information we collect from our employees and job applicants in their capacity as employees and job applicants, as such information practices are described in separate policies.
 
