@@ -9,7 +9,7 @@ const { title, url, description, pubDate, author, image } = Astro.props;
     <article class="flex-1 h-full flex flex-col">
       <div class="w-full">
         <img
-          class="border w-full border-zinc-800 object-cover bg-center h-full"
+          class="border w-full border-stone-800 object-cover bg-center h-full"
           src={image}
           alt={title}
         />
@@ -18,16 +18,16 @@ const { title, url, description, pubDate, author, image } = Astro.props;
         class="flex flex-col items-start justify-between flex-1 w-full mt-4 ">
         <div class="w-full">
           <div>
-            <p class="text-base font-medium text-black uppercase font-display">
+            <p class="text-base font-medium text-white uppercase font-display">
               {title}
             </p>
           </div>
-          <p class="mt-2 text-sm line-clamp-3 text-zinc-500">
+          <p class="mt-2 text-sm line-clamp-3 text-stone-400">
             {description}
           </p>
         </div>
         <footer>
-          <div class="inline-flex space-x-1 items-center mt-6 text-zinc-500">
+          <div class="inline-flex space-x-1 items-center mt-6 text-stone-400">
             <p class="text-xs font-medium">
               {author}
             </p>

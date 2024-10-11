@@ -38,7 +38,7 @@ module.exports = {
     colors: {
       transparent: colors.transparent,
       currentColor: colors.currentColor,
-      zinc: colors.zinc,
+      stone: colors.stone,
       blue: colors.blue,
       black: "#1d1d1d",
       white: "#f9f9f9",

@@ -23,19 +23,19 @@ const jobOffers = [
     <div class="space-y-32">
       {
         jobOffers.map((offer) => (
-          <div class="border-t border-zinc-300 pt-2">
+          <div class="border-t border-stone-700 pt-2">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-0">
-              <p class="text-base font-medium text-black uppercase font-display">
+              <p class="text-base font-medium text-white uppercase font-display">
                 {offer.title}
               </p>
               <div class="lg:col-span-2">
-                <p class="text-base uppercase md:text-3xl lg:text-6xl font-display tracking-tight text-black">
+                <p class="text-base uppercase md:text-3xl lg:text-6xl font-display tracking-tight text-white">
                   {offer.description}
                 </p>
                 <p class="mt-32">
                   <a
                     href={offer.buttonLink}
-                    class="text-base font-medium text-black uppercase font-display hover:text-zinc-500">
+                    class="text-base font-medium text-white uppercase font-display hover:text-stone-400">
                     {offer.buttonText}
                   </a>
                 </p>

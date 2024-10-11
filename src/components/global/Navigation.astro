@@ -3,13 +3,13 @@
     <div class="md:px-12 mt-8 px-8">
       <div
         x-data="{ open: false }"
-        class="relative flex flex-col w-full mx-auto md:items-center md:justify-between md:flex-row border-t border-zinc-300 pt-2">
+        class="relative flex flex-col w-full mx-auto md:items-center md:justify-between md:flex-row border-t border-stone-700 pt-2">
         <div
-          class="flex flex-row items-center justify-between lg:justify-start text-base font-medium text-black uppercase font-display">
+          class="flex flex-row items-center justify-between lg:justify-start text-base font-medium text-white uppercase font-display">
           <a href="/"> Carriera</a>
           <button
             @click="open = !open"
-            class="inline-flex items-center justify-center p-2 text-black hover:text-blue-400 focus:outline-none focus:text-black md:hidden"
+            class="inline-flex items-center justify-center p-2 text-white hover:text-blue-400 focus:outline-none focus:text-white md:hidden"
             ><svg
               class="w-6 h-6"
               stroke="currentColor"
@@ -35,18 +35,18 @@
         </div>
         <nav
           :class="{'flex': open, 'hidden': !open}"
-          class="flex-col items-center flex-grow hidden md:pb-0 md:flex md:justify-end md:flex-row gap-4 text-base font-medium text-black uppercase font-display">
+          class="flex-col items-center flex-grow hidden md:pb-0 md:flex md:justify-end md:flex-row gap-4 text-base font-medium text-white uppercase font-display">
           <a
-            class="hover:text-zinc-500 lg:ml-auto duration-200"
+            class="hover:text-stone-400 lg:ml-auto duration-200"
             href="/system/overview"
             >Overview</a
           ><a
-            class="hover:text-zinc-500 duration-200"
+            class="hover:text-stone-400 duration-200"
             href="/system/style-guide"
             >Styleguide</a
           ><a
             href="https://lexingtonthemes.lemonsqueezy.com/checkout/buy/2c490f1d-6e5c-4690-9ade-038b802e07a0"
-            class="hover:text-zinc-500">
+            class="hover:text-stone-400">
             Buy Carriera</a
           >
         </nav>

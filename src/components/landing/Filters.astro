@@ -1,10 +1,10 @@
 <div class="lg:-mt-24 mx-auto md:px-32 py-6 max-w-7xl">
   <div
-    class="mx-auto rounded-2xl p-4 lg:p-8 mt-4 bg-white/20 backdrop-blur-xl shadow-2xl shadow-zinc-500/40">
+    class="mx-auto rounded-2xl p-4 lg:p-8 mt-4 bg-white/20 backdrop-blur-xl shadow-2xl shadow-stone-500/40">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 lg:grid-cols-4">
       <div class="flex justify-start items-center relative">
         <input
-          class="leading-none shadow shadow-zinc-500/20 text-left block w-full rounded-lg border-0 py-2.5 lg:rounded-xl pl-4 pr-8 text-zinc-500 ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 duration-200 px-4 border-zinc-300 outline-none"
+          class="leading-none shadow shadow-stone-500/20 text-left block w-full rounded-lg border-0 py-2.5 lg:rounded-xl pl-4 pr-8 text-stone-400 ring-1 ring-inset ring-stone-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 duration-200 px-4 border-stone-700 outline-none"
           type="text"
           placeholder="Search"
           aria-label="Search"
@@ -44,7 +44,7 @@
         class="relative">
         <button
           x-on:click="open = true"
-          class="flex relative items-center gap-2 w-full rounded-lg bg-white text-zinc-500 ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 duration-200 px-4 border-zinc-300 outline-none shadow shadow-zinc-500/20 border-0 py-2.5 lg:rounded-xl justify-between"
+          class="flex relative items-center gap-2 w-full rounded-lg bg-white text-stone-400 ring-1 ring-inset ring-stone-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 duration-200 px-4 border-stone-700 outline-none shadow shadow-stone-500/20 border-0 py-2.5 lg:rounded-xl justify-between"
           type="button"
           aria-expanded="false"
           aria-haspopup="true"
@@ -64,25 +64,25 @@
           x-show="open"
           x-on:click.away="open = false"
           id="locationDropdown"
-          class="absolute left-0 mt-2 w-full bg-white rounded-md shadow-md shadow-zinc-500/20 z-10"
+          class="absolute left-0 mt-2 w-full bg-white     shadow-md shadow-stone-500/20 z-10"
           style="min-width:15rem"
           role="menu"
           aria-labelledby="locationButton">
           <a
             href="/board/location"
-            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-zinc-500 hover:text-purple text-left text-sm hover:bg-zinc-50 disabled:text-zinc-500"
+            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-stone-400 hover:text-purple text-left text-sm hover:bg-stone-50 disabled:text-stone-400"
             role="menuitem">
             Mariehamn, Åland Islands
           </a>
           <a
             href="/board/location"
-            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-zinc-500 hover:text-purple text-left text-sm hover:bg-zinc-50 disabled:text-zinc-500"
+            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-stone-400 hover:text-purple text-left text-sm hover:bg-stone-50 disabled:text-stone-400"
             role="menuitem">
             Madrid, Spain
           </a>
           <a
             href="/board/location"
-            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-zinc-500 hover:text-purple text-left text-sm hover:bg-zinc-50 disabled:text-zinc-500"
+            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-stone-400 hover:text-purple text-left text-sm hover:bg-stone-50 disabled:text-stone-400"
             role="menuitem">
             Milano, Italy
           </a>
@@ -94,7 +94,7 @@
         class="relative">
         <button
           x-on:click="open = true"
-          class="flex relative items-center gap-2 w-full rounded-lg bg-white text-zinc-500 ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 duration-200 px-4 border-zinc-300 outline-none shadow shadow-zinc-500/20 border-0 py-2.5 lg:rounded-xl justify-between"
+          class="flex relative items-center gap-2 w-full rounded-lg bg-white text-stone-400 ring-1 ring-inset ring-stone-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 duration-200 px-4 border-stone-700 outline-none shadow shadow-stone-500/20 border-0 py-2.5 lg:rounded-xl justify-between"
           type="button"
           aria-expanded="false"
           aria-haspopup="true"
@@ -114,25 +114,25 @@
           x-show="open"
           x-on:click.away="open = false"
           id="levelDropdown"
-          class="absolute left-0 mt-2 w-full bg-white rounded-md shadow-md shadow-zinc-500/20 z-10"
+          class="absolute left-0 mt-2 w-full bg-white     shadow-md shadow-stone-500/20 z-10"
           style="min-width:15rem"
           role="menu"
           aria-labelledby="levelButton">
           <a
             href="/board/level"
-            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-zinc-500 hover:text-purple text-left text-sm hover:bg-zinc-50 disabled:text-zinc-500"
+            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-stone-400 hover:text-purple text-left text-sm hover:bg-stone-50 disabled:text-stone-400"
             role="menuitem">
             Junior
           </a>
           <a
             href="/board/level"
-            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-zinc-500 hover:text-purple text-left text-sm hover:bg-zinc-50 disabled:text-zinc-500"
+            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-stone-400 hover:text-purple text-left text-sm hover:bg-stone-50 disabled:text-stone-400"
             role="menuitem">
             Senior
           </a>
           <a
             href="/board/level"
-            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-zinc-500 hover:text-purple text-left text-sm hover:bg-zinc-50 disabled:text-zinc-500"
+            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-stone-400 hover:text-purple text-left text-sm hover:bg-stone-50 disabled:text-stone-400"
             role="menuitem">
             Executive
           </a>
@@ -144,7 +144,7 @@
         class="relative">
         <button
           x-on:click="open = true"
-          class="flex relative items-center gap-2 w-full rounded-lg bg-white text-zinc-500 ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 duration-200 px-4 border-zinc-300 outline-none shadow shadow-zinc-500/20 border-0 py-2.5 lg:rounded-xl justify-between"
+          class="flex relative items-center gap-2 w-full rounded-lg bg-white text-stone-400 ring-1 ring-inset ring-stone-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 duration-200 px-4 border-stone-700 outline-none shadow shadow-stone-500/20 border-0 py-2.5 lg:rounded-xl justify-between"
           type="button"
           aria-expanded="false"
           aria-haspopup="true"
@@ -164,25 +164,25 @@
           x-show="open"
           x-on:click.away="open = false"
           id="categoryDropdown"
-          class="absolute left-0 mt-2 w-full bg-white rounded-md shadow-md shadow-zinc-500/20 z-10"
+          class="absolute left-0 mt-2 w-full bg-white     shadow-md shadow-stone-500/20 z-10"
           style="min-width:15rem"
           role="menu"
           aria-labelledby="categoryButton">
           <a
             href="/board/category"
-            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-zinc-500 hover:text-purple text-left text-sm hover:bg-zinc-50 disabled:text-zinc-500"
+            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-stone-400 hover:text-purple text-left text-sm hover:bg-stone-50 disabled:text-stone-400"
             role="menuitem">
             UI/UX
           </a>
           <a
             href="/board/category"
-            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-zinc-500 hover:text-purple text-left text-sm hover:bg-zinc-50 disabled:text-zinc-500"
+            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-stone-400 hover:text-purple text-left text-sm hover:bg-stone-50 disabled:text-stone-400"
             role="menuitem">
             Web Development
           </a>
           <a
             href="/board/category"
-            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-zinc-500 hover:text-purple text-left text-sm hover:bg-zinc-50 disabled:text-zinc-500"
+            class="block w-full first-of-type:rounded-t-md last-of-type:rounded-b-md px-4 py-2.5 text-stone-400 hover:text-purple text-left text-sm hover:bg-stone-50 disabled:text-stone-400"
             role="menuitem">
             Product Design
           </a>

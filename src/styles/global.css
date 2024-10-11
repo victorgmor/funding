@@ -5,18 +5,20 @@
 :root {
   font-family: Inter, sans-serif;
   font-feature-settings:
-  "liga" 1,
-  "calt" 1, /* Contextual Alternates */
-  "dlig" 1, /* Discretionary Ligatures */
-  "ss07" 1, /* fSquare punctuation */
-  "ss08" 1, /* Square quotes */
-  "zero" 1, /* Slashed zero */
-  "tnum" 1, /* Tabular numbers */
-    "cv03" 1, /* Open six */
-    "cv04" 1, /* Open nine */
-    "cv01" 1, /* Alternate one */
-    "cv09", /* Flat-top three */
-    "cv02" 1; /* Open 4 */
+    /*-------- NUMBERS --------*/
+    /* Tabular numbers */ "tnum" 1,
+    /* Slashed zero */ "zero" 1,
+    /* Alternate one */ "cv01" 1,
+    /* Flat-top three */ "cv09" 1,
+    /* Open four */ "cv02" 1,
+    /* Open six */ "cv03" 1,
+    /* Open nine */ "cv04" 1,
+    /*-------- LETTERS --------*/
+    /* Square punctuation */ "ss08" 1,
+    /* Discretionary ligatures */ "dlig" 1,
+    /* Simplified u */ "cv06" 1,
+    /* Capital G with spur */ "cv10" 1,
+    /* Compact t */ "cv13" 1;
 }
 @supports (font-variation-settings: normal) {
   /* Use variable font if supported */
@@ -25,19 +27,19 @@
   }
 }
 :root {
-  --astro-code-color-text: theme('colors.zinc.200');
+  --astro-code-color-text: theme('colors.stone.200');
   --astro-code-color-background: theme('colors.black');
-  --astro-code-token-constant: theme('colors.zinc.300');
+  --astro-code-token-constant: theme('colors.stone.300');
   --astro-code-token-string: theme('colors.white');
-  --astro-code-token-comment: theme('colors.zinc.300');
-  --astro-code-token-keyword: theme('colors.zinc.400');
-  --astro-code-token-parameter: theme('colors.zinc.500');
-  --astro-code-token-function: theme('colors.zinc.300');
-  --astro-code-token-string-expression: theme('colors.zinc.400');
-  --astro-code-token-punctuation: theme('colors.zinc.200');
-  --astro-code-token-link: theme('colors.zinc.300');
+  --astro-code-token-comment: theme('colors.stone.300');
+  --astro-code-token-keyword: theme('colors.stone.400');
+  --astro-code-token-parameter: theme('colors.stone.500');
+  --astro-code-token-function: theme('colors.stone.300');
+  --astro-code-token-string-expression: theme('colors.stone.400');
+  --astro-code-token-punctuation: theme('colors.stone.200');
+  --astro-code-token-link: theme('colors.stone.300');
 }
 
 .prose-styles {
-  @apply prose prose-blockquote:border-l-black prose-a:text-zinc-500 hover:prose-a:text-black  prose-headings:text-black prose-li:marker:text-zinc-500 text-zinc-500 prose-code:text-black prose-blockquote:text-zinc-500 max-w-none prose-strong:font-display prose-pre:ring-1 prose-pre:ring-zinc-800 prose-strong:text-black prose-pre:rounded-none prose-headings:font-display prose-headings:uppercase prose-headings:font-medium prose-strong:uppercase prose-strong:font-medium;
+  @apply prose prose-blockquote:border-l-black prose-a:text-stone-400 hover:prose-a:text-white  prose-headings:text-white prose-li:marker:text-stone-400 text-stone-400 prose-code:text-white prose-blockquote:text-stone-400 max-w-none prose-strong:font-display prose-pre:ring-1 prose-pre:ring-stone-800 prose-strong:text-white prose-pre:rounded-none prose-headings:font-display prose-headings:uppercase prose-headings:font-medium prose-strong:uppercase prose-strong:font-medium;
 }

@@ -6,7 +6,7 @@ const { company, companyLogo, position, url, type, salary, location } =
 <li>
   <div class="group relative py-6 sm:rounded-2xl">
     <div
-      class="absolute -inset-x-4 -inset-y-px bg-zinc-50 opacity-0 group-hover:opacity-100 sm:-inset-x-6 rounded-2xl lg:-inset-x-8 duration-200"
+      class="absolute -inset-x-4 -inset-y-px bg-stone-50 opacity-0 group-hover:opacity-100 sm:-inset-x-6 rounded-2xl lg:-inset-x-8 duration-200"
     >
     </div>
     <div class="relative flex items-center">
@@ -28,17 +28,17 @@ const { company, companyLogo, position, url, type, salary, location } =
       >
         <div class="col-span-2 mr-2.5 flex-none sm:mr-0">
           <dt class="sr-only">Company</dt>
-          <dd class="text-xs font-semibold leading-6 text-zinc-500">
+          <dd class="text-xs font-semibold leading-6 text-stone-400">
             {company}
           </dd>
         </div>
         <div class="col-start-3 row-start-2 -ml-2.5 flex-auto sm:ml-0 sm:pl-6">
           <dt class="sr-only">Location</dt>
-          <dd class="flex items-center text-xs leading-6 text-zinc-500">
+          <dd class="flex items-center text-xs leading-6 text-stone-400">
             <svg
               viewBox="0 0 2 2"
               aria-hidden="true"
-              class="mr-2 h-0.5 w-0.5 flex-none fill-zinc-400 sm:hidden"
+              class="mr-2 h-0.5 w-0.5 flex-none fill-stone-400 sm:hidden"
             >
               <circle cx="1" cy="1" r="1"></circle>
             </svg>
@@ -47,7 +47,7 @@ const { company, companyLogo, position, url, type, salary, location } =
         </div>
         <div class="col-span-2 col-start-1 w-full flex-none">
           <dt class="sr-only">Title</dt>
-          <dd class="text-base font-semibold leading-6 text-zinc-900">
+          <dd class="text-base font-semibold leading-6 text-white">
             <a href={url}>
               <span
                 class="absolute -inset-x-4 inset-y-[calc(-1*(theme(spacing.6)+1px))] sm:-inset-x-6 sm:rounded-2xl lg:-inset-x-8"
@@ -58,17 +58,17 @@ const { company, companyLogo, position, url, type, salary, location } =
         </div>
         <div class="col-start-1 mr-2.5 flex-none">
           <dt class="sr-only">Type</dt>
-          <dd class="text-xs leading-6 text-zinc-500">
+          <dd class="text-xs leading-6 text-stone-400">
             {type}
           </dd>
         </div>
         <div class="col-span-3 -ml-2.5 flex-none">
           <dt class="sr-only">Salary</dt>
-          <dd class="flex items-center text-xs leading-6 text-zinc-500">
+          <dd class="flex items-center text-xs leading-6 text-stone-400">
             <svg
               viewBox="0 0 2 2"
               aria-hidden="true"
-              class="mr-2 h-0.5 w-0.5 flex-none fill-zinc-400"
+              class="mr-2 h-0.5 w-0.5 flex-none fill-stone-400"
             >
               <circle cx="1" cy="1" r="1"></circle>
             </svg>
