@@ -1,5 +1,5 @@
 {
-  "name": "@lexington/job",
+  "name": "@lexington/carriera",
   "type": "module",
   "version": "0.0.1",
   "private": true,
@@ -11,16 +11,14 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/mdx": "^3.1.8",
-    "@astrojs/preact": "^3.5.3",
-    "@astrojs/rss": "^4.0.8",
-    "@astrojs/sitemap": "^3.2.0",
-    "@astrojs/tailwind": "^5.1.2",
-    "@tailwindcss/aspect-ratio": "^0.4.2",
+    "astro": "^5.1.1",
+    "@astrojs/mdx": "^4.0.3",
+    "@astrojs/rss": "^4.0.10",
+    "@astrojs/sitemap": "^3.2.1",
+    "tailwindcss": "^4.0.0-beta.8",
     "@tailwindcss/forms": "^0.5.9",
+    "@astrolib/seo": "^1.0.0-beta.8",
     "@tailwindcss/typography": "^0.5.15",
-    "astro": "^4.16.0",
-    "astro-devtool-breakpoints": "^0.3.0",
-    "preact": "^10.24.2"
+    "@tailwindcss/vite": "^4.0.0-beta.8"
   }
 }
