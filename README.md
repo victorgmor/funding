@@ -39,12 +39,13 @@ All commands are run from the root of the project, from a terminal:
 Learn more - Explore more through Astro's official [documentation](https://docs.astro.build).
 
 ------
-Updated on 21st October 2024
+Updated on 30th December 2024
 
 ## This update includes:
 - Added Tailwind CSS v4 Beta
-
 On this version, Tailwind CSS is now beta version from Tailwind CSS V4, this means that there's no `tailwind.config.mjs` file anymore. From now on, all style will be added on the `css` file. You can find the styles on the `src/styles/global.css` file.
+- Astro V5
+This update includes Astro V5, which is a major update that includes several new features and improvements.
 
 
 - Astro SEO by @astrolib/seo
