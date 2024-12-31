@@ -20,7 +20,7 @@
 
 :root {
   --astro-code-color-text: theme("colors.stone.200");
-  --astro-code-color-background: theme("colors.black");
+  --astro-code-background: theme("colors.black");
   --astro-code-token-constant: theme("colors.stone.300");
   --astro-code-token-string: theme("colors.white");
   --astro-code-token-comment: theme("colors.stone.300");
