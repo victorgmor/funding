@@ -1,0 +1,27 @@
+<script type="module">
+  const dots = document.querySelectorAll(".theme-dot");
+  const savedTheme = localStorage.getItem("theme") || "default";
+  function applyTheme(theme) {
+    if (theme === "default") {
+      document.documentElement.removeAttribute("data-theme");
+      localStorage.removeItem("theme");
+    } else {
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("theme", theme);
+    }
+    // Toggle ring highlight
+    dots.forEach((dot) => {
+      const isActive = dot.dataset.theme === theme;
+      dot.classList.toggle("ring-offset-2", isActive);
+      dot.classList.toggle("ring-current", isActive);
+    });
+  }
+  // Set theme on load
+  applyTheme(savedTheme);
+  // Add click listeners
+  dots.forEach((dot) => {
+    dot.addEventListener("click", () => {
+      applyTheme(dot.dataset.theme);
+    });
+  });
+</script>

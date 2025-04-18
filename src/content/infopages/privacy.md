@@ -1,91 +1,80 @@
 ---
-page: Privacy
-pubDate: 2023-12-22
-description:   All the terms that you agree to when you sign up for a Lexington product
+page: Privacy Policy
+pubDate: 2025-04-01
 ---
-If you are a California resident, the California Consumer Privacy Act, as amended by the California Privacy Rights Act of 2020 (“**CCPA**”), requires us to provide some additional information to California residents. This Section only applies to you if you are a California resident, although please note that this information and the rights afforded herein are the same as offered to our other users in our main Privacy Policy. This Section does not apply to personal information we collect from our employees and job applicants in their capacity as employees and job applicants, as such information practices are described in separate policies.
-
-The following chart details these activities:
-
-**Category of personal information**
-
-**Purposes of use**
-
-**Categories of Third Parties Information**
-
-**Categories of Third Parties**
-
-Contact information (such as your full name, phone number, email address)
-
-Provide the Services; Communicate with you; Analyze use of and improve the services; With your consent; Comply with law or defend our legal rights; Security/fraud prevention
-
-Affiliated entities; Service providers; Entities for legal purposes
-
-We do not share/sell
-
-Customer service interaction information (including optional surveys and when you ask for help)
-
-Provide the Services; Communicate with you; Analyze use of and improve the services; With your consent; Comply with law or defend our legal rights; Security/fraud prevention
-
-Affiliated entities; Service providers; Entities for legal purposes
-
-We do not share/sell
-
-Product interaction information
-
-Provide the Services; Communicate with you; Analyze use of and improve the services; With your consent; Comply with law or defend our legal rights; Security/fraud prevention
-
-Affiliated entities; Service providers; Entities for legal purposes
-
-We do not share/sell
-
-Internet network and device information (such as mobile device information, IP address, and information about your interaction with the services)
-
-Provide the Services; Analyze use of and improve the services; With your consent; Comply with law or defend our legal rights; Security/fraud prevention
-
-Affiliated entities; Service providers; Entities for legal purposes;
-
-We do not share/sell
-
-Login information (such as your username and password)
-
-Provide the Services; Comply with law or defend our legal rights; Security/fraud prevention; Comply with law or defend our legal rights
-
-Affiliated entities; Service providers; Entities for legal purposes
-
-We do not share/sell
-
-Professional or employment information (such as the name and address of the company you work for and your title)
-
-Provide the Services; Communicate with you; Analyze use of and improve the services; With your consent; Comply with law or defend our legal rights; Security/fraud prevention
-
-Affiliated entities; Service providers; Entities for legal purposes;
-
-We do not share/sell
-
-Other information (any other information you choose to provide directly to us, including optional profile photos)
-
-Provide the Services; Communicate with you; Analyze use of and improve the services; With your consent; Comply with law or defend our legal rights; Security/fraud prevention
-
-Affiliated entities; Service providers; Entities for legal purposes;
-
-We do not sell/share
-
-For more information about each category of personal information, purpose of use, and third parties to which we disclose personal information, please see the "What we collect and why," and "When we access or disclose you information" sections of our Privacy Policy.
-
-**Your Choices Regarding “Sharing” and “Selling”**: You have the right to opt out of our sale/sharing of your personal information for purposes of online analytics and advertising. Currently, we do not sell or share your data as defined by the CCPA and we have not done so over the past 12 months from the effective date of this Privacy Policy.
-
-**Other CCPA Rights.** If we ever offer any financial incentives in exchange for your personal information, we will provide you with appropriate information about such incentives.
-
-The CCPA also allows you to limit the use or disclosure of your “sensitive personal information” (as defined in the CCPA) if your sensitive personal information is used for certain purposes. Please note that we do not use or disclose sensitive personal information other than for business purposes for which you cannot opt out under the CCPA.
-
-Please see the “Your rights with respect to your information” section of our Policy above for information about the additional rights you have with respect to your personal information under California law and how to exercise them.
-
-Retention of Your Personal Information. Please see the “Retention Of Your Information” section belowof our Privacy Policy for more information.
-
-Shine the Light Disclosure
---------------------------
-
-The California "Shine the Light" law gives residents of California the right under certain circumstances to request information from us regarding the manner in which we disclose certain categories of personal information (as defined in the Shine the Light law) with third parties for their direct marketing purposes. We currently do not disclose your personal information to third parties for their own direct marketing purposes.
 
 
+At [Your Company Name] ("we", "our", or "us"), we respect your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, and safeguard your personal information when you use our job board website ("Website").
+
+By accessing or using the Website, you agree to the collection and use of your personal information as described in this Privacy Policy.
+
+## 1. Information We Collect
+
+We may collect the following types of information when you use our Website:
+
+- **Personal Information**: This includes information you provide when creating an account, submitting a job listing, or applying for a job. It may include your name, email address, company name, job title, phone number, location, and other relevant details.
+- **Job Application Information**: When you apply for a job, we may collect the information you provide in your application, such as your resume, cover letter, and other personal details.
+- **Usage Data**: We collect information about how you interact with our Website, including the pages you visit, the links you click, and other actions you take on the Website.
+- **Cookies**: We may use cookies and similar technologies to enhance your experience on our Website. These technologies help us remember your preferences, improve site functionality, and analyze Website traffic.
+
+## 2. How We Use Your Information
+
+We use the information we collect for the following purposes:
+
+- To provide and manage the services on the Website, including posting and applying for jobs.
+- To communicate with you about job listings, applications, and account updates.
+- To improve our Website and services based on your feedback and usage data.
+- To respond to your inquiries and provide customer support.
+- To comply with legal obligations and protect our rights.
+
+## 3. Sharing Your Information
+
+We do not share, sell, or rent your personal information to third parties, except in the following cases:
+
+- **With your consent**: We may share your information if you explicitly consent to it.
+- **Service Providers**: We may share information with third-party service providers who help us operate the Website, such as hosting providers, analytics services, or email providers. These third parties are obligated to keep your information secure and use it only for the purposes we specify.
+- **Legal Compliance**: We may disclose your information to comply with legal requirements, such as a court order, or to protect our rights or the rights of others.
+
+## 4. Data Retention
+
+We retain your personal information for as long as necessary to provide you with the services on the Website, to comply with legal obligations, and to resolve disputes. If you delete your account or stop using our Website, we may retain some information for a limited period to meet our legal obligations or enforce our agreements.
+
+## 5. Your Rights
+
+Depending on your jurisdiction, you may have the right to:
+
+- Access, correct, or delete your personal information.
+- Object to or restrict the processing of your personal information.
+- Withdraw your consent to our use of your personal information (if applicable).
+
+To exercise any of these rights, please contact us using the information provided below.
+
+## 6. Security
+
+We take reasonable measures to protect your personal information from unauthorized access, disclosure, or alteration. However, no method of transmission over the Internet or electronic storage is 100% secure, and we cannot guarantee the security of your data.
+
+## 7. Children's Privacy
+
+Our Website is not intended for children under the age of 13. We do not knowingly collect personal information from children. If we become aware that a child has provided us with personal information, we will take steps to delete that information.
+
+## 8. International Data Transfers
+
+If you are located outside of [Your Country], please be aware that your personal information may be transferred to and stored on servers located in [Your Country] or other countries with different data protection laws. By using our Website, you consent to such transfers.
+
+## 9. Changes to This Privacy Policy
+
+We may update this Privacy Policy from time to time. Any changes will be posted on this page with the updated date. Your continued use of the Website after any changes constitutes your acceptance of the updated Privacy Policy.
+
+## 10. Contact Us
+
+If you have any questions or concerns about this Privacy Policy or our practices regarding your personal information, please contact us at:
+
+**TechWorks Solutions**  
+Email: [support@example.com](mailto:support@example.com)  
+Phone: +1 (123) 456-7890  
+Address: 123 Ingithubtion Avenue, Suite 456, San Francisco, CA 94105, USA
+
+
+Thank you for using our Job Board!
+
+---

@@ -1,0 +1,29 @@
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="ax" clip-path="url(#clip0_2194_779)">
+<g id="Clip path group">
+<mask id="mask0_2194_779" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="-1" width="641" height="481">
+<g id="ax-a">
+<path id="Vector" d="M0.0297852 -0.100098H640.027V479.997H0.0297852V-0.100098Z" fill="white" style="fill:white;fill-opacity:1;"/>
+</g>
+</mask>
+<g mask="url(#mask0_2194_779)">
+<g id="Group">
+<path id="Vector_2" d="M-60 -0.100098H674.136V479.997H-60V-0.100098Z" fill="#0053A5" style="fill:#0053A5;fill:color(display-p3 0.0000 0.3255 0.6471);fill-opacity:1;"/>
+<g id="Group_2">
+<path id="Vector_3" d="M165.888 -0.100098H307.068V479.997H165.888V-0.100098Z" fill="#FFCE00" style="fill:#FFCE00;fill:color(display-p3 1.0000 0.8078 0.0000);fill-opacity:1;"/>
+<path id="Vector_4" d="M-60 169.346H674.136V310.551H-60V169.346Z" fill="#FFCE00" style="fill:#FFCE00;fill:color(display-p3 1.0000 0.8078 0.0000);fill-opacity:1;"/>
+</g>
+<g id="Group_3">
+<path id="Vector_5" d="M208.242 -0.100098H264.714V479.997H208.242V-0.100098Z" fill="#D21034" style="fill:#D21034;fill:color(display-p3 0.8235 0.0627 0.2039);fill-opacity:1;"/>
+<path id="Vector_6" d="M-60 211.708H674.136V268.19H-60V211.708Z" fill="#D21034" style="fill:#D21034;fill:color(display-p3 0.8235 0.0627 0.2039);fill-opacity:1;"/>
+</g>
+</g>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_2194_779">
+<rect width="640" height="480" fill="white" style="fill:white;fill-opacity:1;"/>
+</clipPath>
+</defs>
+</svg>

@@ -1,0 +1,15 @@
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="mu" clip-path="url(#clip0_2194_6462)">
+<g id="Group">
+<path id="Vector" fill-rule="evenodd" clip-rule="evenodd" d="M0 360H640V480H0V360Z" fill="#00A04D" style="fill:#00A04D;fill:color(display-p3 0.0000 0.6275 0.3020);fill-opacity:1;"/>
+<path id="Vector_2" fill-rule="evenodd" clip-rule="evenodd" d="M0 120H640V240H0V120Z" fill="#151F6D" style="fill:#151F6D;fill:color(display-p3 0.0824 0.1216 0.4275);fill-opacity:1;"/>
+<path id="Vector_3" fill-rule="evenodd" clip-rule="evenodd" d="M0 0H640V120H0V0Z" fill="#EE2737" style="fill:#EE2737;fill:color(display-p3 0.9333 0.1529 0.2157);fill-opacity:1;"/>
+<path id="Vector_4" fill-rule="evenodd" clip-rule="evenodd" d="M0 240H640V360H0V240Z" fill="#FFCD00" style="fill:#FFCD00;fill:color(display-p3 1.0000 0.8039 0.0000);fill-opacity:1;"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_2194_6462">
+<rect width="640" height="480" fill="white" style="fill:white;fill-opacity:1;"/>
+</clipPath>
+</defs>
+</svg>

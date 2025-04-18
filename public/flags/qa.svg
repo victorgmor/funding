@@ -1,0 +1,11 @@
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="qa" clip-path="url(#clip0_2194_7907)">
+<path id="Vector" d="M0 0H640V480H0V0Z" fill="#8D1B3D" style="fill:#8D1B3D;fill:color(display-p3 0.5529 0.1059 0.2392);fill-opacity:1;"/>
+<path id="Vector_2" d="M0 0V480H158.4L256.2 453.3L158.4 426.7L256.1 400L158.4 373.3L256.1 346.7L158.4 320L256.2 293.3L158.4 266.7L256.1 240L158.4 213.3L256.1 186.7L158.4 160L256.2 133.3L158.4 106.7L256.1 80L158.4 53.3L256.2 26.7L158.3 0H0Z" fill="white" style="fill:white;fill-opacity:1;"/>
+</g>
+<defs>
+<clipPath id="clip0_2194_7907">
+<rect width="640" height="480" fill="white" style="fill:white;fill-opacity:1;"/>
+</clipPath>
+</defs>
+</svg>

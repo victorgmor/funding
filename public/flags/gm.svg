@@ -1,0 +1,25 @@
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="gm" clip-path="url(#clip0_2194_4233)">
+<g id="Clip path group">
+<mask id="mask0_2194_4233" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="640" height="480">
+<g id="gm-a">
+<path id="Vector" d="M0 0H640V480H0V0Z" fill="white" style="fill:white;fill-opacity:1;"/>
+</g>
+</mask>
+<g mask="url(#mask0_2194_4233)">
+<g id="Group">
+<path id="Vector_2" fill-rule="evenodd" clip-rule="evenodd" d="M0 -80H640V133.3H0V-80Z" fill="#FF0000" style="fill:#FF0000;fill:color(display-p3 1.0000 0.0000 0.0000);fill-opacity:1;"/>
+<path id="Vector_3" fill-rule="evenodd" clip-rule="evenodd" d="M0 133.3H640V169H0V133.3Z" fill="white" style="fill:white;fill-opacity:1;"/>
+<path id="Vector_4" fill-rule="evenodd" clip-rule="evenodd" d="M0 168.9H640V311H0V168.9Z" fill="#000099" style="fill:#000099;fill:color(display-p3 0.0000 0.0000 0.6000);fill-opacity:1;"/>
+<path id="Vector_5" fill-rule="evenodd" clip-rule="evenodd" d="M0 311.1H640V346.7H0V311.1Z" fill="white" style="fill:white;fill-opacity:1;"/>
+<path id="Vector_6" fill-rule="evenodd" clip-rule="evenodd" d="M0 346.7H640V560H0V346.7Z" fill="#009900" style="fill:#009900;fill:color(display-p3 0.0000 0.6000 0.0000);fill-opacity:1;"/>
+</g>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_2194_4233">
+<rect width="640" height="480" fill="white" style="fill:white;fill-opacity:1;"/>
+</clipPath>
+</defs>
+</svg>

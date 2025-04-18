@@ -38,20 +38,12 @@ All commands are run from the root of the project, from a terminal:
 
 Learn more - Explore more through Astro's official [documentation](https://docs.astro.build).
 
+
 ------
-Updated on 30th December 2024
+Updated on 18th April 2025
 
 ## This update includes:
-- Added Tailwind CSS v4 Beta
-On this version, Tailwind CSS is now beta version from Tailwind CSS V4, this means that there's no `tailwind.config.mjs` file anymore. From now on, all style will be added on the `css` file. You can find the styles on the `src/styles/global.css` file.
-- Astro V5
-This update includes Astro V5, which is a major update that includes several new features and improvements.
-
-
-- Astro SEO by @astrolib/seo
-This update includes the integration of the Astro SEO package by @astrolib/seo, is an integration that makes managing your SEO easier in Astro projects. It is fully based on the excellent Next SEO library
-
-## On the next update
+- Theme switcher. You can now switch between three different themes: Carriera, Carriera Dark, and Carriera Accent.
 
 - Added Image component from Astro
 The Astro Image component is coming back to the themes
@@ -99,6 +91,18 @@ A flexible layout component that helps with consistent spacing and alignment.
 Your content goes here
 </Wrapper>
 ```
+------
+Updated on 30th December 2024
+
+## This update includes:
+- Added Tailwind CSS v4 Beta
+On this version, Tailwind CSS is now beta version from Tailwind CSS V4, this means that there's no `tailwind.config.mjs` file anymore. From now on, all style will be added on the `css` file. You can find the styles on the `src/styles/global.css` file.
+- Astro V5
+This update includes Astro V5, which is a major update that includes several new features and improvements.
+
+
+- Astro SEO by @astrolib/seo
+This update includes the integration of the Astro SEO package by @astrolib/seo, is an integration that makes managing your SEO easier in Astro projects. It is fully based on the excellent Next SEO library
 -----
 
 ### [Support](https://lexingtonthemes.com/legal/support/)

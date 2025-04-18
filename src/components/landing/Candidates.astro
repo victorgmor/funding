@@ -1,0 +1,29 @@
+---
+// Fundations
+import Text from "@/components/fundations/elements/Text.astro";
+// Components
+import CandidateEntry from "@/components/candidates/CandidateEntry.astro";
+// Content
+import { getCollection } from "astro:content";
+// Get all candidate data
+const allCandidates = await getCollection("candidates");
+// Sort candidates alphabetically
+const sortedCandidates = allCandidates.sort((a, b) => {
+  const nameA = a.data.firstName.toLowerCase();
+  const nameB = b.data.firstName.toLowerCase();
+  return nameA < nameB ? -1 : nameA > nameB ? 1 : 0;
+});
+---
+
+<div>
+  <Text tag="h2" variant="textBase" class="font-medium text-primary">
+    Candidates
+  </Text>
+  <div class="flex flex-col mt-1 divide-y divide-primary/10 border-y border-primary/10">
+    {
+      sortedCandidates.map((candidate) => (
+        <CandidateEntry candidate={candidate} />
+      ))
+    }
+  </div>
+</div>

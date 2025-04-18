@@ -1,0 +1,25 @@
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="pa" clip-path="url(#clip0_2194_7447)">
+<g id="Clip path group">
+<mask id="mask0_2194_7447" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="640" height="480">
+<g id="pa-a">
+<path id="Vector" d="M0 0H640V480H0V0Z" fill="white" style="fill:white;fill-opacity:1;"/>
+</g>
+</mask>
+<g mask="url(#mask0_2194_7447)">
+<g id="Group">
+<path id="Vector_2" d="M0 0H640V480H0V0Z" fill="white" style="fill:white;fill-opacity:1;"/>
+<path id="Vector_3" fill-rule="evenodd" clip-rule="evenodd" d="M92.5 0H569.7V480H92.4L92.5 0Z" fill="white" style="fill:white;fill-opacity:1;"/>
+<path id="Vector_4" fill-rule="evenodd" clip-rule="evenodd" d="M323 3.59998H681V225.3H323V3.59998Z" fill="#DB0000" style="fill:#DB0000;fill:color(display-p3 0.8588 0.0000 0.0000);fill-opacity:1;"/>
+<path id="Vector_5" fill-rule="evenodd" clip-rule="evenodd" d="M3.20001 225.3H323.1V480H3.20001V225.3ZM214.8 177.7L172.8 148.3L131.1 177.9L146.6 129.9L105 100L156.6 99.6L172.6 51.6L188.9 99.5H240.5L199 129.5L214.9 177.5L214.8 177.7Z" fill="#0000AB" style="fill:#0000AB;fill:color(display-p3 0.0000 0.0000 0.6706);fill-opacity:1;"/>
+<path id="Vector_6" fill-rule="evenodd" clip-rule="evenodd" d="M516.9 413.9L474.5 386.2L432.4 414.2L448 368.6L406 340.6L458 340.1L474.2 294.7L490.6 340H542.6L500.8 368.5L516.8 413.9H516.9Z" fill="#D80000" style="fill:#D80000;fill:color(display-p3 0.8471 0.0000 0.0000);fill-opacity:1;"/>
+</g>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_2194_7447">
+<rect width="640" height="480" fill="white" style="fill:white;fill-opacity:1;"/>
+</clipPath>
+</defs>
+</svg>

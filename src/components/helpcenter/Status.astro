@@ -1,0 +1,76 @@
+---
+import Text from "@/components/fundations/elements/Text.astro";
+import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+// Icons
+import ApiApp from "@/components/fundations/icons/ApiApp.astro";
+// Content
+const systemStatus = [
+  { name: "Payments", status: "Operational", color: "bg-teal-100" },
+  {
+    name: "Transfers",
+    status: "Scheduled Maintenance",
+    color: "bg-yellow-100",
+  },
+  { name: "Support", status: "Partial Outage", color: "bg-rose-100" },
+  { name: "Login", status: "Operational", color: "bg-teal-100" },
+  { name: "API", status: "Degraded Performance", color: "bg-orange-100" },
+  { name: "Webhooks", status: "Major Outage", color: "bg-red-100" },
+  { name: "Dashboard", status: "Operational", color: "bg-teal-100" },
+  { name: "Mobile App", status: "Under Investigation", color: "bg-indigo-100" },
+  { name: "Notifications", status: "Delayed", color: "bg-purple-100" },
+  {
+    name: "Banking Connections",
+    status: "Scheduled Maintenance",
+    color: "bg-yellow-100",
+  },
+];
+---
+
+<section class="">
+  <Wrapper variant="standard" class="py-12 lg:py-24">
+    <div class="lg:w-1/2">
+      <Text
+        class="span"
+        variant="textXS"
+        class="text-primary/60 flex items-center gap-2 font-medium uppercase"
+      >
+        <ApiApp size="sm" class="text-yellow-600" />
+        Real-time System Status
+      </Text>
+      <Text
+        tag="h3"
+        variant="displayMD"
+        class="text-primary mt-8 font-semibold tracking-tight md:text-balance"
+      >
+        Stay Updated on Service Availability
+      </Text>
+      <Text
+        tag="p"
+        variant="textBase"
+        class="text-primary/60 mt-2 text-base lg:text-balance"
+      >
+        We monitor our systems 24/7 to ensure smooth operations. Get real-time
+        updates on payments, transfers, and API availability.
+      </Text>
+    </div>
+    <div class="mt-12 space-y-2">
+      {
+        systemStatus.map((item) => (
+          <div class="flex items-center justify-between gap-2 rounded-lg bg-white p-2">
+            <Text tag="h3" variant="textSM" class="text-primary font-medium">
+              {item.name}
+            </Text>
+
+            <div class="flex">
+              <span
+                class={`text-primary flex items-center px-2 py-1 text-xs font-medium ${item.color}`}
+              >
+                {item.status}
+              </span>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </Wrapper>
+</section>

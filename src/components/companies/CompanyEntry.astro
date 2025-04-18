@@ -1,0 +1,13 @@
+---
+import Text from "@/components/fundations/elements/Text.astro";
+const { slug } = Astro.props.post;
+const { name, location, size } = Astro.props.post.data;
+const url = `/companies/${slug}`;
+---
+
+<article class="relative py-4">
+  <a href={url} class="absolute inset-0 z-10" aria-label={`Visit ${name}`}></a>
+  <Text tag="h4" variant="textBase" class="font-medium capitalize text-primary"
+    >{name} — {location} {size}</Text
+  >
+</article>

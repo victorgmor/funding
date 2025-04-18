@@ -1,0 +1,47 @@
+---
+// Assets
+// Fundations
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Text from "@/components/fundations/elements/Text.astro";
+import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+// Components
+import JobEntry from "@/components/jobs/JobEntry.astro";
+// Content
+import { getCollection } from "astro:content";
+export async function getStaticPaths() {
+  const allPosts = await getCollection("jobs");
+  const uniqueTags = [
+    ...new Set(allPosts.map((post) => post.data.tags).flat()),
+  ];
+  return uniqueTags.map((tag) => {
+    const filteredPosts = allPosts.filter((post) =>
+      post.data.tags.includes(tag)
+    );
+    return {
+      params: { tag },
+      props: { posts: filteredPosts },
+    };
+  });
+}
+const { tag } = Astro.params;
+const { posts } = Astro.props;
+---
+
+<BaseLayout pageTitle={tag}>
+  <section>
+    <Wrapper variant="standard" class="py-24">
+      <Text
+        tag="h1"
+        variant="display3XL"
+        class="text-primary font-semibold tracking-tighter text-balance capitalize"
+      >
+        Explore all {tag} jobs
+      </Text>
+      <div
+        class="divide-primary/10 border-primary/10 mt-12 flex flex-col divide-y border-y lg:w-1/4"
+      >
+        {posts.map((post) => <JobEntry post={post} />)}
+      </div>
+    </Wrapper>
+  </section>
+</BaseLayout>

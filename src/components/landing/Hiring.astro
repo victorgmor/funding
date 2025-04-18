@@ -1,0 +1,64 @@
+---
+// Fundations
+import Text from "@/components/fundations/elements/Text.astro";
+// Content
+import { getCollection } from "astro:content";
+const allJobs = await getCollection("jobs");
+const allCompanies = await getCollection("companies");
+// Filter companies that have jobs
+const hiringCompanies = allCompanies.filter((company) =>
+  allJobs.some((job) => job.data.company === company.slug)
+);
+// Count open roles for each company
+const getOpenRolesCount = (companySlug) => {
+  return allJobs.filter(
+    (job) => job.data.company === companySlug && !job.data.isClosed
+  ).length;
+};
+---
+<div>
+  {
+    hiringCompanies.length > 0 && (
+          <Text
+            tag="h2"
+            variant="textBase"
+            class="font-medium text-primary "
+          >
+            Who’s Hiring
+          </Text>
+           <div class="flex flex-col mt-1 divide-y divide-primary/10 border-y border-primary/10">
+          {hiringCompanies.map((company) => {
+            const openRolesCount = getOpenRolesCount(company.slug);
+            return (
+              <article class="relative py-4">
+                <a
+                  href={`/companies/${company.slug}`}
+                  class="absolute inset-0 z-10"
+                />
+                  {company.data.logo ? (
+                      <div>
+                        <Text
+                          tag="h4"
+                          variant="textBase"
+                          class="font-medium capitalize text-primary "
+                        >
+                          {company.data.name} —
+                          {company.data.location}
+                        </Text>
+                      </div>
+                  ) : (
+                    <span>{company.data.name}</span>
+                  )}
+                <Text
+                 tag="p"
+                 variant="textXS"
+                 class="mt-1 text-primary/60  ">
+                  {openRolesCount} Open Roles
+                </Text>
+              </article>
+            );
+          })}
+        </div>
+    )
+  }
+</div>

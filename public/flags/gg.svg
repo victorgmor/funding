@@ -1,0 +1,16 @@
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="gg" clip-path="url(#clip0_2194_4182)">
+<path id="Vector" d="M0 0H640V480H0V0Z" fill="white" style="fill:white;fill-opacity:1;"/>
+<path id="Vector_2" d="M256 0H384V480H256V0Z" fill="#E8112D" style="fill:#E8112D;fill:color(display-p3 0.9098 0.0667 0.1765);fill-opacity:1;"/>
+<path id="Vector_3" d="M0 176H640V304H0V176Z" fill="#E8112D" style="fill:#E8112D;fill:color(display-p3 0.9098 0.0667 0.1765);fill-opacity:1;"/>
+<path id="gg-a" d="M110 286.7L133.3 263.3H343.3V216.7H133.3L110 193.3V286.7Z" fill="#F9DD16" style="fill:#F9DD16;fill:color(display-p3 0.9765 0.8667 0.0863);fill-opacity:1;"/>
+<path id="gg-a_2" d="M273.3 30L296.7 53.3V263.3H343.3V53.3L366.7 30L273.3 30Z" fill="#F9DD16" style="fill:#F9DD16;fill:color(display-p3 0.9765 0.8667 0.0863);fill-opacity:1;"/>
+<path id="gg-a_3" d="M366.7 450L343.3 426.7V216.7H296.7V426.7L273.3 450H366.7Z" fill="#F9DD16" style="fill:#F9DD16;fill:color(display-p3 0.9765 0.8667 0.0863);fill-opacity:1;"/>
+<path id="gg-a_4" d="M530 193.3L506.7 216.7L296.7 216.7V263.3H506.7L530 286.7V193.3Z" fill="#F9DD16" style="fill:#F9DD16;fill:color(display-p3 0.9765 0.8667 0.0863);fill-opacity:1;"/>
+</g>
+<defs>
+<clipPath id="clip0_2194_4182">
+<rect width="640" height="480" fill="white" style="fill:white;fill-opacity:1;"/>
+</clipPath>
+</defs>
+</svg>

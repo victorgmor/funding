@@ -1,7 +1,163 @@
 ---
+// Fundations
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import Overview from "@/components/system/Overview.astro";
+import Text from "@/components/fundations/elements/Text.astro";
+import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+// Data array
+const pageData = [
+  {
+    sectionTitle: "Static",
+    categories: [
+      {
+        title: "Main",
+        links: [
+          { name: "Index", url: "/" },
+          { name: "404", url: "/404" },
+          { name: "Pricing", url: "/pricing" },
+        ],
+      },
+      {
+        title: "Forms",
+        links: [
+          { name: "Sign in", url: "/forms/sign-in" },
+          { name: "Sign up", url: "/forms/sign-up" },
+          { mname: "Reset password", url: "/forms/reset-password" },
+          { name: "Contact", url: "/forms/contact" },
+          { name: "Reset password", url: "/forms/reset-password" },
+          { name: "Submit job", url: "/forms/submit-job" },
+          { name: "Submit company", url: "/forms/submit-company" },
+          { name: "Submit candidate", url: "/forms/submit-candidate" },
+        ],
+      },
+      {
+        title: "System Pages",
+        links: [
+          { name: "Links", url: "/system/links" },
+          { name: "Colors", url: "/system/colors" },
+          { name: "Buttons", url: "/system/buttons" },
+          { name: "Typography", url: "/system/typography" },
+          {
+            name: "License",
+            url: "https://lexingtonthemes.com/legal/license/",
+          },
+          {
+            name: "Documentation",
+            url: "https://lexingtonthemes.com/documentation",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    sectionTitle: "Content collections",
+    categories: [
+      {
+        title: "Jobs",
+        links: [
+          { name: "Job details closed offer", url: "/jobs/1" },
+          { name: "Job details open offer", url: "/jobs/2" },
+          { name: "Tag index", url: "/jobs/tags" },
+          { name: "Tag Category", url: "/jobs/tags/remote" },
+        ],
+      },
+      {
+        title: "Candidates",
+        links: [{ name: "Candidates details", url: "/candidates/1" }],
+      },
+      {
+        title: "Companies",
+        links: [{ name: "Companies details", url: "/companies/polar" }],
+      },
+      {
+        title: "Blog ",
+        links: [
+          { name: "Blog home", url: "/blog/home" },
+          { name: "Blog post", url: "/blog/posts/1" },
+          { name: "Tag index", url: "/blog/tags" },
+          { name: "Tag Category", url: "/blog/tags/health" },
+          { name: "RSS", url: "/rss.xml" },
+        ],
+      },
+      {
+        title: "Team",
+        links: [
+          { name: "Team home", url: "/team/home" },
+          { name: "Team details", url: "/team/jordan-wells" },
+        ],
+      },
+      {
+        title: "Help Center",
+        links: [
+          { name: "Help Center Home", url: "/helpcenter/home" },
+          { name: "Help Center details", url: "/helpcenter/1" },
+        ],
+      },
+      {
+        title: "Utility Pages",
+        links: [
+          { name: "Terms Of use", url: "/infopages/terms" },
+          { name: "Privacy Policy", url: "/infopages/privacy" },
+        ],
+      },
+    ],
+  },
+];
 ---
+
 <BaseLayout>
-  <Overview />
+  <section>
+    <Wrapper variant="standard" class="py-24">
+      <Text
+        tag="h1"
+        variant="display3XL"
+        class="text-primary font-semibold tracking-tighter text-balance"
+      >
+        Overview
+      </Text>
+      <div class="mt-12 grid grid-cols-1 gap-12 md:grid-cols-2">
+        {
+          pageData.map((section) => (
+            <div>
+              <Text
+                tag="h3"
+                variant="textBase"
+                class="text-primary font-semibold md:text-balance"
+              >
+                {section.sectionTitle}
+              </Text>
+              <div class="mt-4 grid grid-cols-2 gap-y-4 pt-4 md:grid-cols-3">
+                {section.categories.map((category) => (
+                  <div class="flex flex-col">
+                    <Text
+                      tag="h3"
+                      variant="textBase"
+                      class="text-primary font-medium"
+                    >
+                      {category.title}
+                    </Text>
+                    <div class="mt-2">
+                      {category.links.map((link) => (
+                        <div>
+                          <Text
+                            tag="a"
+                            variant="textSM"
+                            class="text-primary/60 hover:text-primary duration-300"
+                            href={link.url}
+                            title={link.name}
+                            aria-label={link.name}
+                          >
+                            {link.name}
+                          </Text>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </Wrapper>
+  </section>
 </BaseLayout>

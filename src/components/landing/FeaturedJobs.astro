@@ -1,0 +1,19 @@
+---
+// Fundations
+import Text from "@/components/fundations/elements/Text.astro";
+// Componetes
+import JobEntry from "@/components/jobs/JobEntry.astro";
+// Content
+import { getCollection } from "astro:content";
+const allJobs = await getCollection("jobs");
+---
+
+<div>
+  <Text tag="h2" variant="textBase" class="font-medium text-primary"
+    >Featured Jobs</Text
+  >
+  <div
+    class="flex flex-col mt-1 divide-primary/10 border-primary/10 divide-y border-y">
+    {allJobs.map((post) => <JobEntry post={post} />)}
+  </div>
+</div>

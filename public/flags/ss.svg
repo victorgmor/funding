@@ -1,0 +1,15 @@
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="ss" clip-path="url(#clip0_2194_9433)">
+<path id="Vector" d="M0 336H640V480H0V336Z" fill="#078930" style="fill:#078930;fill:color(display-p3 0.0275 0.5373 0.1882);fill-opacity:1;"/>
+<path id="Vector_2" d="M0 144H640V336H0V144Z" fill="white" style="fill:white;fill-opacity:1;"/>
+<path id="Vector_3" d="M0 0H640V144H0V0Z" fill="#000001" style="fill:#000001;fill:color(display-p3 0.0000 0.0000 0.0039);fill-opacity:1;"/>
+<path id="Vector_4" d="M0 168H640V312H0V168Z" fill="#DA121A" style="fill:#DA121A;fill:color(display-p3 0.8549 0.0706 0.1020);fill-opacity:1;"/>
+<path id="Vector_5" d="M0 0L415.7 240L0 480V0Z" fill="#0F47AF" style="fill:#0F47AF;fill:color(display-p3 0.0588 0.2784 0.6863);fill-opacity:1;"/>
+<path id="Vector_6" d="M200.7 194.8L61.7 240L200.7 285.1L114.9 167V313L200.7 194.8Z" fill="#FCDD09" style="fill:#FCDD09;fill:color(display-p3 0.9882 0.8667 0.0353);fill-opacity:1;"/>
+</g>
+<defs>
+<clipPath id="clip0_2194_9433">
+<rect width="640" height="480" fill="white" style="fill:white;fill-opacity:1;"/>
+</clipPath>
+</defs>
+</svg>

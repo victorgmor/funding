@@ -1,0 +1,25 @@
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="il" clip-path="url(#clip0_2194_4958)">
+<g id="Clip path group">
+<mask id="mask0_2194_4958" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="-1" y="0" width="643" height="482">
+<g id="il-a">
+<path id="Vector" d="M-0.244019 0H641.4V481.28H-0.244019V0Z" fill="white" style="fill:white;fill-opacity:1;"/>
+</g>
+</mask>
+<g mask="url(#mask0_2194_4958)">
+<g id="Group">
+<path id="Vector_2" fill-rule="evenodd" clip-rule="evenodd" d="M664.336 481.28H-23.1801V0H664.336V481.28Z" fill="white" style="fill:white;fill-opacity:1;"/>
+<path id="Vector_3" fill-rule="evenodd" clip-rule="evenodd" d="M664.336 108.288H-23.1801V45.12H664.336V108.288ZM664.336 437.758H-23.1801V374.59H664.336V437.758ZM210.316 179.258L313.81 359.362L419.56 180.104L210.316 179.258Z" fill="#0038B8" style="fill:#0038B8;fill:color(display-p3 0.0000 0.2196 0.7216);fill-opacity:1;"/>
+<path id="Vector_4" fill-rule="evenodd" clip-rule="evenodd" d="M294.352 298.732L313.998 332.102L334.114 298.92L294.352 298.732Z" fill="white" style="fill:white;fill-opacity:1;"/>
+<path id="Vector_5" fill-rule="evenodd" clip-rule="evenodd" d="M209.94 301.364L313.528 121.26L419.184 300.612L209.94 301.364Z" fill="#0038B8" style="fill:#0038B8;fill:color(display-p3 0.0000 0.2196 0.7216);fill-opacity:1;"/>
+<path id="Vector_6" fill-rule="evenodd" clip-rule="evenodd" d="M294.352 180.104L313.998 146.734L334.114 180.01L294.352 180.104ZM253.18 254.834L232.782 288.674L271.322 288.58L253.18 254.74V254.834ZM233.158 192.324L271.886 192.606L253.274 226.728L233.158 192.324ZM375.286 255.304L394.932 288.674L355.734 288.204L375.286 255.304ZM394.556 192.324L355.828 192.606L374.44 226.728L394.556 192.324ZM287.114 192.324L260.418 240.64L287.49 287.922L337.122 289.05L367.202 240.64L339.378 191.76L287.114 192.324Z" fill="white" style="fill:white;fill-opacity:1;"/>
+</g>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_2194_4958">
+<rect width="640" height="480" fill="white" style="fill:white;fill-opacity:1;"/>
+</clipPath>
+</defs>
+</svg>

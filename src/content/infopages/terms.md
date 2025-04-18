@@ -1,78 +1,67 @@
 ---
 page: Terms
-pubDate: 2023-12-22
-description:   All the terms that you agree to when you sign up for a Lexington product
+pubDate: 2025-04-01
 ---
-This privacy policy sets out how Unwrapped AB collects, processes and uses your Personal Information through your use of our Services.
 
-### Definitions
 
-### DPO
 
-DPO means Data Protection Officer, and is the person specifically appointed by us to deal with your enquiries with respect to this privacy policy and your Personal Information.
+Welcome to our Job Board! These Terms of Service ("Terms") govern your access to and use of the job board website ("Website"), operated by [Your Company Name] ("we", "our", or "us"). By using the Website, you agree to comply with and be bound by these Terms.
 
-Personal Information means any identifying information about you. This includes, but is not limited to, the following: cookies and usage data.
+## 1. Acceptance of Terms
 
-Services means all services provided by Michael Alexander Web Agency to you, including (but not limited to) this Website.
+By accessing or using the Website, you agree to comply with these Terms and our Privacy Policy. If you do not agree with these Terms, please do not use our Website.
 
-Website means this website and all websites, applications and communications that post a link to this Privacy Policy.
+## 2. Use of the Website
 
-### Personal Information Collection
+You may use the Website only for lawful purposes. You agree not to:
 
-We only collect and use Personal Information to the extent necessary to provide you with the Services. We collect Personal Information for the Website to provide you with a better online experience.
+- Post, transmit, or otherwise make available any content that violates any applicable law or regulation.
+- Impersonate any person or entity or falsely represent your affiliation with any person or entity.
+- Post any content that is obscene, defamatory, libelous, or discriminatory.
+- Attempt to gain unauthorized access to the Website or related systems or networks.
 
-### Personal Information Retention
+## 3. Job Listings
 
-We keep Personal Information for the shortest time necessary to provide you with Services and to meet all our legal and compliance obligations. To determine this retention period, we take into account (i) the nature of the Personal Information gathered; and (ii) the nature of our legal and compliance obligations. All Personal Information no longer required by us is destroyed and/or erased.
+Employers may post job listings on the Website. By submitting a job listing, you confirm that the information provided is accurate and complete to the best of your knowledge. Employers are solely responsible for the content of the job listings.
 
-### Personal Data from Third Parties
+Job seekers are responsible for ensuring the information they submit in applications is accurate and truthful.
 
-We may, from time to time, obtain Personal Information from third parties to enable us to better tailor our Services to you (Third Party Personal Information). When we obtain Third Party Personal Information, we will notify you within one month. If we use or share Third Party Personal Information, we will notify you immediately.
+## 4. User Accounts
 
-### Your Rights
+To submit a job listing or apply for a job, you may be required to create an account. You agree to provide accurate, current, and complete information when creating your account. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account.
 
-With respect to Personal Information we hold, you have the following rights:
+## 5. Privacy and Data Collection
 
-*   Access: You may request from us access to your data that we hold on you.
+By using our Website, you agree to our Privacy Policy, which describes how we collect, use, and protect your personal data.
 
-    li
-*   Rectification: If the data we hold on you is inaccurate, you may request that we correct it. If the data we hold is incomplete, you may request that we complete it.
-*   Erasure: Subject to certain conditions, you may request that we erase all of the data we hold on you. li Restrictions: Subject to certain conditions, you may request that we restrict the processing of data we hold on you.
-*   Portability: Subject to certain conditions, you may request that we transfer all the data we hold on you to a third party (including yourself).
-*   Objections: Subject to certain conditions, you may object to us processing the data we hold on you.
+## 6. Content Ownership
 
-### Social Media
+All content on the Website, including text, images, logos, and other materials, is owned by [Your Company Name] or its licensors. You may not use, reproduce, or distribute any content from the Website without prior written permission.
 
-You may choose to engage with our Services through a variety of social media sites and platforms, for example Facebook, Instagram and Twitter. When you interact with our Services through these social media platforms, you may allow us to receive Personal Information on how you are interacting with our Services. This will depend on your privacy settings on each social media site and platform. The data we are provided by you through your interaction with our Services on social media sites and platforms will be used by us subject to the terms of this privacy policy. Depending on your social media site’s privacy settings, your Personal Information may become public to a community of users if you choose to engage with our Services through these platforms. For further information on how you can customize your privacy settings on social media sites and how those sites handle your privacy, please refer to the privacy policy of each particular social media site.
+## 7. Termination of Access
 
-### Minors
+We reserve the right to suspend or terminate your access to the Website at our sole discretion, without notice, for any reason, including violation of these Terms.
 
-We do not knowingly collect information on children under the age of 16 (“Child”). If you become aware that a Child has provided us with Personal Information, please contact us. If we become aware that we have collected Personal Information from a Child without their parent's verifiable authorization to access our Services, we will take steps to remove that information from our servers.
+## 8. Disclaimers
 
-### Third Party Links
+The Website is provided "as is" and "as available." We do not guarantee the accuracy, completeness, or reliability of the content on the Website. We are not responsible for any damages arising from the use of the Website.
 
-Our website contains links to other third-party websites not owned or managed by Unwrapped. This privacy policy applies to this website only. If you click a link to a third-party website, the privacy policy of that website will apply. We highly recommend that you read the privacy policies of other websites as they may be different from ours.
+## 9. Limitation of Liability
 
-### Payment Vendors
+To the maximum extent permitted by law, [Your Company Name] will not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of profits, data, or use, arising from your use of the Website.
 
-You can make payments via our website. Our vendors are listed below:
+## 10. Governing Law
 
-*   Paypal
+These Terms are governed by and construed in accordance with the laws of [Your Country or State]. Any disputes arising out of or relating to these Terms will be resolved in the appropriate courts located in [Your Jurisdiction].
 
-Their privacy policy can be viewed [here](https://www.paypal.com/webapps/mpp/ua/privacy-full)
+## 11. Changes to Terms
 
-### Merger, acquisition or asset sale
+We reserve the right to modify or update these Terms at any time. Any changes will be posted on this page with the updated date. Your continued use of the Website after any changes to the Terms constitutes your acceptance of the updated Terms.
 
-If we or our subsidiaries are involved in a merger, acquisition, or asset sale, your Personal Information may be transferred.
+## 12. Contact Us
 
-### Updates
+If you have any questions or concerns about these Terms, please contact us at [Your Contact Information].
 
-We are constantly reviewing our privacy policy and procedures to ensure that they meet best practices. This policy was last updated on August 21, 2021.
+Thank you for using our Job Board!
 
-### Contact us
-
-If you have any questions or suggestions about our privacy policy or want to know more information about Personal Information we hold, please contact us at support@unwrapped.design or write to us at Mariehamn, Åland Islands..
-
-### Complaints
-
-If you believe that we have breached our obligations to you under this privacy policy or relevant privacy laws, please contact us at email@example If you are not satisfied with our response, you have the right to lodge a complaint at any time to your relevant authority.
+---

@@ -1,33 +1,31 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 @plugin "@tailwindcss/forms";
-@layer components {
-  .prose-styles {
-    @apply prose prose-blockquote:border-l-black prose-a:text-stone-400 hover:prose-a:text-white  prose-headings:text-white prose-li:marker:text-stone-400 text-stone-400 prose-code:text-white prose-blockquote:text-stone-400 max-w-none  prose-pre:ring-1 prose-pre:ring-stone-800 prose-strong:text-white prose-pre:rounded-none  prose-headings:uppercase prose-headings:font-medium prose-strong:uppercase prose-strong:font-medium;
-  }
-}
+@plugin "tailwind-scrollbar-hide";
 @theme {
-  /* Typography*/
   --font-sans: "Geist", sans-serif;
   --font-mono: "Geist Mono", monospace;
-
-  /* Text Sizes */
-
-  /* Colors */
-  --color-black: #121212;
-  --color-white: #f9f9f9;
+  /* Styles text */
+  --color-primary: oklch(0.07 0 0); 
+  /* Styles background */
+  --color-secondary: oklch(1 0 0);
+  /* For accents */
+  --color-accent: oklch(0.67 0.2941 338.67);
+}
+[data-theme="dark"] {
+  /* Styles text */
+  --color-primary: oklch(1 0 0);
+  /* Styles background */
+  --color-secondary: oklch(0.37 0.0073 264.48);
+  /* For accents */
+  --color-accent: oklch(0.67 0.2941 338.67);
+}
+[data-theme="accent"] {
+  /* Styles text */
+  --color-primary: oklch(1 0 0);
+  /* Styles background */
+  --color-secondary: oklch(0.41 0.1992 291.76);
+  /* For accents */
+  --color-accent: oklch(0.67 0.2941 338.67);
 }
 
-:root {
-  --astro-code-color-text: theme("colors.stone.200");
-  --astro-code-background: theme("colors.black");
-  --astro-code-token-constant: theme("colors.stone.300");
-  --astro-code-token-string: theme("colors.white");
-  --astro-code-token-comment: theme("colors.stone.300");
-  --astro-code-token-keyword: theme("colors.stone.400");
-  --astro-code-token-parameter: theme("colors.stone.500");
-  --astro-code-token-function: theme("colors.stone.300");
-  --astro-code-token-string-expression: theme("colors.stone.400");
-  --astro-code-token-punctuation: theme("colors.stone.200");
-  --astro-code-token-link: theme("colors.stone.300");
-}

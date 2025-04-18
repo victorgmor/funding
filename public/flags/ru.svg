@@ -1,0 +1,12 @@
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="ru" clip-path="url(#clip0_2194_8393)">
+<path id="Vector" d="M0 0H640V160H0V0Z" fill="white" style="fill:white;fill-opacity:1;"/>
+<path id="Vector_2" d="M0 160H640V320H0V160Z" fill="#0039A6" style="fill:#0039A6;fill:color(display-p3 0.0000 0.2235 0.6510);fill-opacity:1;"/>
+<path id="Vector_3" d="M0 320H640V480H0V320Z" fill="#D52B1E" style="fill:#D52B1E;fill:color(display-p3 0.8353 0.1686 0.1176);fill-opacity:1;"/>
+</g>
+<defs>
+<clipPath id="clip0_2194_8393">
+<rect width="640" height="480" fill="white" style="fill:white;fill-opacity:1;"/>
+</clipPath>
+</defs>
+</svg>

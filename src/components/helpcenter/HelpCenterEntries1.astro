@@ -1,0 +1,29 @@
+---
+// Fundations
+import Text from "@/components/fundations/elements/Text.astro";
+
+// Content
+const { page, description, url } = {
+  url: "/helpcenter/" + Astro.props.post.slug,
+  page: Astro.props.post.data.page,
+  description: Astro.props.post.data.description,
+};
+---
+
+<div class="group relative py-4">
+  <a class="absolute inset-0 z-10" title={page} href={url}></a>
+  <div class="relative flex h-full flex-col justify-between gap-8">
+    <div>
+      <div class="text-primary flex items-center gap-2">
+        <Text tag="h3" variant="textBase" class="text-primary font-medium">
+          {page}
+        </Text>
+      </div>
+      <div>
+        <Text tag="p" variant="textSM" class="text-primary/60"
+          >{description}</Text
+        >
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,21 +1,19 @@
 ---
-import { getCollection } from "astro:content";
 import CompaniesLayout from "@/layouts/CompaniesLayout.astro";
+import { getCollection } from "astro:content";
+
 export async function getStaticPaths() {
   const companies = await getCollection("companies");
-  const paths = companies.map((page) => {
-    return {
-      params: { slug: page.slug },
-      props: { page },
-      trailingSlash: false,
-    };
-  });
-  return paths;
+  return companies.map((page) => ({
+    params: { slug: page.slug },
+    props: { page },
+  }));
 }
+
 const { page } = Astro.props;
 const { Content } = await page.render();
 ---
 
-<CompaniesLayout frontmatter={page.data}>
+<CompaniesLayout frontmatter={page.data} slug={page.slug}>
   <Content />
 </CompaniesLayout>

@@ -1,0 +1,18 @@
+---
+// Fundations
+import CandidateLayout from "@/layouts/CandidateLayout.astro";
+// Content
+import { getCollection } from "astro:content";
+export async function getStaticPaths() {
+  const jobEntries = await getCollection("candidates");
+  return jobEntries.map((entry) => ({
+    params: { slug: entry.slug },
+    props: { entry },
+  }));
+}
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+---
+<CandidateLayout frontmatter={entry.data}>
+  <Content />
+</CandidateLayout>

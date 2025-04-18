@@ -1,0 +1,38 @@
+---
+// Assets
+
+// Fundations
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Text from "@/components/fundations/elements/Text.astro";
+import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+// Components
+import TeamEntries from "@/components/team/TeamEntries.astro";
+// Content
+import { getCollection } from "astro:content";
+const allAuthors = await getCollection("team");
+---
+
+<BaseLayout>
+  <section>
+    <Wrapper variant="standard" class="py-12">
+      <Text
+        tag="h1"
+        variant="display3XL"
+        class="text-primary font-semibold tracking-tighter text-balance"
+        >The Team. The Myth. The Email Responders.</Text
+      >
+      <div class="mt-12 grid grid-cols-1 gap-y-4 gap-x-12 md:grid-cols-2 lg:grid-cols-4">
+        {
+          // Sorting authors alphabetically inline
+          allAuthors
+            .sort((a, b) => {
+              const nameA = a.data.name.toLowerCase();
+              const nameB = b.data.name.toLowerCase();
+              return nameA < nameB ? -1 : nameA > nameB ? 1 : 0;
+            })
+            .map((post) => <TeamEntries post={post} />)
+        }
+      </div>
+    </Wrapper>
+  </section>
+</BaseLayout>

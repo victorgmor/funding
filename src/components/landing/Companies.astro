@@ -1,0 +1,18 @@
+---
+// Fundations
+import Text from "@/components/fundations/elements/Text.astro";
+// Components
+import CompanyEntry from "@/components/companies/CompanyEntry.astro";
+// Content
+import { getCollection } from "astro:content";
+const companies = await getCollection("companies");
+---
+
+<div>
+  <Text tag="h2" variant="textBase" class="font-medium text-primary">
+    All companies
+  </Text>
+  <div class="flex flex-col mt-1 divide-y divide-primary/10 border-y border-primary/10">
+    {companies.map((company) => <CompanyEntry post={company} />)}
+  </div>
+</div>

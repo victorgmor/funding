@@ -1,14 +1,30 @@
 ---
+// Fundations
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import Text from "@/components/fundations/elements/Text.astro";
+import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+// Sections
 import Hero from "@/components/landing/Hero.astro";
-import Featured from "@/components/landing/Featured.astro";
-import Latest from "@/components/landing/Latest.astro";
-import PostJobs from "@/components/ctas/PostJobs.astro";
+import Hiring from "@/components/landing/Hiring.astro";
+import Companies from "@/components/landing/Companies.astro";
+import Categories from "@/components/landing/Categories.astro";
+import Candidates from "@/components/landing/Candidates.astro";
+import FeaturedJobs from "@/components/landing/FeaturedJobs.astro";
 ---
 
 <BaseLayout>
-  <Hero />
-  <Featured />
-  <Latest />
-  <PostJobs />
+  <section>
+    <Wrapper variant="standard" class="py-24">
+      <Hero />
+      <div class="mt-12 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4">
+        <FeaturedJobs />
+        <Categories />
+        <div class="space-y-12">
+          <Hiring />
+          <Companies />
+        </div>
+        <Candidates />
+      </div>
+    </Wrapper>
+  </section>
 </BaseLayout>

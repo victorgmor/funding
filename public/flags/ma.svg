@@ -1,0 +1,11 @@
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="ma" clip-path="url(#clip0_2194_6052)">
+<path id="Vector" d="M640 0H0V480H640V0Z" fill="#C1272D" style="fill:#C1272D;fill:color(display-p3 0.7569 0.1529 0.1765);fill-opacity:1;"/>
+<path id="Vector_2" d="M320 179.4L284.4 289L377.6 221.4H262.4L355.6 289L320 179.4Z" stroke="#006233" style="stroke:#006233;stroke:color(display-p3 0.0000 0.3843 0.2000);stroke-opacity:1;" stroke-width="11.7"/>
+</g>
+<defs>
+<clipPath id="clip0_2194_6052">
+<rect width="640" height="480" fill="white" style="fill:white;fill-opacity:1;"/>
+</clipPath>
+</defs>
+</svg>

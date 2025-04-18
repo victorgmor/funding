@@ -1,0 +1,218 @@
+---
+// Assets
+
+// Fundations
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Text from "@/components/fundations/elements/Text.astro";
+import Button from "@/components/fundations/elements/Button.astro";
+import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+// Sections
+import HelpCenterFaq from "@/components/helpcenter/HelpCenterFaq.astro";
+
+// prcing data
+const billingOptions = ["monthly", "quarterly", "yearly", "lifetime"];
+const pricingPlans = {
+  monthly: [
+    {
+      name: "Just Browsing",
+      price: "$99",
+      frequency: "Every 30-ish days",
+      features: [
+        "1 lonely job post",
+        "Visible for a month (then poof)",
+        "Support that tries its best",
+      ],
+      variant: "muted",
+    },
+    {
+      name: "Making Moves",
+      price: "$249",
+      frequency: "Monthly-ish",
+      features: [
+        "3 job posts to play with",
+        "Brag-worthy company profile",
+        "Mildly impressive analytics",
+      ],
+      variant: "default",
+    },
+    {
+      name: "All-In Recruiter",
+      price: "$499",
+      frequency: "Monthly charge (sorry)",
+      features: [
+        "Unlimited job posts (go wild)",
+        "Front page fame (aka featured)",
+        "Full access to the candidate treasure trove",
+        "Top-shelf support (with emojis)",
+      ],
+      variant: "accent",
+    },
+  ],
+  quarterly: [
+    {
+      name: "Quarter-Life Crisis",
+      price: "$249",
+      frequency: "Every 3 months (you’ll forget, we won’t)",
+      features: [
+        "3 job posts",
+        "Visible for 90 days",
+        "Support that responds eventually",
+      ],
+      variant: "muted",
+    },
+    {
+      name: "Momentum Builder",
+      price: "$649",
+      frequency: "Quarterly",
+      features: [
+        "6 active job posts",
+        "Analytics and profile clout",
+        "Email support from semi-awake humans",
+      ],
+      variant: "default",
+    },
+    {
+      name: "Quarterback Hire",
+      price: "$1,299",
+      frequency: "Quarterly (champagne not included)",
+      features: [
+        "Unlimited posts",
+        "Featured slots + database magic",
+        "Priority support with a smile",
+      ],
+      variant: "accent",
+    },
+  ],
+  yearly: [
+    {
+      name: "One Year Wonder",
+      price: "$899",
+      frequency: "Per year (big spender!)",
+      features: [
+        "12 job posts",
+        "Visible all year (yep, all 365)",
+        "Support via email (and maybe memes)",
+      ],
+      variant: "muted",
+    },
+    {
+      name: "Big League",
+      price: "$1,999",
+      frequency: "Annually",
+      features: [
+        "25 job posts (hire your dream team)",
+        "Fancy analytics + brand glow-up",
+        "Slack support (we’ll reply, promise)",
+      ],
+      variant: "default",
+    },
+    {
+      name: "Hiring Machine",
+      price: "$3,999",
+      frequency: "Once a year, then chill",
+      features: [
+        "Unlimited everything",
+        "Full candidate command center",
+        "Top-tier support, minus the ego",
+      ],
+      variant: "accent",
+    },
+  ],
+  lifetime: [
+    {
+      name: "One Post to Rule Them All",
+      price: "$6,999",
+      frequency: "One-time payment. Eternal vibes.",
+      features: [
+        "Unlimited job posts until the sun burns out",
+        "Forever-featured listings (because you're special)",
+        "Access to every future feature we dream up",
+        "White-glove support (actual gloves not included)",
+      ],
+      variant: "accent",
+    },
+  ],
+};
+---
+
+<BaseLayout>
+  <section>
+    <Wrapper variant="standard" class="py-12 lg:py-24">
+      <Text
+        tag="h1"
+        variant="display3XL"
+        class="text-primary font-semibold tracking-tighter text-balance capitalize"
+      >
+        Post your job. Hope for the best.</Text
+      >
+      <div class="mt-12 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4">
+        {
+          billingOptions.map((cycle) => (
+            <div>
+              <Text
+                tag="h2"
+                variant="textBase"
+                class="text-primary font-medium capitalize"
+              >
+                {cycle}
+              </Text>
+              <div class="divide-primary/10 border-primary/10 mt-1 flex h-full flex-col divide-y border-y">
+                {pricingPlans[cycle].map((tier) => (
+                  <div
+                    class={`flex h-full flex-col gap-8 py-4 ${
+                      pricingPlans[cycle].length === 1
+                        ? "justify-start"
+                        : "justify-between"
+                    }`}
+                  >
+                    <div>
+                      <div class="flex items-center justify-between gap-2">
+                        <Text
+                          tag="h3"
+                          variant="textSM"
+                          class="text-primary font-mono font-medium uppercase"
+                        >
+                          {tier.name}
+                        </Text>
+                        <Text
+                          tag="p"
+                          variant="textSM"
+                          class="text-primary font-mono font-medium"
+                        >
+                          {tier.price}
+                        </Text>
+                      </div>
+                      <Text tag="p" variant="textXS" class="text-primary/60">
+                        {tier.frequency}
+                      </Text>
+
+                      <Text
+                        variant="textXS"
+                        class="ont-mono text-primary mt-4 font-medium uppercase"
+                      >
+                        Whats included
+                      </Text>
+                      <ul class="text-primary/60 mt-1 space-y-1 text-xs">
+                        {tier.features.map((f) => (
+                          <li class="flex items-center gap-2">
+                            — <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div class="flex">
+                      <Button variant={tier.variant} size="xxs" class="mt-1">
+                        Purchase
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </Wrapper>
+  </section>
+  <HelpCenterFaq />
+</BaseLayout>

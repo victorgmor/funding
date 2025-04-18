@@ -1,32 +1,52 @@
 ---
+// Assets
+// Fundations
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import Text from "@/components/fundations/elements/Text.astro";
+import Link from "@/components/fundations/elements/Link.astro";
+import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+// Popular pages
+const items = [
+  {
+    title: "Open Positions",
+    description: "Find your next career opportunity.",
+    link: "/",
+  },
+  {
+    title: "Hiring Companies",
+    description: "See all companies hiring on HireWise.",
+    link: "/companies/home",
+  },
+  {
+    title: "Latest news",
+    description: "Read the latest news from HireWise.",
+    link: "/blog/home",
+  },
+];
 ---
 
 <BaseLayout>
   <section>
-    <div
-      class="items-center w-full px-8 md:px-12 py-12 lg:pt-32 mx-auto 2xl:max-w-7xl">
-      <div class="border-t border-stone-700 pt-2">
-        <div class="flex flex-col gap-8 lg:gap-0">
-          <p
-            class="text-base font-medium text-white uppercase font-display">
-            Error 404
-          </p>
-          <p
-            class="text-base md:text-3xl mt-32 lg:text-6xl font-display uppercase text-white text-balance">
-            Oops! The page you're looking for couldn't be found. It may have
-            been moved, deleted, or doesn't exist. Please check the URL for
-            typos or return to the homepage to start fresh
-          </p>
-          <p class="mt-32">
-            <a
-              href="/"
-              class="hover:text-stone-400 text-base font-medium text-white uppercase font-display"
-              >go back gome</a
-            >
-          </p>
-        </div>
+    <Wrapper variant="standard" class="py-24">
+      <Text
+        tag="h1"
+        variant="display3XL"
+        class="text-primary font-semibold tracking-tighter text-balance capitalize"
+      >
+        404 — This page does not exist
+      </Text>
+      <Text
+        tag="p"
+        variant="textBase"
+        class="text-primary/60 mt-4 text-balance"
+      >
+        Sorry, we couldn’t find the page you’re looking for.
+      </Text>
+      <div class="mt-2 flex">
+        <Link size="xs" variant="accent" href="/" class="w-auto">
+          Go back home
+        </Link>
       </div>
-    </div>
+    </Wrapper>
   </section>
 </BaseLayout>

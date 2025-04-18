@@ -1,0 +1,22 @@
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="pw" clip-path="url(#clip0_2194_7746)">
+<g id="Clip path group">
+<mask id="mask0_2194_7746" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="640" height="480">
+<g id="pw-a">
+<path id="Vector" d="M0 0H640V480H0V0Z" fill="white" style="fill:white;fill-opacity:1;"/>
+</g>
+</mask>
+<g mask="url(#mask0_2194_7746)">
+<g id="Group">
+<path id="Vector_2" fill-rule="evenodd" clip-rule="evenodd" d="M-103.1 0H743.2V480H-103.1V0Z" fill="#4AADD6" style="fill:#4AADD6;fill:color(display-p3 0.2902 0.6784 0.8392);fill-opacity:1;"/>
+<path id="Vector_3" fill-rule="evenodd" clip-rule="evenodd" d="M405.9 232.1C406.392 249.476 403.243 266.769 396.637 282.96C390.032 299.151 380.104 313.911 367.44 326.367C354.777 338.824 339.634 348.725 322.907 355.485C306.18 362.246 288.207 365.729 270.05 365.729C251.893 365.729 233.92 362.246 217.193 355.485C200.466 348.725 185.323 338.824 172.66 326.367C159.996 313.911 150.068 299.151 143.463 282.96C136.857 266.769 133.707 249.476 134.2 232.1C133.707 214.724 136.857 197.431 143.463 181.24C150.068 165.049 159.996 150.289 172.66 137.833C185.323 125.376 200.466 115.475 217.193 108.715C233.92 101.954 251.893 98.4712 270.05 98.4712C288.207 98.4712 306.18 101.954 322.907 108.715C339.634 115.475 354.777 125.376 367.44 137.833C380.104 150.289 390.032 165.049 396.637 181.24C403.243 197.431 406.392 214.724 405.9 232.1Z" fill="#FFDE00" style="fill:#FFDE00;fill:color(display-p3 1.0000 0.8706 0.0000);fill-opacity:1;"/>
+</g>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_2194_7746">
+<rect width="640" height="480" fill="white" style="fill:white;fill-opacity:1;"/>
+</clipPath>
+</defs>
+</svg>

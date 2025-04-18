@@ -1,0 +1,110 @@
+---
+// Assets
+// Fundations
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Text from "@/components/fundations/elements/Text.astro";
+import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+import ChevronRight from "@/components/fundations/icons/ChevronRight.astro";
+const { frontmatter } = Astro.props;
+// Breadcrumbs Data
+const breadcrumbs = [
+  { label: "Home", href: "/" },
+  { label: "Help Center", href: "/helpcenter/home" },
+  { label: frontmatter.page, href: "#" }, // Current page (unstyled)
+];
+---
+
+<BaseLayout>
+  <section>
+    <Wrapper variant="standard" class="py-24">
+      <Text
+        tag="h1"
+        variant="display3XL"
+        class="text-primary font-semibold tracking-tighter text-balance capitalize"
+      >
+        {frontmatter.page}
+      </Text>
+      <div class="mt-12 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4">
+        <Wrapper variant="narrow" class="lg:col-span-2">
+          <nav aria-label="Breadcrumb">
+            <ol class="text-primary/60 flex items-center space-x-2">
+              {
+                breadcrumbs.map((item, index) => (
+                  <>
+                    <li>
+                      {index < breadcrumbs.length - 1 ? (
+                        <a
+                          href={item.href}
+                          class="hover:text-primary font-mono text-xs font-medium uppercase"
+                        >
+                          {item.label}
+                        </a>
+                      ) : (
+                        <span class="text-primary font-mono text-xs font-medium uppercase">
+                          {item.label}
+                        </span>
+                      )}
+                    </li>
+                    {index < breadcrumbs.length - 1 && (
+                      <li class="text-primary/60">
+                        <ChevronRight size="sm" />
+                      </li>
+                    )}
+                  </>
+                ))
+              }
+            </ol>
+          </nav>
+          <Text
+            class="span"
+            variant="textXS"
+            class="text-primary/60 mt-12 flex items-center gap-2 font-medium uppercase"
+          >
+            <time datetime="{frontmatter.lastUpdated}">
+              {
+                new Date(frontmatter.lastUpdated).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                })
+              }
+            </time>
+          </Text>
+
+          <Text variant="textSM" class="text-primary/60 mt-4">
+            {frontmatter.description}
+          </Text>
+          <Wrapper variant="prose" class="mt-4">
+            <slot />
+          </Wrapper>
+        </Wrapper>
+        <div>
+          <Text tag="h4" variant="textBase" class="text-primary font-medium">
+            Frequently Asked Questions
+          </Text>
+          <ul
+            class="divide-primary/10 border-primary/10 mt-1 flex flex-col divide-y border-y"
+          >
+            {
+              frontmatter.faq.map((item) => (
+                <li class="flex py-4">
+                  <div>
+                    <Text
+                      tag="h5"
+                      variant="textBase"
+                      class="text-primary font-medium"
+                    >
+                      {item.question}
+                    </Text>
+                    <Text variant="textSM" class="text-primary/60 mt-2">
+                      {item.answer}
+                    </Text>
+                  </div>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+    </Wrapper>
+  </section>
+</BaseLayout>

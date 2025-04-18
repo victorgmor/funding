@@ -1,0 +1,84 @@
+---
+// Fundations
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Text from "@/components/fundations/elements/Text.astro";
+import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+const colors = [
+  {
+    name: "Default",
+    shades: [
+      { name: "Primary ", class: "bg-[#010101]   outline outline-primary/20 " },
+      {
+        name: "Secondary ",
+        class: "bg-[#ffffff]   outline outline-primary/20 ",
+      },
+      { name: "Accent ", class: "bg-[#fc00d0]   outline outline-primary/20 " },
+    ],
+  },
+  {
+    name: "Dark",
+    shades: [
+      { name: "Primary ", class: "bg-[#ffffff]   outline outline-primary/20 " },
+      {
+        name: "Secondary ",
+        class: "bg-[#3d3f43]   outline outline-primary/20 ",
+      },
+      { name: "Accent ", class: "bg-[#fc00d0]   outline outline-primary/20 " },
+    ],
+  },
+  {
+    name: "Accent",
+    shades: [
+      { name: "Primary ", class: "bg-[#ffffff]   outline outline-primary/20 " },
+      {
+        name: "Secondary ",
+        class: "bg-[#531faa]   outline outline-primary/20 ",
+      },
+      { name: "Accent ", class: "bg-[#fc00d0]   outline outline-primary/20 " },
+    ],
+  },
+];
+---
+
+<BaseLayout>
+  <section>
+    <Wrapper variant="standard" class="py-12">
+      <Text
+        tag="h1"
+        variant="display3XL"
+        class="font-semibold tracking-tighter text-primary text-balance"
+      >
+        Colors
+      </Text>
+      <div
+        class="mt-12 grid grid-cols-2 gap-12 md:grid-cols-2 lg:grid-cols-3"
+      >
+        {
+          colors.map((color) => (
+            <div class="flex flex-col gap-2">
+              <Text
+                tag="h3"
+                variant="textXS"
+                class="font-semibold uppercase text-primary text-foreground"
+              >
+                {color.name}
+              </Text>
+              <div class="mt-2 grid grid-cols-1 gap-1 gap-y-8 md:grid-cols-2 lg:grid-cols-3">
+                {color.shades.map((shade) => (
+                  <div class="flex flex-col gap-2">
+                    <div
+                      class={`aspect-square size-full rounded-md ${shade.class}`}
+                    />
+                    <span class="font-mono text-sm font-medium uppercase text-primary">
+                      {shade.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </Wrapper>
+  </section>
+</BaseLayout>

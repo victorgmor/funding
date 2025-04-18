@@ -1,0 +1,185 @@
+---
+// Assets
+import { Image } from "astro:assets";
+// Fundations
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Text from "@/components/fundations/elements/Text.astro";
+import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+// Components
+import CandidateEntry from "@/components/candidates/CandidateEntry.astro";
+// Content
+import { getCollection } from "astro:content";
+// Access frontmatter passed to this layout
+const { frontmatter } = Astro.props;
+// Load all candidates
+const allCandidates = await getCollection("candidates");
+// Get current candidate slug from URL
+const currentSlug = Astro.url.pathname.split("/").filter(Boolean).pop();
+const currentPreferences = frontmatter.jobPreferences ?? [];
+// Filter candidates with at least one shared preference, exclude current
+const relatedCandidates = allCandidates
+  .filter((candidate) => {
+    const isNotSelf = candidate.slug !== currentSlug;
+    const preferences = candidate.data.jobPreferences ?? [];
+    const matches = preferences.some((p) => currentPreferences.includes(p));
+    return isNotSelf && matches;
+  })
+  .slice(0, 3); // Limit to 3 results
+---
+
+<BaseLayout>
+  <section>
+    <Wrapper variant="standard" class="py-24">
+      <Text
+        tag="h1"
+        variant="display3XL"
+        class="text-primary font-semibold tracking-tighter text-balance capitalize"
+      >
+        {`${frontmatter.firstName} ${frontmatter.lastName}`}
+      </Text>
+      <div
+        class="mt-12 grid grid-cols-1 items-start gap-12 md:grid-cols-2 lg:grid-cols-4"
+      >
+        <div class="lg:sticky lg:top-24 lg:z-50">
+          <div class="flex w-full items-center gap-4">
+            <Image
+              width={400}
+              height={400}
+              src={frontmatter.avatar.url}
+              alt={frontmatter.avatar.alt}
+              class="size-9 rounded-full"
+            />
+          </div>
+          <ul
+            class="text-primary mt-2 flex items-center gap-1 font-mono text-xs uppercase"
+          >
+            {
+              frontmatter.jobPreferences &&
+                frontmatter.jobPreferences.map((job, index) => (
+                  <li>
+                    {job}
+                    {index < frontmatter.jobPreferences.length - 1 ? "/" : ""}
+                  </li>
+                ))
+            }
+          </ul>
+          <Text tag="p" variant="textSM" class="text-primary/60 mt-1">
+            {frontmatter.coverLetter}</Text
+          >
+          <div class="mt-4">
+            <div class="flex items-baseline justify-between">
+              <Text tag="h3" variant="textSM" class="text-primary font-medium">
+                Location
+              </Text>
+              <span class="border-primary/30 mx-2 flex-1 border-b border-dotted"
+              ></span>
+              <Text tag="p" variant="textSM" class="text-primary/60">
+                {frontmatter.location}
+              </Text>
+            </div>
+            <div class="flex items-baseline justify-between">
+              <Text tag="h3" variant="textSM" class="text-primary font-medium">
+                Experience
+              </Text>
+              <span class="border-primary/30 mx-2 flex-1 border-b border-dotted"
+              ></span>
+              <Text tag="p" variant="textSM" class="text-primary/60">
+                {frontmatter.experienceLevel}
+              </Text>
+            </div>
+            <div class="flex items-baseline justify-between">
+              <Text tag="h3" variant="textSM" class="text-primary font-medium">
+                Status
+              </Text>
+              <span class="border-primary/30 mx-2 flex-1 border-b border-dotted"
+              ></span>
+              <Text tag="p" variant="textSM" class="text-primary/60">
+                {frontmatter.status}
+              </Text>
+            </div>
+            <div class="flex items-baseline justify-between">
+              <Text tag="h3" variant="textSM" class="text-primary font-medium">
+                Aplied on
+              </Text>
+              <span class="border-primary/30 mx-2 flex-1 border-b border-dotted"
+              ></span>
+              <Text tag="p" variant="textSM" class="text-primary/60">
+                {
+                  new Date(frontmatter.dateApplied).toLocaleDateString(
+                    "en-US",
+                    {
+                      year: "numeric",
+                      month: "long",
+                      day: "2-digit",
+                    }
+                  )
+                }
+              </Text>
+            </div>
+            <div class="text-primary/60 mt-2 flex items-center gap-2">
+              <a
+                href={`tel:${frontmatter.phone.replace(/\s+/g, "")}`}
+                class="text-primary text-xs duration-300 hover:underline"
+              >
+                Phone
+              </a>
+              <a
+                href={`mailto:${frontmatter.email}`}
+                class="text-primary text-xs duration-300 hover:underline"
+              >
+                Email
+              </a>
+              <a
+                href={frontmatter.linkedinProfile}
+                class="text-primary text-xs duration-300 hover:underline"
+              >
+                LinkedIn
+              </a>
+              <a
+                href={frontmatter.githubProfile}
+                class="text-primary text-xs duration-300 hover:underline"
+              >
+                GitHub
+              </a>
+              <a
+                href={frontmatter.portfolioUrl}
+                class="text-primary text-xs duration-300 hover:underline"
+              >
+                Portfolio
+              </a>
+              <a
+                href={frontmatter.resumeUrl}
+                class="text-primary text-xs duration-300 hover:underline"
+              >
+                Resume
+              </a>
+            </div>
+          </div>
+        </div>
+        <Wrapper variant="prose" class="lg:col-span-2">
+          <slot />
+        </Wrapper>
+        <div class="lg:sticky lg:top-24 lg:z-50">
+          {
+            relatedCandidates.length > 0 && (
+              <div>
+                <Text
+                  tag="h2"
+                  variant="textBase"
+                  class="text-primary font-medium"
+                >
+                  Related Candidates
+                </Text>
+                <div class="divide-primary/10 border-primary/10 mt-1 flex flex-col divide-y border-y">
+                  {relatedCandidates.map((candidate) => (
+                    <CandidateEntry candidate={candidate} />
+                  ))}
+                </div>
+              </div>
+            )
+          }
+        </div>
+      </div>
+    </Wrapper>
+  </section>
+</BaseLayout>

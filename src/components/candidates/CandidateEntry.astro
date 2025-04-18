@@ -1,0 +1,68 @@
+---
+// Assets
+import { Image } from "astro:assets";
+// Fundations
+import Text from "@/components/fundations/elements/Text.astro";
+import Link from "@/components/fundations/elements/Link.astro";
+
+// Mirror the TeamCard destructuring pattern
+const { url, name, avatar, location, experience, status, date, preferences } = {
+  url: "/candidates/" + Astro.props.candidate.slug,
+  name: `${Astro.props.candidate.data.firstName} ${Astro.props.candidate.data.lastName}`,
+  avatar: Astro.props.candidate.data.avatar?.url,
+  location: Astro.props.candidate.data.location,
+  experience: Astro.props.candidate.data.experienceLevel,
+  status: Astro.props.candidate.data.status,
+  date: Astro.props.candidate.data.dateApplied,
+  preferences: Astro.props.candidate.data.jobPreferences,
+};
+---
+
+<article class="relative py-4">
+  <a href={url} class="absolute inset-0 z-10"> </a>
+  <div class="flex items-center gap-2">
+    <Image
+      width={48}
+      height={48}
+      src={avatar}
+      alt={name}
+      class="size-10 rounded-full"
+    />
+
+    <div>
+      <Text
+        tag="h4"
+        variant="textBase"
+        class="text-primary flex items-center gap-1 font-medium capitalize"
+      >
+        {name}
+      </Text>
+      <Text
+        tag="p"
+        variant="textSM"
+        class="text-primary/60 flex items-center gap-1"
+      >
+        {location}
+        <span aria-hidden="true">/</span>
+        {experience}
+      </Text>
+    </div>
+  </div>
+  {
+    preferences?.length && (
+      <ul class="mt-1 flex flex-col gap-1">
+        {preferences.map((pref) => (
+          <li>
+            <Text
+              tag="p"
+              variant="textXS"
+              class="text-primary mt-1 flex items-center gap-1 font-mono font-medium uppercase"
+            >
+              {pref}
+            </Text>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</article>

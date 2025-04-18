@@ -1,0 +1,39 @@
+---
+// Assets
+
+// Fundations
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Text from "@/components/fundations/elements/Text.astro";
+import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+//Sections
+import TicketCta from "@/components/helpcenter/TicketCta.astro";
+// Components
+import HelpCenterEntries1 from "@/components/helpcenter/HelpCenterEntries1.astro";
+// Content
+import { getCollection } from "astro:content";
+// Content
+const allEntries = await getCollection("helpcenter");
+---
+
+<BaseLayout>
+  <section>
+    <Wrapper variant="standard" class="py-24">
+      <Text
+        tag="h1"
+        variant="display3XL"
+        class="text-primary font-semibold tracking-tighter text-balance capitalize"
+      >
+        The manual you <br class="hidden lg:block"> swore you didn’t need.
+      </Text>
+      <div class="mt-12 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4">
+        <div
+          class="divide-primary/10 border-primary/10 flex flex-col divide-y border-y"
+        >
+          {allEntries.map((post) => <HelpCenterEntries1 post={post} />)}
+        </div>
+
+        <TicketCta />
+      </div>
+    </Wrapper>
+  </section>
+</BaseLayout>

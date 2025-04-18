@@ -1,0 +1,16 @@
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="gy" clip-path="url(#clip0_2194_4603)">
+<g id="Group">
+<path id="Vector" fill-rule="evenodd" clip-rule="evenodd" d="M2.3999 0H640V480H2.3999V0Z" fill="#399408" style="fill:#399408;fill:color(display-p3 0.2235 0.5804 0.0314);fill-opacity:1;"/>
+<path id="Vector_2" fill-rule="evenodd" clip-rule="evenodd" d="M0.2 0C-0.7 0 619.8 241.5 619.8 241.5L0 479.8L0.2 0Z" fill="white" style="fill:white;fill-opacity:1;"/>
+<path id="Vector_3" fill-rule="evenodd" clip-rule="evenodd" d="M0.299805 20.2C3.6998 20.2 559.3 238.1 556.2 240.2L1.8998 463.2L0.299805 20.2999V20.2Z" fill="#FFDE08" style="fill:#FFDE08;fill:color(display-p3 1.0000 0.8706 0.0314);fill-opacity:1;"/>
+<path id="Vector_4" fill-rule="evenodd" clip-rule="evenodd" d="M1.8998 0.800049C3.6998 0.800049 292.8 241.7 292.8 241.7L1.7998 477L1.8998 0.800049Z" fill="#000001" style="fill:#000001;fill:color(display-p3 0.0000 0.0000 0.0039);fill-opacity:1;"/>
+<path id="Vector_5" fill-rule="evenodd" clip-rule="evenodd" d="M0.300195 33.9C1.9002 18.9 261.2 242.3 261.2 242.3L0.200195 451.7V33.9H0.300195Z" fill="#DE2110" style="fill:#DE2110;fill:color(display-p3 0.8706 0.1294 0.0627);fill-opacity:1;"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_2194_4603">
+<rect width="640" height="480" fill="white" style="fill:white;fill-opacity:1;"/>
+</clipPath>
+</defs>
+</svg>

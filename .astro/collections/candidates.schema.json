@@ -1,0 +1,86 @@
+{
+  "$ref": "#/definitions/candidates",
+  "definitions": {
+    "candidates": {
+      "type": "object",
+      "properties": {
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "resumeUrl": {
+          "type": "string"
+        },
+        "coverLetter": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "experienceLevel": {
+          "type": "string"
+        },
+        "jobPreferences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "dateApplied": {
+          "type": "string"
+        },
+        "linkedinProfile": {
+          "type": "string"
+        },
+        "githubProfile": {
+          "type": "string"
+        },
+        "portfolioUrl": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "avatar": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string"
+            },
+            "alt": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "url",
+            "alt"
+          ],
+          "additionalProperties": false
+        },
+        "isFeatured": {
+          "type": "boolean"
+        },
+        "$schema": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "firstName",
+        "lastName",
+        "email",
+        "dateApplied"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

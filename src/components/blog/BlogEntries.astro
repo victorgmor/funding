@@ -1,0 +1,36 @@
+---
+import Text from "@/components/fundations/elements/Text.astro";
+// Content
+const { url, title, description, pubDate } = {
+  url: "/blog/posts/" + Astro.props.post.slug,
+  title: Astro.props.post.data.title,
+  description: Astro.props.post.data.description,
+  pubDate: new Date(Astro.props.post.data.pubDate).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "2-digit",
+  }),
+};
+---
+
+<div class="relative py-4">
+  <a href={url} title={title} class="absolute inset-0 z-10"></a>
+  <div class="relative items-start">
+    <Text
+      tag="p"
+      variant="textXS"
+      class="text-primary/60 font-mono font-medium uppercase"
+    >
+      {pubDate}
+    </Text>
+    <Text
+      tag="h3"
+      variant="textBase"
+      class="text-primary mt-2 flex items-center gap-1 font-medium capitalize"
+    >
+      {title}
+    </Text>
+
+    <Text tag="p" variant="textSM" class="text-primary/60">{description} </Text>
+  </div>
+</div>

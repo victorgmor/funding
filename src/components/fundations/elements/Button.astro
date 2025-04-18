@@ -1,0 +1,83 @@
+---
+const {
+  variant,
+  size,
+  onlyIconSize,
+  gap,
+  class: className,
+  ...rest
+} = Astro.props;
+// Default button
+const defaultClass = [
+  "bg-primary",
+  "text-secondary",
+  "focus:ring-primary",
+  "hover:bg-primary/80",
+];
+const accentClass = [
+  "text-white",
+  "bg-accent",
+  "focus:ring-accent",
+  "hover:bg-accent/80",
+];
+const mutedClass = [
+  "text-primary",
+  "bg-primary/10",
+  "focus:ring-muted",
+  "hover:bg-primary/20",
+];
+// Size (only applies if variant is not "link")
+const xxs = ["h-6", "px-2", "py-1.5", "text-[0.65rem]"];
+const xs = ["h-8", "px-4", "py-2", "text-xs"];
+const sm = ["h-9", "px-4", "py-2", "text-sm"];
+const base = ["h-10", "px-6", "py-3", "text-base"];
+const md = ["h-11", "px-6", "py-3", "text-md"];
+const lg = ["h-12", "px-6", "py-3", "text-lg"];
+const xl = ["h-14", "px-6", "py-3", "text-lg"];
+// Gap
+const gapXS = ["gap-2"];
+const gapSM = ["gap-4"];
+const gapBase = ["gap-8"];
+const gapMD = ["gap-10"];
+const gapLG = ["gap-12"];
+const additionalClasses = className ? className.split(" ") : [];
+---
+
+<button
+  class:list={[
+    "flex",
+    "items-center",
+    "font-medium",
+    "justify-center",
+    "transition-all",
+    "rounded-full",
+    "items-center",
+    "duration-300",
+    "focus:ring-2",
+    "focus:outline-none",
+    "focus:ring-offset-2",
+    "focus:ring-offset-base",
+    variant === "default" && defaultClass,
+    variant === "accent" && accentClass,
+    variant === "muted" && mutedClass,
+    variant === "none" && [], // No additional classes for "none" variant
+    size === "xxs" && xxs,
+    size === "xs" && xs,
+    size === "sm" && sm,
+    size === "base" && base,
+    size === "md" && md,
+    size === "lg" && lg,
+    size === "xl" && xl,
+    gap === "xs" && gapXS,
+    gap === "sm" && gapSM,
+    gap === "base" && gapBase,
+    gap === "md" && gapMD,
+    gap === "lg" && gapLG,
+    ...additionalClasses,
+  ]}
+  {...rest}
+>
+  <slot name="left-icon" />
+  <slot />
+  <slot name="right-icon" />
+</button>

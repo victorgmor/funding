@@ -1,7 +1,16 @@
 ---
+// Assets
+
+// Fundations
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import EntriesOne from "@/components/blog/EntriesOne.astro";
+import Text from "@/components/fundations/elements/Text.astro";
+import Button from "@/components/fundations/elements/Button.astro";
+import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+// Component
+import BlogEntries1 from "@/components/blog/BlogEntries.astro";
+// Content
 import { getCollection } from "astro:content";
+
 export async function getStaticPaths() {
   const allPosts = await getCollection("posts");
   const uniqueTags = [
@@ -23,37 +32,21 @@ const { tag } = Astro.params;
 const { posts } = Astro.props;
 ---
 
-<BaseLayout pageTitle={tag}>
+<BaseLayout>
   <section>
-    <div
-      class="items-center w-full px-8 md:px-12 py-12 lg:pt-32 mx-auto 2xl:max-w-7xl">
-      <div class="border-t border-stone-700 pt-2">
-        <div class="flex flex-col gap-8 lg:gap-0">
-          <p class="text-base font-medium text-white uppercase font-display">
-            Tage category
-          </p>
-          <p
-            class="text-base md:text-3xl mt-32 lg:text-6xl font-display uppercase text-white text-balance">
-            all posts tagged with ⏤ {tag}
-          </p>
-        </div>
-        <ul
-          class="grid grid-cols-1 mt-2 lg:grid-cols-3 sm:grid-cols-2 gap-x-2 gap-y-24 border-t border-stone-700 pt-2">
-          {
-            posts.map((post) => (
-              <EntriesOne
-                url={"/blog/posts/" + post.slug}
-                title={post.data.title}
-                description={post.data.description}
-                alt={post.data.title}
-                pubDate={post.data.pubDate.toString().slice(0, 10)}
-                author={post.data.author}
-                image={post.data.image.url}
-              />
-            ))
-          }
-        </ul>
+    <Wrapper variant="standard" class="py-24">
+      <Text
+        tag="h1"
+        variant="display3XL"
+        class="text-primary font-semibold tracking-tighter text-balance capitalize"
+      >
+        Lates news about {tag} 
+      </Text>
+      <div
+        class="divide-primary/10 border-primary/10 mt-12 flex flex-col divide-y border-y lg:w-1/4"
+      >
+        {posts.map((post) => <BlogEntries1 post={post} />)}
       </div>
-    </div>
+    </Wrapper>
   </section>
 </BaseLayout>

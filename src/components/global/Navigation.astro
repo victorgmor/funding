@@ -1,56 +1,40 @@
+---
+// Assets
+import Logo from "@/components/assets/Logo.astro";
+import JobSearch from "@/components/jobs/JobSearch.astro";
+import ThemeToggle from "@/components/assets/ThemeToggle.astro";
+// Fundations
+import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+---
+
 <section>
-  <div class="relative w-full mx-auto 2xl:max-w-7xl">
-    <div class="md:px-12 mt-8 px-8">
+  <Wrapper variant="standard">
+    <div
+      class="grid w-full grid-cols-2 items-center justify-between gap-4 py-2 lg:grid-cols-3 lg:gap-12"
+    >
+      <a href="/" class="flex items-center gap-2">
+        <Logo class="text-primary font-medium lowercase" />
+      </a>
+      <div class="text-primary/60 ml-auto flex items-center gap-2 lg:mx-auto">
+        <a
+          href="/system/overview"
+          class="hover:text-primary text-sm duration-300"
+        >
+          Overview
+        </a>
+        <a
+          href="https://buy.polar.sh/polar_cl_uTsOzAB0c5cWUwq0XwDFmoQ6mMjOnIeMDRmvRh39V-w"
+          class="hover:text-primary text-sm duration-300"
+        >
+          Buy Carriera
+        </a>
+      </div>
       <div
-        x-data="{ open: false }"
-        class="relative flex flex-col w-full mx-auto md:items-center md:justify-between md:flex-row border-t border-stone-700 pt-2">
-        <div
-          class="flex flex-row items-center justify-between lg:justify-start text-base font-medium text-white uppercase font-display">
-          <a href="/"> Carriera</a>
-          <button
-            @click="open = !open"
-            class="inline-flex items-center justify-center p-2 text-white hover:text-blue-400 focus:outline-none focus:text-white md:hidden"
-            ><svg
-              class="w-6 h-6"
-              stroke="currentColor"
-              fill="none"
-              viewBox="0 0 24 24"
-              ><path
-                :class="{'hidden': open, 'inline-flex': !open }"
-                class="inline-flex"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 6h16M4 12h16M4 18h16"
-              ></path><path
-                :class="{'hidden': !open, 'inline-flex': open }"
-                class="hidden"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              ></path></svg
-            ></button
-          >
-        </div>
-        <nav
-          :class="{'flex': open, 'hidden': !open}"
-          class="flex-col items-center flex-grow hidden md:pb-0 md:flex md:justify-end md:flex-row gap-4 text-base font-medium text-white uppercase font-display">
-          <a
-            class="hover:text-stone-400 lg:ml-auto duration-200"
-            href="/system/overview"
-            >Overview</a
-          ><a
-            class="hover:text-stone-400 duration-200"
-            href="/system/style-guide"
-            >Styleguide</a
-          ><a
-            href="https://buy.polar.sh/polar_cl_uTsOzAB0c5cWUwq0XwDFmoQ6mMjOnIeMDRmvRh39V-w"
-            class="hover:text-stone-400">
-            Buy Carriera</a
-          >
-        </nav>
+        class="col-span-full flex items-center justify-between gap-2 lg:col-span-1 lg:ml-auto"
+      >
+        <JobSearch />
+        <ThemeToggle />
       </div>
     </div>
-  </div>
+  </Wrapper>
 </section>

@@ -1,0 +1,61 @@
+---
+// Fundations
+import Text from "@/components/fundations/elements/Text.astro";
+const { url, title, location, company, type, jobType, salary } = {
+  url: "/jobs/" + Astro.props.post.slug,
+  type: Astro.props.post.data.type,
+  title: Astro.props.post.data.title,
+  location: Astro.props.post.data.location,
+  jobType: Astro.props.post.data.jobType,
+  company: Astro.props.post.data.company,
+  salary: Astro.props.post.data.salary,
+};
+/**
+ * Generates a consistent pastel-like HSL color based on any input string.
+ * Useful for assigning unique but visually balanced colors to categories like job types.
+ */
+function stringToPastelColor(str) {
+  let hash = 0;
+  // Convert the string into a numeric hash value
+  for (let i = 0; i < str.length; i++) {
+    // Bitwise hash generation for a reasonably unique output per string
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  // Use the hash to get a hue between 0 and 359 (HSL color wheel)
+  const hue = Math.abs(hash) % 360;
+  // Set saturation and lightness to pastel-style values
+  const saturation = 80; // Higher saturation for more vivid pastel colors
+  const lightness = 65; // Lower lightness than full pastels for better contrast
+  // Return a full HSL color string
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+// Determine the background color based on job type, falling back to type or company
+const dotColor = stringToPastelColor(jobType || type || company);
+---
+
+<article class="relative py-4">
+  <a href={url} class="absolute inset-0 z-10"> </a>
+  <div class="flex items-center gap-2">
+    <span class="size-3 rounded-full" style={`background-color: ${dotColor}`}
+    ></span>
+    <Text
+      tag="h4"
+      variant="textBase"
+      class="text-primary flex items-center gap-1 font-medium capitalize"
+    >
+      {company} — {title}</Text
+    >
+  </div>
+  <Text tag="p" variant="textSM" class="text-primary/60">{location}</Text>
+  <Text
+    tag="p"
+    variant="textXS"
+    class="text-primary mt-1 flex items-center gap-1 font-mono font-medium uppercase"
+    ><span class="block">{jobType}</span>
+    <span aria-hidden="true">/</span>
+    <span class="">{type}</span>
+  </Text>
+  <Text tag="p" variant="textXS" class="text-primary/60 mt-1 text-xs">
+    {salary}</Text
+  >
+</article>
