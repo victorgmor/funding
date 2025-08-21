@@ -1,0 +1,225 @@
+# .pages.yml — Pages CMS config (images live in src/images)
+
+media:
+  name: images
+  label: Images
+  input: src/images
+  output: src/images
+  path: ""          # start at /src/images
+  extensions: [png, jpg, jpeg, webp, svg]
+
+settings:
+  content:
+    merge: true
+
+content:
+  # JOBS
+  - name: jobs
+    label: Jobs
+    type: collection
+    path: src/content/jobs
+    filename: "{year}{month}{day}-{hour}{minute}{second}.md"
+    view:
+      primary: title
+      fields: [title, company, location]
+      sort: [datePosted]
+      default:
+        sort: datePosted
+        order: desc
+    fields:
+      - { name: title,        label: Title,       type: string, required: true }
+      - { name: company,      label: Company,     type: string }
+      - { name: location,     label: Location,    type: string }
+      - { name: type,         label: Type,        type: string }
+      - { name: jobLevel,     label: Job Level,   type: string }
+      - { name: jobType,      label: Job Type,    type: string }
+      - { name: updated,      label: Updated,     type: string }
+      - { name: category,     label: Category,    type: string }
+      - { name: tags,         label: Tags,        type: string, list: true }
+      - { name: salary,       label: Salary,      type: string }
+      - { name: experienceLevel, label: Experience Level, type: string }
+      - { name: datePosted,   label: Date Posted, type: date }
+      - { name: applyUrl,     label: Apply URL,   type: string }
+      - { name: deadline,     label: Deadline,    type: date }
+      - name: flag
+        label: Flag
+        type: object
+        fields:
+          - { name: url, label: Flag Image, type: image, options: { media: images } }
+          - { name: alt, label: Alt text, type: string }
+      - { name: isFeatured,   label: Featured,    type: boolean }
+      - { name: isClosed,     label: Closed,      type: boolean }
+      - { name: body, label: Body, type: rich-text }
+
+  # COMPANIES
+  - name: companies
+    label: Companies
+    type: collection
+    path: src/content/companies
+    filename: "{year}{month}{day}-{hour}{minute}{second}.md"
+    view:
+      primary: name
+      fields: [name, website]
+      sort: [name]
+    fields:
+      - { name: name,        label: Name,        type: string, required: true }
+      - { name: founded,     label: Founded,     type: string }
+      - { name: headquarters,label: Headquarters,type: string }
+      - { name: website,     label: Website,     type: string }
+      - { name: hiringPage,  label: Hiring Page, type: string }
+      - { name: description, label: Description, type: text }
+      - { name: logo,        label: Logo,        type: image, options: { media: images } }
+      - { name: location,    label: Location,    type: string }
+      - { name: size,        label: Size,        type: string }
+      - { name: industry,    label: Industry,    type: string }
+      - { name: benefits,    label: Benefits,    type: string, list: true }
+      - { name: companyType, label: Company Type,type: string }
+      - { name: remotePolicy,label: Remote Policy,type: string }
+      - { name: culture,     label: Culture,     type: string }
+      - { name: mission,     label: Mission,     type: string }
+      - { name: about,       label: About,       type: string }
+      - { name: values,      label: Values,      type: string, list: true }
+      - { name: milestones,  label: Milestones,  type: string, list: true }
+      - name: socials
+        label: Socials
+        type: object
+        fields:
+          - { name: twitter,  label: Twitter,  type: string }
+          - { name: linkedin, label: LinkedIn, type: string }
+          - { name: github,   label: GitHub,   type: string }
+      - { name: body, label: Body, type: rich-text }
+
+  # CANDIDATES
+  - name: candidates
+    label: Candidates
+    type: collection
+    path: src/content/candidates
+    filename: "{year}{month}{day}-{hour}{minute}{second}.md"
+    view:
+      primary: firstName
+      fields: [firstName, lastName, email]
+      sort: [dateApplied]
+      default:
+        sort: dateApplied
+        order: desc
+    fields:
+      - { name: firstName, label: First Name, type: string, required: true }
+      - { name: lastName,  label: Last Name,  type: string }
+      - { name: email,     label: Email,      type: string }
+      - { name: phone,     label: Phone,      type: string }
+      - { name: resumeUrl, label: Resume URL, type: string }
+      - { name: coverLetter, label: Cover Letter, type: text }
+      - { name: location,  label: Location,   type: string }
+      - { name: experienceLevel, label: Experience Level, type: string }
+      - { name: jobPreferences, label: Job Preferences, type: string, list: true }
+      - { name: dateApplied, label: Date Applied, type: string }
+      - { name: linkedinProfile, label: LinkedIn Profile, type: string }
+      - { name: githubProfile,  label: GitHub Profile,  type: string }
+      - { name: portfolioUrl,   label: Portfolio URL,   type: string }
+      - { name: status,    label: Status,     type: string }
+      - name: avatar
+        label: Avatar
+        type: object
+        fields:
+          - { name: url, label: Image, type: image, options: { media: images } }
+          - { name: alt, label: Alt text, type: string }
+      - { name: isFeatured, label: Featured, type: boolean }
+      - { name: body, label: Body, type: rich-text }
+
+  # TEAM
+  - name: team
+    label: Team
+    type: collection
+    path: src/content/team
+    filename: "{year}{month}{day}-{hour}{minute}{second}.md"
+    view:
+      primary: name
+      fields: [name, role]
+      sort: [name]
+    fields:
+      - { name: name,  label: Name, type: string, required: true }
+      - { name: role,  label: Role, type: string }
+      - { name: bio,   label: Bio,  type: text }
+      - name: image
+        label: Image
+        type: object
+        fields:
+          - { name: url, label: Image, type: image, options: { media: images } }
+          - { name: alt, label: Alt text, type: string }
+      - name: socials
+        label: Socials
+        type: object
+        fields:
+          - { name: twitter,  label: Twitter,  type: string }
+          - { name: website,  label: Website,  type: string }
+          - { name: linkedin, label: LinkedIn, type: string }
+          - { name: email,    label: Email,    type: string }
+      - { name: body, label: Body, type: rich-text }
+
+  # POSTS
+  - name: posts
+    label: Posts
+    type: collection
+    path: src/content/posts
+    filename: "{year}{month}{day}-{hour}{minute}{second}.md"
+    view:
+      primary: title
+      fields: [title, pubDate, team]
+      sort: [pubDate]
+      default:
+        sort: pubDate
+        order: desc
+    fields:
+      - { name: title,       label: Title,       type: string, required: true }
+      - { name: pubDate,     label: Pub Date,    type: date }
+      - { name: description, label: Description, type: text }
+      - { name: team,        label: Team,        type: string }
+      - name: image
+        label: Cover Image
+        type: object
+        fields:
+          - { name: url, label: Image, type: image, options: { media: images } }
+          - { name: alt, label: Alt text, type: string }
+      - { name: tags, label: Tags, type: string, list: true }
+      - { name: body, label: Body, type: rich-text }
+
+  # INFO PAGES
+  - name: infopages
+    label: Info Pages
+    type: collection
+    path: src/content/infopages
+    filename: "{year}{month}{day}-{hour}{minute}{second}.md"
+    view:
+      primary: page
+      fields: [page, pubDate]
+      sort: [page]
+    fields:
+      - { name: page,    label: Page,     type: string, required: true }
+      - { name: pubDate, label: Pub Date, type: date }
+      - { name: body,    label: Body,     type: rich-text }
+
+  # HELP CENTER
+  - name: helpcenter
+    label: Help Center
+    type: collection
+    path: src/content/helpcenter
+    filename: "{year}{month}{day}-{hour}{minute}{second}.md"
+    view:
+      primary: page
+      fields: [page, category, lastUpdated]
+      sort: [page]
+    fields:
+      - { name: iconId,     label: Icon ID,     type: string }
+      - { name: page,       label: Page,        type: string, required: true }
+      - { name: description,label: Description, type: text }
+      - { name: category,   label: Category,    type: string }
+      - { name: keywords,   label: Keywords,    type: string, list: true }
+      - { name: lastUpdated,label: Last Updated,type: string }
+      - name: faq
+        label: FAQ
+        type: object
+        list: true
+        fields:
+          - { name: question, label: Question, type: string }
+          - { name: answer,   label: Answer,   type: text }
+      - { name: body, label: Body, type: rich-text }
