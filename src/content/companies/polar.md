@@ -9,7 +9,7 @@ hiringPage: "#_"
 headquarters: "Remote"
 location: "Global"
 size: "20+"
-logo: "/companies/polar.svg"
+logo: "/src/images/companies/polar.svg"
 industry: "Open Source Funding"
 socials:
   twitter: "#_"

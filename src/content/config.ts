@@ -1,124 +1,134 @@
 import { defineCollection, z } from "astro:content";
+
 const infopages = defineCollection({
   schema: z.object({
     page: z.string(),
     pubDate: z.date(),
   }),
 });
+
 const jobs = defineCollection({
-  schema: z.object({
-    title: z.string(),
-    company: z.string(),
-    location: z.string(),
-    type: z.string(),
-    jobLevel: z.string().optional(),
-    jobType: z.string().optional(),
-    updated: z.string().optional(),
-    category: z.string(),
-    tags: z.array(z.string()),
-    salary: z.string().optional(),
-    experienceLevel: z.string().optional(),
-    datePosted: z.date(),
-    applyUrl: z.string(),
-    deadline: z.date().optional(),
-    flag: z
-      .object({
-        url: z.string(),
-        alt: z.string(),
-      })
-      .optional(),
-
-    isFeatured: z.boolean().optional(),
-    isClosed: z.boolean().optional(),
-  }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      company: z.string(),
+      location: z.string(),
+      type: z.string(),
+      jobLevel: z.string().optional(),
+      jobType: z.string().optional(),
+      updated: z.string().optional(),
+      category: z.string(),
+      tags: z.array(z.string()),
+      salary: z.string().optional(),
+      experienceLevel: z.string().optional(),
+      datePosted: z.date(),
+      applyUrl: z.string(),
+      deadline: z.date().optional(),
+      flag: z
+        .object({
+          url: image(),     
+          alt: z.string(),
+        })
+        .optional(),
+      isFeatured: z.boolean().optional(),
+      isClosed: z.boolean().optional(),
+    }),
 });
+
 const companies = defineCollection({
-  schema: z.object({
-    name: z.string(),
-    founded: z.string().optional(),
-    headquarters: z.string().optional(),
-    website: z.string(),
-    hiringPage: z.string().optional(),
-    description: z.string(),
-    logo: z.string().optional(),
-    location: z.string().optional(),
-    size: z.string().optional(),
-    industry: z.string().optional(),
-    benefits: z.array(z.string()).optional(),
-    companyType: z.string().optional(),
-    remotePolicy: z.string().optional(),
-    culture: z.string().optional(),
-    mission: z.string().optional(),
-    about: z.string().optional(),
-    values: z.array(z.string()).optional(),
-    milestones: z.array(z.string()).optional(),
-    socials: z
-      .object({
-        twitter: z.string().optional(),
-        linkedin: z.string().optional(),
-        github: z.string().optional(),
-      })
-      .optional(),
-  }),
+  schema: ({ image }) =>
+    z.object({
+      name: z.string(),
+      founded: z.string().optional(),
+      headquarters: z.string().optional(),
+      website: z.string(),
+      hiringPage: z.string().optional(),
+      description: z.string(),
+      logo: image().optional(),   // ✅ single image path (keep simple)
+      location: z.string().optional(),
+      size: z.string().optional(),
+      industry: z.string().optional(),
+      benefits: z.array(z.string()).optional(),
+      companyType: z.string().optional(),
+      remotePolicy: z.string().optional(),
+      culture: z.string().optional(),
+      mission: z.string().optional(),
+      about: z.string().optional(),
+      values: z.array(z.string()).optional(),
+      milestones: z.array(z.string()).optional(),
+      socials: z
+        .object({
+          twitter: z.string().optional(),
+          linkedin: z.string().optional(),
+          github: z.string().optional(),
+        })
+        .optional(),
+    }),
 });
-const candidates = defineCollection({
-  schema: z.object({
-    firstName: z.string(),
-    lastName: z.string(),
-    email: z.string().email(),
-    phone: z.string().optional(),
-    resumeUrl: z.string().optional(),
-    coverLetter: z.string().optional(),
-    location: z.string().optional(),
-    experienceLevel: z.string().optional(),
-    jobPreferences: z.array(z.string()).optional(),
-    dateApplied: z.string(),
-    linkedinProfile: z.string().optional(),
-    githubProfile: z.string().optional(),
-    portfolioUrl: z.string().optional(),
-    status: z.string().optional(),
-    avatar: z
-      .object({
-        url: z.string(),
-        alt: z.string(),
-      })
-      .optional(),
 
-    isFeatured: z.boolean().optional(),
-  }),
+const candidates = defineCollection({
+  schema: ({ image }) =>
+    z.object({
+      firstName: z.string(),
+      lastName: z.string(),
+      email: z.string().email(),
+      phone: z.string().optional(),
+      resumeUrl: z.string().optional(),
+      coverLetter: z.string().optional(),
+      location: z.string().optional(),
+      experienceLevel: z.string().optional(),
+      jobPreferences: z.array(z.string()).optional(),
+      dateApplied: z.string(),
+      linkedinProfile: z.string().optional(),
+      githubProfile: z.string().optional(),
+      portfolioUrl: z.string().optional(),
+      status: z.string().optional(),
+      avatar: z
+        .object({
+          url: image(),     
+          alt: z.string(),
+        })
+        .optional(),
+      isFeatured: z.boolean().optional(),
+    }),
 });
+
 const team = defineCollection({
-  schema: z.object({
-    name: z.string(),
-    role: z.string().optional(),
-    bio: z.string().optional(),
-    image: z.object({
-      url: z.string(),
-      alt: z.string(),
+  schema: ({ image }) =>
+    z.object({
+      name: z.string(),
+      role: z.string().optional(),
+      bio: z.string().optional(),
+      image: z.object({
+        url: image(),       
+        alt: z.string(),
+      }),
+      socials: z
+        .object({
+          twitter: z.string().optional(),
+          website: z.string().optional(),
+          linkedin: z.string().optional(),
+          email: z.string().optional(),
+        })
+        .optional(),
     }),
-    socials: z
-      .object({
-        twitter: z.string().optional(),
-        website: z.string().optional(),
-        linkedin: z.string().optional(),
-        email: z.string().optional(),
-      })
-      .optional(),
-  }),
 });
+
 const postsCollection = defineCollection({
-  schema: z.object({
-    title: z.string(),
-    pubDate: z.date(),
-    description: z.string(),
-    team: z.string(),
-    image: z.object({
-      url: z.string(),
-      alt: z.string(),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      pubDate: z.date(),
+      description: z.string(),
+      team: z.string(),
+      image: z.object({
+        url: image(),       
+        alt: z.string(),
+      }),
+      tags: z.array(z.string()),
     }),
-    tags: z.array(z.string()),
-  }),
 });
+
 const helpcenter = defineCollection({
   schema: z.object({
     iconId: z.string().optional(),
@@ -137,13 +147,13 @@ const helpcenter = defineCollection({
       .optional(),
   }),
 });
-export const collections = {
-  jobs: jobs,
-  team: team,
-  helpcenter: helpcenter,
 
-  candidates: candidates,
-  infopages: infopages,
-  companies: companies,
+export const collections = {
+  jobs,
+  team,
+  helpcenter,
+  candidates,
+  infopages,
+  companies,
   posts: postsCollection,
 };

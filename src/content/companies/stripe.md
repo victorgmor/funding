@@ -9,7 +9,7 @@ hiringPage: "#_"
 headquarters: "San Francisco"
 location: "United States"
 size: "7000+"
-logo: "/companies/stripe.svg"
+logo: "/src/images/companies/stripe.svg"
 industry: "Fintech"
 socials:
   twitter: "#_"
@@ -34,5 +34,4 @@ benefits:
   - "Wellness and learning stipends"
   - "Generous parental leave"
   - "Global mobility opportunities"
-
 ---

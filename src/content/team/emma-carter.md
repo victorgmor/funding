@@ -8,7 +8,7 @@ bio: |
 
   Her articles inspire wanderlust and offer practical advice for fellow travelers seeking their next great adventure.
 image:
-  url: "/team/7.jpeg"
+  url: "/src/images/team/7.jpeg"
   alt: "Emma Carter"
 socials:
   twitter: "#_"

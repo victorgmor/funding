@@ -9,7 +9,7 @@ hiringPage: "#_"
 headquarters: "Barcelona"
 location: "Spain"
 size: "50+"
-logo: "/companies/penpot.svg"
+logo: "/src/images/companies/penpot.svg"
 industry: "Design Tools"
 socials:
   twitter: "#_"
@@ -34,5 +34,4 @@ benefits:
   - "Learning and conference budgets"
   - "Generous vacation policy"
   - "Early-stage equity options"
-
 ---

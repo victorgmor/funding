@@ -9,7 +9,7 @@ hiringPage: "#_"
 headquarters: "Cupertino"
 location: "United States"
 size: "5000+"
-logo: "/companies/apple.svg"
+logo: "/src/images/companies/apple.svg"
 industry: "Consumer Electronics"
 
 socials:

@@ -9,7 +9,7 @@ hiringPage: "#_"
 headquarters: "San Francisco"
 location: "United States"
 size: "100+"
-logo: "/companies/supabase.svg"
+logo: "/src/images/companies/supabase.svg"
 industry: "Database & Developer Tools"
 socials:
   twitter: "#_"

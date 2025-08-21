@@ -9,7 +9,7 @@ hiringPage: "#_"
 headquarters: "San Francisco"
 location: "United States"
 size: "400+"
-logo: "/companies/vercel.svg"
+logo: "/src/images/companies/vercel.svg"
 industry: "Web Infrastructure"
 socials:
   twitter: "#_"
@@ -34,5 +34,4 @@ benefits:
   - "Unlimited PTO"
   - "Wellbeing and learning budgets"
   - "Equity and competitive compensation"
-
 ---

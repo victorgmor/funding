@@ -9,7 +9,7 @@ hiringPage: "#_"
 headquarters: "San Francisco"
 location: "United States"
 size: "1000+"
-logo: "/companies/figma.svg"
+logo: "/src/images/companies/figma.svg"
 industry: "Design Tools"
 socials:
   twitter: "#_"

@@ -9,7 +9,7 @@ hiringPage: "#_"
 headquarters: "San Francisco"
 location: "United States"
 size: "3000+"
-logo: "/companies/github.svg"
+logo: "/src/images/companies/github.svg"
 industry: "Software Development"
 socials:
   twitter: "#_"
@@ -34,4 +34,3 @@ benefits:
   - "Professional development stipend"
   - "Home office stipend"
 ---
-

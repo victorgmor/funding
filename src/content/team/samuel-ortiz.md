@@ -8,7 +8,7 @@ bio: |
 
   Samuel’s passion lies in providing insightful commentary on the political factors shaping the world. Through his work, he aims to educate readers on the complexities of global governance and foster a deeper understanding of political issues that affect people’s lives on a global scale.
 image:
-  url: "/team/8.jpeg"
+  url: "/src/images/team/8.jpeg"
   alt: "Samuel Ortiz"
 socials:
   twitter: "#_"

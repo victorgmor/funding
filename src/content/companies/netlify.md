@@ -9,7 +9,7 @@ hiringPage: "#_"
 headquarters: "San Francisco"
 location: "United States"
 size: "300+"
-logo: "/companies/netlify.svg"
+logo: "/src/images/companies/netlify.svg"
 industry: "Web Infrastructure"
 socials:
   twitter: "#_"
