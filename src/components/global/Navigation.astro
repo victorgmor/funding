@@ -1,40 +1,51 @@
 ---
 // Assets
 import Logo from "@/components/assets/Logo.astro";
-import JobSearch from "@/components/jobs/JobSearch.astro";
-import ThemeToggle from "@/components/assets/ThemeToggle.astro";
-// Fundations
+// fundations
+import Button from "@/components/fundations/elements/Button.astro";
 import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+// Components
+import JobSearch from "@/components/global/Search.astro";
+import MobileNav from "@/components/global/MobileNav.astro";
+const navLinks = [
+  { href: "/", label: "Home" },
+  { href: "/blog", label: "Blog" },
+  { href: "/helpcenter", label: "Help Center" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/sign-in", label: "Sign In" },
+  { href: "/system/overview", label: "Overview" },
+  { href: "https://lexingtonthemes.com/templates/carriera", label: "Buy Carriera" },
+];
 ---
-
 <section>
   <Wrapper variant="standard">
-    <div
-      class="grid w-full grid-cols-2 items-center justify-between gap-4 py-2 lg:grid-cols-3 lg:gap-12"
-    >
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 py-2">
       <a href="/" class="flex items-center gap-2">
         <Logo class="text-primary font-medium lowercase" />
       </a>
-      <div class="text-primary/60 ml-auto flex items-center gap-2 lg:mx-auto">
-        <a
-          href="/system/overview"
-          class="hover:text-primary text-sm duration-300"
-        >
-          Overview
-        </a>
-        <a
-          href="https://buy.polar.sh/polar_cl_uTsOzAB0c5cWUwq0XwDFmoQ6mMjOnIeMDRmvRh39V-w"
-          class="hover:text-primary text-sm duration-300"
-        >
-          Buy Carriera
-        </a>
+      <div class="hidden items-center gap-4 text-primary lg:flex justify-center lg:col-span-3">
+        {navLinks.map((link) => (
+          <a href={link.href} class="hover:text-primary text-sm duration-300">
+            {link.label}
+          </a>
+        ))}
       </div>
-      <div
-        class="col-span-full flex items-center justify-between gap-2 lg:col-span-1 lg:ml-auto"
-      >
+      <div class="items-center gap-2 flex ml-auto">
         <JobSearch />
-        <ThemeToggle />
+       <div class="hidden items-center gap-2 lg:flex">
+          <Button isLink href="/sign-in" size="sm" variant="muted">Sign in</Button>
+          <Button isLink href="/sign-up"size="sm" variant="accent" >Sign in</Button>
+      </div>
+      <button
+        id="navToggle"
+        class="hover:text-primary/40 duration-300 text-primary text-sm lg:hidden"
+        aria-expanded="false"
+        aria-controls="mobileMenu"
+      >
+        Menu
+      </button>
       </div>
     </div>
   </Wrapper>
 </section>
+<MobileNav links={navLinks} />

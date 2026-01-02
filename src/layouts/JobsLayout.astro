@@ -2,7 +2,7 @@
 // Fundations
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Text from "@/components/fundations/elements/Text.astro";
-import Link from "@/components/fundations/elements/Link.astro";
+import Button from "@/components/fundations/elements/Button.astro";
 import Wrapper from "@/components/fundations/containers/Wrapper.astro";
 // Components
 import JobEntry from "@/components/jobs/JobEntry.astro"; 
@@ -119,10 +119,10 @@ job.slug !== Astro.url.pathname.split("/").pop()
                    )}
                </div>
              )}
-             <div class="flex mt-2">
-               <Link size="xs" variant="accent" href="/forms/submit-candidate">
+            <div class="flex mt-2">
+               <Button isLink size="xs" variant="accent" href="/submit-candidate">
                    Apply
-              </Link>
+              </Button>
              </div>
          </div>
          {
@@ -139,8 +139,8 @@ job.slug !== Astro.url.pathname.split("/").pop()
                   arise from {company?.data.name}.
                </Text>
                <div class="flex mt-2">
-                  <Link size="xs" variant="default" clas="w-auto" href="/forms/submit-candidate" >
-                  Submit</Link>
+                  <Button isLink size="xs" variant="default" class="w-auto" href="/submit-candidate" >
+                  Submit</Button>
                </div>
          </div>
          )

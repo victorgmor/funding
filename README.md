@@ -38,9 +38,13 @@ All commands are run from the root of the project, from a terminal:
 
 Learn more - Explore more through Astro's official [documentation](https://docs.astro.build).
 
-
 ------
-Updated on 18th April 2025
+Updated on 02nd Jan 2026
+- Button accpets icons and link
+- New color palette
+- New navigation
+------
+Updated on 18th Apr 2025
 
 ## This update includes:
 - Theme switcher. You can now switch between three different themes: Carriera, Carriera Dark, and Carriera Accent.

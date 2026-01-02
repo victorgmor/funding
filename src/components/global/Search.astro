@@ -1,0 +1,233 @@
+---
+// Icons
+import SearchIcon from "@/components/fundations/icons/Search.astro";
+import { getCollection } from "astro:content";
+
+const [jobs, posts, companies, candidates, helpcenter, legal, team] =
+  await Promise.all([
+    getCollection("jobs"),
+    getCollection("posts"),
+    getCollection("companies"),
+    getCollection("candidates"),
+    getCollection("helpcenter"),
+    getCollection("legal"),
+    getCollection("team"),
+  ]);
+
+const items = [
+  ...jobs.map(({ slug, data }) => ({
+    title: data.title,
+    subtitle: data.company,
+    description: data.type ?? data.category ?? "",
+    meta: [data.location, data.salary].filter(Boolean).join(" / "),
+    url: `/jobs/${slug}`,
+    type: "Job",
+  })),
+  ...posts.map(({ slug, data }) => ({
+    title: data.title,
+    subtitle: data.team ?? "",
+    description: data.description,
+    meta: "",
+    url: `/blog/posts/${slug}`,
+    type: "Blog",
+  })),
+  ...companies.map(({ slug, data }) => ({
+    title: data.name,
+    subtitle: data.industry ?? "",
+    description: data.description,
+    meta: data.location ?? "",
+    url: `/companies/${slug}`,
+    type: "Company",
+  })),
+  ...candidates.map(({ slug, data }) => ({
+    title: [data.firstName, data.lastName].filter(Boolean).join(" "),
+    subtitle: data.location ?? "",
+    description: data.jobPreferences?.join(", ") ?? "",
+    meta: data.experienceLevel ?? "",
+    url: `/candidates/${slug}`,
+    type: "Candidate",
+  })),
+  ...helpcenter.map(({ slug, data }) => ({
+    title: data.page,
+    subtitle: data.category,
+    description: data.description,
+    meta: "",
+    url: `/helpcenter/${slug}`,
+    type: "Help Center",
+  })),
+  ...legal.map(({ slug, data }) => ({
+    title: data.page,
+    subtitle: "",
+    description: "",
+    meta: data.pubDate
+      ? new Date(data.pubDate).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
+      : "",
+    url: `/legal/${slug}`,
+    type: "Legal",
+  })),
+  ...team.map(({ slug, data }) => ({
+    title: data.name,
+    subtitle: data.role,
+    description: data.bio ?? "",
+    meta: "",
+    url: `/team/${slug}`,
+    type: "Team",
+  })),
+];
+---
+
+<div class="relative">
+  <button
+    type="button"
+    id="searchButton"
+    aria-label="Search content"
+   class="hover:text-primary/40 duration-300 text-primary text-sm "
+  >
+Search
+  </button>
+  <div
+    id="searchModal"
+    class="fixed inset-0 z-80 hidden overflow-y-auto"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="min-h-screen px-4 text-center">
+      <div
+        class="bg-secondary/50 fixed inset-0 backdrop-blur transition-opacity"
+        id="modalOverlay"
+      >
+      </div>
+      <div
+        class="relative mt-12 mb-8 inline-block w-full max-w-xl transform  rounded px-1.5 text-left align-middle transition-all lg:mt-24"
+      >
+        <div class="bg-secondary outline-2 outline-primary/10 w-full rounded p-4 pb-2">
+          <div class="hidden">
+            <button
+              type="button"
+              id="closeSearch"
+              class="text-primary/60 hover:text-primary/60 ml-auto cursor-pointer"
+              aria-label="Close search"
+            >
+              Close
+            </button>
+          </div>
+          <div class="p-1">
+            <label
+              for="searchInput"
+              class="text-primary block text-sm font-medium">Search content</label
+            >
+            <input
+              type="text"
+              id="searchInput"
+              class="border-primary/10 focus:border-primary text-primary w-full border-0 border-b bg-transparent px-0 text-xs focus:ring-0 focus:outline-none"
+            />
+          </div>
+          <div
+            id="searchResults"
+            class="scrollbar-hide flex max-h-200 flex-col gap-1 overflow-y-auto p-1"
+          >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script is:inline define:vars={{ items }}>
+  window.addEventListener("load", () => {
+    // Get references to necessary DOM elements
+    const searchButton = document.getElementById("searchButton");
+    const searchModal = document.getElementById("searchModal");
+    const modalOverlay = document.getElementById("modalOverlay");
+    const searchInput = document.getElementById("searchInput");
+    const searchResults = document.getElementById("searchResults");
+    const closeSearch = document.getElementById("closeSearch");
+    // Clear the search input field on page load to prevent old values from persisting
+    searchInput.value = "";
+    // Initialize Fuse.js for fuzzy searching
+    const fuse = new Fuse(items, {
+      keys: ["title", "subtitle", "description", "meta", "type"],
+      threshold: 0.3, // Determines search sensitivity (lower = stricter match)
+      includeMatches: true, // Includes matched text segments in results
+    });
+    // Function to open the search modal
+    function openSearch(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      searchModal.classList.remove("hidden"); // Show the modal
+      document.body.style.overflow = "hidden"; // Prevent scrolling in the background
+      setTimeout(() => searchInput.focus(), 100); // Delay focus to ensure input is ready
+    }
+    // Function to close the search modal
+    function closeSearchModal(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      searchModal.classList.add("hidden"); // Hide the modal
+      document.body.style.overflow = ""; // Restore scrolling functionality
+      searchInput.value = ""; // Clear search input when modal is closed
+      searchResults.innerHTML = ""; // Clear search results
+    }
+    // Function to display search results
+    function renderResults(results) {
+      // If search input is empty, clear results
+      if (!searchInput.value.trim()) {
+        searchResults.innerHTML = "";
+        return;
+      }
+      // If no results are found, display a message
+      if (results.length === 0) {
+        searchResults.innerHTML = `
+                <div class="px-4 py-3 text-sm text-primary/60  ">
+                    No results found
+                </div>
+            `;
+        return;
+      }
+      // Generate HTML for search results and display them
+      searchResults.innerHTML = results
+        .slice(0, 8) // Limit results to top matches
+        .map(
+          (result) => `
+            <a href="${result.item.url}" class="block py-4 bg-secondary group duration-300">
+              <div class="flex items-center gap-2">
+                <span class="text-[0.6rem] uppercase tracking-wide text-primary/80 rounded-full bg-primary/10 px-2 py-1">${result.item.type}</span>
+                ${result.item.subtitle ? `<span class="text-xs text-primary/60">${result.item.subtitle}</span>` : ""}
+              </div>
+              <h3 class="text-base font-medium text-primary group-hover:text-accent duration-300 mt-1">
+                ${result.item.title}
+              </h3>
+              ${result.item.meta ? `<p class="mt-1 text-xs text-primary/60">${result.item.meta}</p>` : ""}
+              ${result.item.description ? `<p class="mt-1 text-sm text-primary/70">${result.item.description}</p>` : ""}
+            </a>
+          `
+        )
+        .join(""); // Convert array of HTML into a single string
+    }
+    // Attach event listeners for opening the search modal (both click and touch)
+    searchButton.addEventListener("click", openSearch);
+    searchButton.addEventListener("touchend", openSearch);
+    // Attach event listeners for closing the search modal (both click and touch)
+    closeSearch.addEventListener("click", closeSearchModal);
+    closeSearch.addEventListener("touchend", closeSearchModal);
+    // Close the modal when clicking outside the search box
+    modalOverlay.addEventListener("click", closeSearchModal);
+    modalOverlay.addEventListener("touchend", closeSearchModal);
+    // Perform search when input changes
+    searchInput.addEventListener("input", (e) => {
+      const value = e.target.value; // Get the input value
+      const results = value.trim() ? fuse.search(value) : []; // Perform search if input isn't empty
+      renderResults(results); // Update the displayed results
+    });
+    // Close the search modal when pressing the "Escape" key
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !searchModal.classList.contains("hidden")) {
+        closeSearchModal();
+      }
+    });
+  });
+</script>

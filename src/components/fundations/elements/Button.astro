@@ -3,11 +3,13 @@ const {
   variant,
   size,
   onlyIconSize,
+  iconOnly = false,
   gap,
+  isLink = false,
   class: className,
   ...rest
 } = Astro.props;
-// Default button
+
 const defaultClass = [
   "bg-primary",
   "text-secondary",
@@ -26,58 +28,108 @@ const mutedClass = [
   "focus:ring-muted",
   "hover:bg-primary/20",
 ];
-// Size (only applies if variant is not "link")
-const xxs = ["h-6", "px-2", "py-1.5", "text-[0.65rem]"];
-const xs = ["h-8", "px-4", "py-2", "text-xs"];
-const sm = ["h-9", "px-4", "py-2", "text-sm"];
-const base = ["h-10", "px-6", "py-3", "text-base"];
-const md = ["h-11", "px-6", "py-3", "text-md"];
-const lg = ["h-12", "px-6", "py-3", "text-lg"];
-const xl = ["h-14", "px-6", "py-3", "text-lg"];
-// Gap
-const gapXS = ["gap-2"];
-const gapSM = ["gap-4"];
-const gapBase = ["gap-8"];
-const gapMD = ["gap-10"];
-const gapLG = ["gap-12"];
-const additionalClasses = className ? className.split(" ") : [];
+
+// Size
+const sizes = {
+  xxs: ["h-7.5", "px-4", "py-2", "text-xs"],
+  xs: ["h-8", "px-4", "py-3", "text-xs"],
+  sm: ["h-9", "px-4", "py-3", "text-sm"],
+  base: ["h-10", "px-5", "py-4", "text-sm"],
+  md: ["h-11", "px-5", "py-4", "text-base"],
+  lg: ["h-12", "px-5", "py-4", "text-lg"],
+  xl: ["h-13", "px-5", "py-4", "text-lg"],
+};
+// Icon size
+const iconSizes = {
+  xxs: ["size-7.5", "py-2", "text-xs"],
+  xs: ["size-8", "text-xs"],
+  sm: ["size-9", "text-sm"],
+  base: ["size-10", "text-sm"],
+  md: ["size-11", "text-base"],
+  lg: ["size-12", "text-lg"],
+  xl: ["size-13", "text-lg"],
+};
+const gapMap = {
+  xs: ["gap-2"],
+  sm: ["gap-4"],
+  base: ["gap-8"],
+  md: ["gap-10"],
+  lg: ["gap-12"],
+};
+
+const variantClass = {
+  default: defaultClass,
+  accent: accentClass,
+  muted: mutedClass,
+  none: [],
+};
+
+const baseClass = [
+  "flex",
+  "items-center",
+  "font-medium",
+  "justify-center",
+  "transition-all",
+  "rounded-full",
+  "duration-300",
+  "focus:ring-2",
+  "focus:outline-none",
+  "focus:ring-offset-2",
+  "focus:ring-offset-base",
+];
+
+const additionalClasses = className
+  ? className.split(/\s+/).filter(Boolean)
+  : [];
+const isIconOnly = iconOnly || Boolean(onlyIconSize);
+const sizeKey = isIconOnly && onlyIconSize ? onlyIconSize : size;
+const sizeClass = isIconOnly
+  ? iconSizes[sizeKey] || []
+  : sizes[size] || [];
+const gapClass = !isIconOnly && gap ? gapMap[gap] || [] : [];
+const variantClasses = variantClass[variant] || [];
 ---
 
-<button
-  class:list={[
-      "flex",
-      "items-center",
-      "font-medium",
-      "justify-center",
-      "transition-all",
-      "rounded-full",
-      "items-center",
-      "duration-300",
-      "focus:ring-2",
-      "focus:outline-none",
-      "focus:ring-offset-2",
-      "focus:ring-offset-base",
-    variant === "default" && defaultClass,
-    variant === "accent" && accentClass,
-    variant === "muted" && mutedClass,
-    variant === "none" && [], // No additional classes for "none" variant
-    size === "xxs" && xxs,
-    size === "xs" && xs,
-    size === "sm" && sm,
-    size === "base" && base,
-    size === "md" && md,
-    size === "lg" && lg,
-    size === "xl" && xl,
-    gap === "xs" && gapXS,
-    gap === "sm" && gapSM,
-    gap === "base" && gapBase,
-    gap === "md" && gapMD,
-    gap === "lg" && gapLG,
-    ...additionalClasses,
-  ]}
-  {...rest}
->
-  <slot name="left-icon" />
-  <slot />
-  <slot name="right-icon" />
-</button>
+{isLink ? (
+  <a
+    class:list={[
+      ...baseClass,
+      ...variantClasses,
+      ...sizeClass,
+      ...gapClass,
+      ...additionalClasses,
+    ]}
+    {...rest}
+  >
+    {isIconOnly ? (
+      <slot name="icon" />
+    ) : (
+      <>
+        <slot name="left-icon" />
+        <slot />
+        <slot name="right-icon" />
+      </>
+    )}
+  </a>
+) : (
+  <button
+    class:list={[
+      ...baseClass,
+      ...variantClasses,
+      ...sizeClass,
+      ...gapClass,
+      ...additionalClasses,
+    ]}
+    {...rest}
+  >
+    {isIconOnly ? (
+      <slot name="icon" />
+    ) : (
+      <>
+        <slot name="left-icon" />
+        <slot />
+        <slot name="right-icon" />
+      </>
+    )}
+  </button>
+)}

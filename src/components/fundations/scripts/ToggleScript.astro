@@ -1,7 +1,15 @@
 <script type="module">
-  const dots = document.querySelectorAll(".theme-dot");
+  const dots = Array.from(
+    document.querySelectorAll('[id^="theme-dot"]')
+  );
   const savedTheme = localStorage.getItem("theme") || "default";
+  let transitionTimeout;
   function applyTheme(theme) {
+    document.documentElement.classList.add("theme-animating");
+    clearTimeout(transitionTimeout);
+    transitionTimeout = window.setTimeout(() => {
+      document.documentElement.classList.remove("theme-animating");
+    }, 400);
     if (theme === "default") {
       document.documentElement.removeAttribute("data-theme");
       localStorage.removeItem("theme");
