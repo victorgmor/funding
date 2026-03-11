@@ -2,16 +2,16 @@
 // Fundations
 import JobsLayout from "@/layouts/JobsLayout.astro";
 // Content
-import { getCollection } from "astro:content";
+import { getCollection, render } from "astro:content";
 export async function getStaticPaths() {
   const jobEntries = await getCollection("jobs");
   return jobEntries.map((entry) => ({
-    params: { slug: entry.slug },
+    params: { slug: entry.id },
     props: { entry },
   }));
 }
 const { entry } = Astro.props;
-const { Content } = await entry.render();
+const { Content } = await render(entry);
 ---
 <JobsLayout frontmatter={entry.data}>
   <Content />

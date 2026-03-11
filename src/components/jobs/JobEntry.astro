@@ -2,7 +2,7 @@
 // Fundations
 import Text from "@/components/fundations/elements/Text.astro";
 const { url, title, location, company, type, jobType, salary } = {
-  url: "/jobs/" + Astro.props.post.slug,
+  url: "/jobs/" + Astro.props.post.id,
   type: Astro.props.post.data.type,
   title: Astro.props.post.data.title,
   location: Astro.props.post.data.location,

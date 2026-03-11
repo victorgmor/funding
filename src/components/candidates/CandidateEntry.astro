@@ -6,7 +6,7 @@ import Text from "@/components/fundations/elements/Text.astro";
 
 // Mirror the TeamCard destructuring pattern
 const { url, name, avatar, location, experience, status, date, preferences } = {
-  url: "/candidates/" + Astro.props.candidate.slug,
+  url: "/candidates/" + Astro.props.candidate.id,
   name: `${Astro.props.candidate.data.firstName} ${Astro.props.candidate.data.lastName}`,
   avatar: Astro.props.candidate.data.avatar?.url,
   location: Astro.props.candidate.data.location,

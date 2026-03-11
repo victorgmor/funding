@@ -19,7 +19,7 @@ const currentPreferences = frontmatter.jobPreferences ?? [];
 // Filter candidates with at least one shared preference, exclude current
 const relatedCandidates = allCandidates
   .filter((candidate) => {
-    const isNotSelf = candidate.slug !== currentSlug;
+    const isNotSelf = candidate.id !== currentSlug;
     const preferences = candidate.data.jobPreferences ?? [];
     const matches = preferences.some((p) => currentPreferences.includes(p));
     return isNotSelf && matches;

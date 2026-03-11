@@ -7,7 +7,7 @@ const allJobs = await getCollection("jobs");
 const allCompanies = await getCollection("companies");
 // Filter companies that have jobs
 const hiringCompanies = allCompanies.filter((company) =>
-  allJobs.some((job) => job.data.company === company.slug)
+  allJobs.some((job) => job.data.company === company.id)
 );
 // Count open roles for each company
 const getOpenRolesCount = (companySlug) => {
@@ -28,11 +28,11 @@ const getOpenRolesCount = (companySlug) => {
           </Text>
            <div class="flex flex-col mt-1 divide-y divide-primary/10 border-y border-primary/10">
           {hiringCompanies.map((company) => {
-            const openRolesCount = getOpenRolesCount(company.slug);
+            const openRolesCount = getOpenRolesCount(company.id);
             return (
               <article class="relative py-4">
                 <a
-                  href={`/companies/${company.slug}`}
+                  href={`/companies/${company.id}`}
                   class="absolute inset-0 z-10"
                 />
                   {company.data.logo ? (

@@ -1,6 +1,9 @@
-import { defineCollection, z } from "astro:content";
+import { defineCollection } from "astro:content";
+import { z } from "astro/zod";
+import { glob } from "astro/loaders";
 
 const legal = defineCollection({
+  loader: glob({ pattern: "**/*.md", base: "./src/content/legal" }),
   schema: z.object({
     page: z.string(),
     pubDate: z.date(),
@@ -8,6 +11,7 @@ const legal = defineCollection({
 });
 
 const jobs = defineCollection({
+  loader: glob({ pattern: "**/*.md", base: "./src/content/jobs" }),
   schema: ({ image }) =>
     z.object({
       title: z.string(),
@@ -26,7 +30,7 @@ const jobs = defineCollection({
       deadline: z.date().optional(),
       flag: z
         .object({
-          url: image(),     
+          url: image(),
           alt: z.string(),
         })
         .optional(),
@@ -36,6 +40,7 @@ const jobs = defineCollection({
 });
 
 const companies = defineCollection({
+  loader: glob({ pattern: "**/*.md", base: "./src/content/companies" }),
   schema: ({ image }) =>
     z.object({
       name: z.string(),
@@ -44,7 +49,7 @@ const companies = defineCollection({
       website: z.string(),
       hiringPage: z.string().optional(),
       description: z.string(),
-      logo: image().optional(),   // ✅ single image path (keep simple)
+      logo: image().optional(),
       location: z.string().optional(),
       size: z.string().optional(),
       industry: z.string().optional(),
@@ -67,11 +72,12 @@ const companies = defineCollection({
 });
 
 const candidates = defineCollection({
+  loader: glob({ pattern: "**/*.md", base: "./src/content/candidates" }),
   schema: ({ image }) =>
     z.object({
       firstName: z.string(),
       lastName: z.string(),
-      email: z.string().email(),
+      email: z.email(),
       phone: z.string().optional(),
       resumeUrl: z.string().optional(),
       coverLetter: z.string().optional(),
@@ -85,7 +91,7 @@ const candidates = defineCollection({
       status: z.string().optional(),
       avatar: z
         .object({
-          url: image(),     
+          url: image(),
           alt: z.string(),
         })
         .optional(),
@@ -94,13 +100,14 @@ const candidates = defineCollection({
 });
 
 const team = defineCollection({
+  loader: glob({ pattern: "**/*.md", base: "./src/content/team" }),
   schema: ({ image }) =>
     z.object({
       name: z.string(),
       role: z.string().optional(),
       bio: z.string().optional(),
       image: z.object({
-        url: image(),       
+        url: image(),
         alt: z.string(),
       }),
       socials: z
@@ -115,6 +122,7 @@ const team = defineCollection({
 });
 
 const posts = defineCollection({
+  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/posts" }),
   schema: ({ image }) =>
     z.object({
       title: z.string(),
@@ -122,7 +130,7 @@ const posts = defineCollection({
       description: z.string(),
       team: z.string(),
       image: z.object({
-        url: image(),       
+        url: image(),
         alt: z.string(),
       }),
       tags: z.array(z.string()),
@@ -130,6 +138,7 @@ const posts = defineCollection({
 });
 
 const helpcenter = defineCollection({
+  loader: glob({ pattern: "**/*.md", base: "./src/content/helpcenter" }),
   schema: z.object({
     iconId: z.string().optional(),
     page: z.string(),
@@ -149,11 +158,11 @@ const helpcenter = defineCollection({
 });
 
 export const collections = {
-  jobs,
-  team,
-  helpcenter,
-  candidates,
   legal,
+  jobs,
   companies,
-posts,
+  candidates,
+  team,
+  posts,
+  helpcenter,
 };

@@ -17,7 +17,7 @@ const relatedJobs = allJobs
 .filter(
 (job) =>
 job.data.category === frontmatter.category &&
-job.slug !== Astro.url.pathname.split("/").pop()
+job.id !== Astro.url.pathname.split("/").pop()
 )
 .slice(0, 4); 
 ---
@@ -38,7 +38,7 @@ job.slug !== Astro.url.pathname.split("/").pop()
                             Company
                          </Text>
                          <span class="flex-1 mx-2 border-b border-dotted border-primary/30"></span>
-                         <a href={`/companies/${company.slug}`} class=" text-primary hover:underline duration-300">
+                         <a href={`/companies/${company.id}`} class=" text-primary hover:underline duration-300">
                            {company.data.name}
                          </a>
                       </div>
