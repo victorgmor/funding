@@ -1,0 +1,13 @@
+---
+description: Carriera routes — dynamic segments, layouts, content collection names
+globs: src/pages/**
+alwaysApply: false
+---
+
+# Pages (`src/pages/**`)
+
+- **Dynamic routes** use **`[...slug]`** with `getStaticPaths` + `params.slug` set from **`entry.id`** (or `page.id`) of the matching collection — see e.g. `src/pages/blog/posts/[...slug].astro`, `src/pages/jobs/[...slug].astro`, `src/pages/legal/[...slug].astro`, `src/pages/helpcenter/[...slug].astro`, `src/pages/team/[...slug].astro`, `src/pages/companies/[...slug].astro`, `src/pages/candidates/[...slug].astro`.
+- **Tag routes:** `blog/tags/[tag].astro` and `jobs/tags/[tag].astro` derive `tag` from **`tags` arrays** on `posts` / `jobs`.
+- **Layouts:** map features to the existing layout in `src/layouts/` (`BlogLayout`, `JobsLayout`, …); default marketing shell is `src/layouts/BaseLayout.astro` (nav + footer + `BaseHead`).
+- **Indexes in repo:** `/`, `/blog`, `/blog/tags`, `/helpcenter`, `/team`, `/jobs/tags` — there is **no** `src/pages/jobs/index.astro`, **`companies/index.astro`**, or **`candidates/index.astro`**; don’t assume listing pages exist unless you add them.
+- **RSS:** `src/pages/rss.xml.js` uses `import.meta.glob('./blog/*.{md,mdx}')` relative to **`src/pages`**, not `src/content/posts` — if extending the feed, coordinate with the actual content pipeline.

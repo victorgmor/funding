@@ -1,0 +1,12 @@
+---
+description: src/content.config.ts — Zod schemas and loaders; coordinate with pages/layouts
+globs: src/content.config.ts
+alwaysApply: false
+---
+
+# Content schema (`src/content.config.ts`)
+
+- Collections use `defineCollection` + **`glob`** loaders pointing at `src/content/<name>/`.
+- **`schema: ({ image }) => z.object({...})`** — `image()` fields must stay consistent with how layouts render assets (Image components / URLs).
+- **Do not** add or remove required fields lightly: update **`src/layouts/*.astro`** and **`src/pages/**`** that read `entry.data` or `frontmatter`.
+- **Build config** (`site`, integrations) lives in **`astro.config.mjs`** — change both when adding MDX options or `site` for canonical URLs.

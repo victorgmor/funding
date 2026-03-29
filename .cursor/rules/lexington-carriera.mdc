@@ -1,0 +1,12 @@
+---
+description: Global conventions for Carriera (@lexington/carriera) — Lexington Astro theme
+alwaysApply: true
+---
+
+# Carriera — global conventions
+
+- **Publisher / package:** Lexington Themes; npm name **`@lexington/carriera`** (`package.json`). Use **`@/`** imports mapped to `src/` (`tsconfig.json`).
+- **Foundations folder:** the UI/head layer lives under **`src/components/fundations/`** (intentional spelling). Do not rename to `foundations`.
+- **Minimal diffs:** change only what the task requires; match existing import order and layout patterns (`BaseLayout` → nav/main/footer).
+- **Dependencies:** do not assume packages absent from [`package.json`](package.json) (Astro 6, Tailwind 4 + Vite plugin, MDX, RSS, Sitemap, `@lexingtonthemes/seo`, Tailwind typography/forms/scrollbar-hide).
+- **Lexington links:** theme docs and support URLs are listed in **`README.md`** and **`AGENTS.md`** — use those strings, not invented URLs.

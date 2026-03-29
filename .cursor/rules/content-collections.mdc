@@ -1,0 +1,25 @@
+---
+description: Carriera content collections — schemas, frontmatter, image() paths
+globs: src/content/**
+alwaysApply: false
+---
+
+# Content (`src/content/**`)
+
+- **Schemas are law:** fields and optionality come only from `src/content.config.ts`. Adding keys or loosening types requires updating every consuming layout/page.
+- **`image()` fields** (jobs `flag`, companies `logo`, candidates `avatar`, team `image`, posts `image`): use paths that resolve for Astro’s asset pipeline — this repo’s entries use **`/src/images/...`** (e.g. `src/content/jobs/1.md`, `src/content/posts/1.md`). Keep the same shape: nested `url` / `alt` where the schema expects an object.
+- **`posts.team`** must be an existing **`team`** entry id (e.g. `david-lee` for `david-lee.md`). `src/layouts/BlogLayout.astro` calls `getEntry("team", frontmatter.team)`.
+- **Collection names** consumed in pages: `legal`, `jobs`, `companies`, `candidates`, `team`, `posts`, `helpcenter` — keep names aligned with `getCollection` / `getEntry` calls.
+- **Legal / helpcenter** have no `image()` in schema; don’t add hero images in frontmatter without extending the schema and layouts.
+
+**Quick required fields (non-optional in Zod):**
+
+| Collection | Required |
+|------------|----------|
+| legal | `page`, `pubDate` |
+| jobs | `title`, `company`, `location`, `type`, `category`, `tags`, `datePosted`, `applyUrl` |
+| companies | `name`, `website`, `description` |
+| candidates | `firstName`, `lastName`, `email`, `dateApplied` |
+| team | `name`, `image` |
+| posts | `title`, `pubDate`, `description`, `team`, `image`, `tags` |
+| helpcenter | `page`, `description` |

@@ -1,0 +1,13 @@
+---
+description: Coordinated changes — astro.config.mjs and src/content.config.ts only when necessary
+globs: astro.config.mjs
+alwaysApply: false
+---
+
+# Build config (`astro.config.mjs`)
+
+- **`site`** drives `context.site` (RSS, sitemap, absolute URLs). Change together with SEO placeholders in `src/components/fundations/head/` when going to production.
+- **Integrations:** `sitemap()`, `mdx()` only — do not add integrations in config without adding them to `package.json`.
+- **Vite:** Tailwind is wired via `@tailwindcss/vite` only.
+
+When editing **content loaders or schemas**, edit **`src/content.config.ts`**. Rule: any new field or collection must be reflected in **`getCollection` / `render` / layouts** for every route that should use it.
