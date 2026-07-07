@@ -136,6 +136,22 @@ function formatTradeError(
   const msg = e instanceof Error ? e.message : "Order failed";
   const lower = msg.toLowerCase();
 
+  try {
+    const parsed = JSON.parse(msg) as {
+      error?: string;
+      status?: number;
+    };
+    if (parsed.status === 0) {
+      return "Could not reach Polymarket from your browser. Disable ad blockers, check your connection, and ensure POLY_BUILDER_* env vars are set on the server (needed for deposit wallet setup).";
+    }
+  } catch {
+    /* not JSON */
+  }
+
+  if (lower.includes("builder not configured")) {
+    return "Server missing Polymarket builder keys — add POLY_BUILDER_API_KEY, POLY_BUILDER_API_SECRET, and POLY_BUILDER_PASSPHRASE to the ECS service.";
+  }
+
   if (lower.includes("deposit wallet")) {
     return msg;
   }

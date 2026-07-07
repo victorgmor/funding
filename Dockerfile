@@ -1,5 +1,7 @@
 FROM node:22-slim AS build
 WORKDIR /app
+ARG PUBLIC_POLY_BUILDER_CODE=""
+ENV PUBLIC_POLY_BUILDER_CODE=$PUBLIC_POLY_BUILDER_CODE
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .

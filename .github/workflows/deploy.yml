@@ -3,6 +3,7 @@ name: Deploy to ECS Express
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
@@ -44,6 +45,8 @@ jobs:
           context: .
           push: true
           tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          build-args: |
+            PUBLIC_POLY_BUILDER_CODE=${{ secrets.PUBLIC_POLY_BUILDER_CODE }}
 
       - name: Deploy to ECS Express Mode
         uses: aws-actions/amazon-ecs-deploy-express-service@v1
@@ -55,3 +58,9 @@ jobs:
           container-port: 8080
           task-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole
           cluster: ${{ env.ECS_CLUSTER }}
+          environment-variables: |
+            [
+              {"name": "POLY_BUILDER_API_KEY", "value": "${{ secrets.POLY_BUILDER_API_KEY }}"},
+              {"name": "POLY_BUILDER_API_SECRET", "value": "${{ secrets.POLY_BUILDER_API_SECRET }}"},
+              {"name": "POLY_BUILDER_PASSPHRASE", "value": "${{ secrets.POLY_BUILDER_PASSPHRASE }}"}
+            ]
