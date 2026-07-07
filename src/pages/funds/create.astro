@@ -1,0 +1,25 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Text from "@/components/fundations/elements/Text.astro";
+import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+import CreateFundForm from "@/components/funds/CreateFundForm";
+---
+
+<BaseLayout>
+  <section>
+    <Wrapper variant="standard" class="py-24">
+      <Wrapper variant="narrow">
+        <a href="/" class="text-primary/60 hover:text-primary text-sm">← All bundles</a>
+        <Text tag="h1" variant="displaySM" class="text-primary mt-6 font-semibold">
+          Create bundle
+        </Text>
+        <p class="text-primary/60 mt-2 text-sm">
+          Bundle Polymarket positions into a fund others can buy. Pick markets, set
+          YES/NO weights, define your thesis.
+        </p>
+
+        <CreateFundForm client:load />
+      </Wrapper>
+    </Wrapper>
+  </section>
+</BaseLayout>

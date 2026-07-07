@@ -1,29 +1,43 @@
 ---
-// Fundations
+export const prerender = false;
+
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import Text from "@/components/fundations/elements/Text.astro";
 import Wrapper from "@/components/fundations/containers/Wrapper.astro";
-// Sections
 import Hero from "@/components/landing/Hero.astro";
-import Hiring from "@/components/landing/Hiring.astro";
-import Companies from "@/components/landing/Companies.astro";
-import Categories from "@/components/landing/Categories.astro";
-import Candidates from "@/components/landing/Candidates.astro";
-import FeaturedJobs from "@/components/landing/FeaturedJobs.astro";
+import TopCreatorsCarousel from "@/components/landing/TopCreatorsCarousel";
+import FundListPanel from "@/components/funds/FundListPanel";
+import { getTopCreators } from "@/lib/funds/creators";
+import { computeFundPerformance } from "@/lib/funds/performance";
+import { getAllFunds } from "@/lib/funds/store";
+
+const funds = getAllFunds();
+const performanceEntries = await Promise.all(
+  funds.map(async (fund) => [
+    fund.slug,
+    await computeFundPerformance(fund),
+  ] as const),
+);
+const performanceBySlug = Object.fromEntries(performanceEntries);
+const topCreators = getTopCreators(funds, performanceBySlug);
 ---
 
 <BaseLayout>
   <section>
     <Wrapper variant="standard" class="py-24">
       <Hero />
-      <div class="mt-12 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4">
-        <FeaturedJobs />
-        <Categories />
-        <div class="space-y-12">
-          <Hiring />
-          <Companies />
-        </div>
-        <Candidates />
+      {
+        topCreators.length > 0 && (
+          <div class="mt-10">
+            <TopCreatorsCarousel client:visible creators={topCreators} />
+          </div>
+        )
+      }
+      <div class="mt-8">
+        <FundListPanel
+          client:load
+          funds={funds}
+          performanceBySlug={performanceBySlug}
+        />
       </div>
     </Wrapper>
   </section>

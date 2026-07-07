@@ -1,0 +1,132 @@
+---
+export const prerender = false;
+
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Text from "@/components/fundations/elements/Text.astro";
+import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+import SealCheck from "@/components/fundations/icons/SealCheck.astro";
+import CreatorFundList from "@/components/funds/CreatorFundList";
+import GiftButton from "@/components/creators/GiftButton";
+import CreatorAvatar from "@/components/creators/CreatorAvatar";
+import { getFundsByCreator } from "@/lib/funds/store";
+import { isCreatorWallet } from "@/lib/funds/creator";
+import { computeFundPerformance } from "@/lib/funds/performance";
+import { resolveGiftRecipient } from "@/lib/polymarket/gift-recipient";
+import {
+  fetchPolymarketProfile,
+  polymarketDisplayName,
+  polymarketProfileImage,
+} from "@/lib/polymarket/profile";
+
+const creatorId = Astro.params.id;
+if (!creatorId) {
+  return Astro.redirect("/404");
+}
+
+const funds = getFundsByCreator(creatorId);
+const walletId = isCreatorWallet(creatorId) ? creatorId : null;
+
+if (funds.length === 0 && !walletId) {
+  return Astro.redirect("/404");
+}
+
+const manager = funds[0]?.manager;
+let name = manager?.name ?? "";
+let verified = manager?.verified ?? false;
+let profileImage: string | null = null;
+const profileWalletId =
+  walletId ?? (manager && isCreatorWallet(manager.id) ? manager.id : null);
+
+if (profileWalletId) {
+  const profile = await fetchPolymarketProfile(profileWalletId);
+  name = polymarketDisplayName(profile, profileWalletId);
+  verified = Boolean(profile?.verifiedBadge);
+  profileImage = polymarketProfileImage(profile);
+}
+
+const initial = name.trim().charAt(0).toUpperCase() || "?";
+
+const performanceEntries = await Promise.all(
+  funds.map(async (fund) => [
+    fund.slug,
+    await computeFundPerformance(fund),
+  ] as const),
+);
+const performanceBySlug = Object.fromEntries(performanceEntries);
+const recipient =
+  profileWalletId && isCreatorWallet(profileWalletId)
+    ? await resolveGiftRecipient(profileWalletId)
+    : null;
+---
+
+<BaseLayout>
+  <section>
+    <Wrapper variant="standard" class="py-24">
+      <a href="/" class="text-primary/60 hover:text-primary text-sm">← All bundles</a>
+
+      <div class="mt-6 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex min-w-0 items-center gap-4">
+          {
+            profileWalletId ? (
+              <CreatorAvatar
+                client:load
+                address={profileWalletId}
+                name={name}
+                initialImage={profileImage}
+              />
+            ) : profileImage ? (
+              <img
+                src={profileImage}
+                alt=""
+                width={64}
+                height={64}
+                class="border-primary/10 size-16 shrink-0 rounded-full border object-cover"
+              />
+            ) : (
+              <div
+                class="bg-primary/10 text-primary border-primary/10 flex size-16 shrink-0 items-center justify-center rounded-full border text-xl font-semibold"
+                aria-hidden="true"
+              >
+                {initial}
+              </div>
+            )
+          }
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <Text tag="h1" variant="displaySM" class="text-primary font-semibold">
+                {name}
+              </Text>
+              {verified && <SealCheck size="base" class="text-[#32BCFF]" />}
+            </div>
+            <p class="text-primary/60 mt-2 text-sm">
+              {funds.length} bundle{funds.length === 1 ? "" : "s"}
+            </p>
+          </div>
+        </div>
+        {
+          recipient && (
+            <GiftButton
+              client:load
+              recipient={recipient}
+              creatorName={name}
+            />
+          )
+        }
+      </div>
+
+      <div class="mt-8">
+        {
+          funds.length > 0 ? (
+            <CreatorFundList
+              client:load
+              funds={funds}
+              performanceBySlug={performanceBySlug}
+            />
+          ) : (
+            <p class="text-primary/50 text-sm">No bundles yet.</p>
+          )
+        }
+      </div>
+    </Wrapper>
+  </section>
+</BaseLayout>

@@ -1,0 +1,64 @@
+import FundPerformanceCell from "@/components/funds/FundPerformanceCell";
+import SealCheck from "@/components/fundations/icons/SealCheck";
+import { creatorPath } from "@/lib/funds/creator";
+import type { FundPerformance } from "@/lib/funds/performance";
+import type { Fund } from "@/lib/funds/types";
+
+type Props = {
+  fund: Fund;
+  performance: FundPerformance | null;
+};
+
+export default function FundRow({ fund, performance }: Props) {
+  return (
+    <article className="bg-primary/5 hover:bg-primary/8 grid grid-cols-1 gap-3 rounded-lg px-4 py-3 transition-colors lg:grid-cols-[2fr_1fr_1.2fr_1fr] lg:items-center lg:gap-4">
+      <div className="min-w-0">
+        <a
+          href={`/funds/${fund.slug}`}
+          className="text-primary hover:text-primary/80 font-medium"
+        >
+          <span className="truncate">{fund.name}</span>
+        </a>
+        <p className="text-primary/60 mt-0.5 line-clamp-1 text-xs">
+          {fund.description}
+        </p>
+      </div>
+
+      <div className="min-w-0">
+        <p className="text-primary/50 mb-1 text-[0.65rem] font-medium uppercase lg:hidden">
+          Creator
+        </p>
+        <div className="flex items-center gap-2">
+          <a
+            href={creatorPath(fund.manager.id)}
+            className="text-primary hover:text-primary/80 truncate text-sm"
+          >
+            {fund.manager.name}
+          </a>
+          {fund.manager.verified && (
+            <SealCheck size="sm" className="text-[#32BCFF]" />
+          )}
+        </div>
+      </div>
+
+      <div className="min-w-0">
+        <p className="text-primary/50 mb-1 text-[0.65rem] font-medium uppercase lg:hidden">
+          Markets
+        </p>
+        <p className="text-primary text-sm font-medium">
+          {fund.markets.length} markets
+        </p>
+      </div>
+
+      <div className="min-w-0 lg:text-right">
+        <p className="text-primary/50 mb-1 text-[0.65rem] font-medium uppercase lg:hidden">
+          Thesis ROI
+        </p>
+        <FundPerformanceCell
+          roi={performance?.roi ?? null}
+          since={fund.createdAt}
+        />
+      </div>
+    </article>
+  );
+}

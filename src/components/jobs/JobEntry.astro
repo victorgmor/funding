@@ -33,7 +33,7 @@ function stringToPastelColor(str) {
 const dotColor = stringToPastelColor(jobType || type || company);
 ---
 
-<article class="relative py-4">
+<article class:list={["relative h-full py-4", Astro.props.class]}>
   <a href={url} class="absolute inset-0 z-10"> </a>
   <div class="flex items-center gap-2">
     <span class="size-3 rounded-full" style={`background-color: ${dotColor}`}
@@ -51,11 +51,12 @@ const dotColor = stringToPastelColor(jobType || type || company);
     tag="p"
     variant="textXS"
     class="text-primary mt-1 flex items-center gap-1 font-mono font-medium uppercase"
-    ><span class="block">{jobType}</span>
+  >
+    <span class="block">{jobType}</span>
     <span aria-hidden="true">/</span>
-    <span class="">{type}</span>
+    <span>{type}</span>
   </Text>
   <Text tag="p" variant="textXS" class="text-primary/60 mt-1 text-xs">
-    {salary}</Text
-  >
+    {salary}
+  </Text>
 </article>

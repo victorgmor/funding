@@ -15,6 +15,9 @@ pnpm-debug.log*
 .env
 .env.production
 
+# User-created funds (local persistence)
+data/user-funds.json
+
 # macOS-specific files
 .DS_Store
 

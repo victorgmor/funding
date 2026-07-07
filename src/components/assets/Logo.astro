@@ -1,5 +1,13 @@
 ---
+import { Image } from "astro:assets";
+import logo from "@/images/logo.png";
+
 const { class: className = "", ...rest } = Astro.props;
 ---
-<span class={className}
-{...rest}>Carriera®</span>
+
+<Image
+  src={logo}
+  alt="45 Degrees"
+  class:list={["h-5 w-auto", className]}
+  {...rest}
+/>

@@ -1,34 +1,35 @@
 ---
-// Fundations
 import Text from "@/components/fundations/elements/Text.astro";
 import Wrapper from "@/components/fundations/containers/Wrapper.astro";
-const sections = [
-  { name: "X", url: "#_" },
-  { name: "LinkedIn", url: "#_" },
-];
+import Telegram from "@/components/fundations/icons/Telegram.astro";
+import XLogo from "@/components/fundations/icons/XLogo.astro";
 ---
 
 <footer>
   <Wrapper variant="standard" class="py-12">
     <div class="mt-12 flex flex-wrap items-center justify-between gap-2">
-      <Text tag="p" variant="textXS" class="text-primary/60">
+      <Text tag="p" variant="textSM" class="text-primary/60">
         © Copyright Lexington Themes <span id="year"></span>
       </Text>
-      <ul role="list" class="mt-2 flex flex-wrap gap-2">
-        {
-          sections.map((link) => (
-            <li>
-              <Text
-                tag="a"
-                variant="textSM"
-                class="text-primary/60 hover:text-blue transition duration-300 ease-in-out"
-                href={link.url}
-              >
-                {link.name}
-              </Text>
-            </li>
-          ))
-        }
+      <ul role="list" class="flex items-center gap-3">
+        <li>
+          <a
+            href="#_"
+            aria-label="X"
+            class="text-primary/60 hover:text-primary transition duration-300 ease-in-out"
+          >
+            <XLogo size="base" />
+          </a>
+        </li>
+        <li>
+          <a
+            href="#_"
+            aria-label="Telegram"
+            class="text-primary/60 hover:text-primary transition duration-300 ease-in-out"
+          >
+            <Telegram size="base" />
+          </a>
+        </li>
       </ul>
     </div>
   </Wrapper>

@@ -1,0 +1,118 @@
+import WagmiScope from "@/components/app/WagmiScope";
+import { useFundInvestment } from "@/components/funds/InvestedBadge";
+import { formatPercent, formatSinceDate, formatUsd } from "@/lib/funds/format";
+
+type Props = {
+  fundSlug?: string;
+  roi: number | null;
+  since?: string;
+  variant?: "row" | "header";
+};
+
+function ThesisRoi({
+  roi,
+  since,
+  size = "row",
+}: {
+  roi: number;
+  since?: string;
+  size?: "row" | "header";
+}) {
+  const positive = roi >= 0;
+  const color = positive ? "text-emerald-400" : "text-red-400";
+
+  if (size === "header") {
+    return (
+      <div className="text-right">
+        <p className={`font-mono text-2xl font-medium tabular-nums ${color}`}>
+          {formatPercent(roi)}
+        </p>
+        {since && (
+          <p className="text-primary/50 mt-0.5 text-sm">
+            since {formatSinceDate(since)}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="inline-flex min-w-[5rem] flex-col items-end py-1 lg:ml-auto">
+      <p className={`font-mono text-sm font-semibold tabular-nums ${color}`}>
+        {formatPercent(roi)}
+      </p>
+      {since && (
+        <p className="text-primary/50 mt-0.5 text-[0.65rem]">
+          since {formatSinceDate(since)}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function FundPerformanceHeader({
+  fundSlug,
+  roi,
+  since,
+}: {
+  fundSlug: string;
+  roi: number | null;
+  since?: string;
+}) {
+  const { invested, investment } = useFundInvestment(fundSlug);
+  const position =
+    invested && investment && investment.totalCurrent > 0
+      ? investment.totalCurrent
+      : null;
+  const personalRoi =
+    position != null && investment && investment.totalInvested > 0
+      ? ((investment.totalCurrent / investment.totalInvested) - 1) * 100
+      : null;
+
+  if (roi == null && position == null) return null;
+
+  return (
+    <div className="text-right">
+      {roi != null && <ThesisRoi roi={roi} since={since} size="header" />}
+      {position != null && (
+        <p className="text-primary/60 mt-2 text-sm">
+          Your position{" "}
+          <span className="text-primary font-mono tabular-nums">
+            {formatUsd(position)}
+          </span>
+          {personalRoi != null && (
+            <span
+              className={`ml-1 font-mono tabular-nums ${
+                personalRoi >= 0 ? "text-emerald-400/80" : "text-red-400/80"
+              }`}
+            >
+              ({formatPercent(personalRoi)})
+            </span>
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export default function FundPerformanceCell({
+  fundSlug,
+  roi,
+  since,
+  variant = "row",
+}: Props) {
+  if (variant === "row") {
+    if (roi == null) {
+      return <span className="text-primary/30 text-sm">—</span>;
+    }
+    return <ThesisRoi roi={roi} since={since} size="row" />;
+  }
+
+  if (!fundSlug) return null;
+
+  return (
+    <WagmiScope>
+      <FundPerformanceHeader fundSlug={fundSlug} roi={roi} since={since} />
+    </WagmiScope>
+  );
+}

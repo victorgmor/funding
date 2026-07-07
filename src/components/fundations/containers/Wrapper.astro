@@ -7,8 +7,8 @@ interface Props {
 const { variant = "standard", class: extraClass = "" } = Astro.props;
 // Map each variant to its specific classes
 const variantClasses = {
-  // Narrow wrapper
-  narrow: "max-w-sm 2xl:max-w-4xl w-full",
+  // Narrow wrapper — centered form / prose column (use inside standard for page padding)
+  narrow: "max-w-2xl w-full mx-auto",
   // Standard wrapper
   standard: "max-w-screen 2xl:max-w-[1400px] mx-auto px-8 ",
   // Prose styles

@@ -6,14 +6,16 @@ import JobEntry from "@/components/jobs/JobEntry.astro";
 // Content
 import { getCollection } from "astro:content";
 const allJobs = await getCollection("jobs");
+const limit = Astro.props.limit ?? allJobs.length;
+const jobs = allJobs.slice(0, limit);
 ---
 
 <div>
   <Text tag="h2" variant="textBase" class="font-medium text-primary"
-    >Featured Jobs</Text
+    >Markets</Text
   >
   <div
-    class="flex flex-col mt-1 divide-primary/10 border-primary/10 divide-y border-y">
-    {allJobs.map((post) => <JobEntry post={post} />)}
+    class="mt-1 flex flex-col divide-y divide-primary/10 border-y border-primary/10">
+    {jobs.map((post) => <JobEntry post={post} />)}
   </div>
 </div>

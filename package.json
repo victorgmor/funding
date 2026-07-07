@@ -5,21 +5,34 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
-    "start": "astro dev",
+    "start": "node ./dist/server/entry.mjs",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"
   },
   "dependencies": {
     "@astrojs/mdx": "^7.0.0-alpha.1",
+    "@astrojs/node": "^11.0.2",
+    "@astrojs/react": "^6.0.1",
     "@astrojs/rss": "^4.0.15-beta.4",
     "@astrojs/sitemap": "^3.6.1-beta.3",
     "@lexingtonthemes/seo": "^0.3.0",
+    "@polymarket/builder-relayer-client": "^0.0.10",
+    "@polymarket/builder-signing-sdk": "^1.0.0",
+    "@polymarket/clob-client-v2": "^1.0.8",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.3.0",
+    "@tanstack/react-query": "^5.101.2",
+    "@wagmi/connectors": "^8.0.20",
     "astro": "^7.0.0-beta.3",
+    "buffer": "^6.0.3",
+    "phosphor-astro": "^2.1.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "tailwind-scrollbar-hide": "^4.0.0",
-    "tailwindcss": "^4.3.0"
+    "tailwindcss": "^4.3.0",
+    "viem": "^2.54.2",
+    "wagmi": "^3.6.21"
   }
 }

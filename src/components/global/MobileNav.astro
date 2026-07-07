@@ -1,8 +1,7 @@
 ---
 // Assets
 import Logo from "@/components/assets/Logo.astro";
-// Fundations
-import Button from "@/components/fundations/elements/Button.astro";
+import ConnectWalletIsland from "@/components/app/ConnectWalletIsland";
 const { links = [] } = Astro.props;
 
 ---
@@ -12,7 +11,7 @@ const { links = [] } = Astro.props;
   >
     <div class="flex items-center justify-between">
       <a href="/" class="flex items-center gap-2">
-        <Logo class="text-primary font-medium lowercase" />
+        <Logo />
       </a>
       <button
         class="hover:text-primary text-primary duration-300 text-sm"
@@ -28,11 +27,8 @@ const { links = [] } = Astro.props;
         </a>
       ))}
     </nav>
-    <div class="mt-12 flex items-center gap-2">
-        <Button size="xs" variant="accent">Sign in</Button>
-         <Button
-            size="xs"
-            variant="muted">Sign in</Button>
+    <div class="mt-12 lg:hidden">
+      <ConnectWalletIsland client:only="react" />
     </div>
   </div>
 </div>

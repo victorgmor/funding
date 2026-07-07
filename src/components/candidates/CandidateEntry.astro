@@ -5,19 +5,16 @@ import { Image } from "astro:assets";
 import Text from "@/components/fundations/elements/Text.astro";
 
 // Mirror the TeamCard destructuring pattern
-const { url, name, avatar, location, experience, status, date, preferences } = {
+const { url, name, avatar, location, experience } = {
   url: "/candidates/" + Astro.props.candidate.id,
   name: `${Astro.props.candidate.data.firstName} ${Astro.props.candidate.data.lastName}`,
   avatar: Astro.props.candidate.data.avatar?.url,
   location: Astro.props.candidate.data.location,
   experience: Astro.props.candidate.data.experienceLevel,
-  status: Astro.props.candidate.data.status,
-  date: Astro.props.candidate.data.dateApplied,
-  preferences: Astro.props.candidate.data.jobPreferences,
 };
 ---
 
-<article class="relative py-4">
+<article class:list={["relative flex h-full items-center py-4", Astro.props.class]}>
   <a href={url} class="absolute inset-0 z-10"> </a>
   <div class="flex items-center gap-2">
     <Image
@@ -47,21 +44,4 @@ const { url, name, avatar, location, experience, status, date, preferences } = {
       </Text>
     </div>
   </div>
-  {
-    preferences?.length && (
-      <ul class="mt-1 flex flex-col gap-1">
-        {preferences.map((pref) => (
-          <li>
-            <Text
-              tag="p"
-              variant="textXS"
-              class="text-primary mt-1 flex items-center gap-1 font-mono font-medium uppercase"
-            >
-              {pref}
-            </Text>
-          </li>
-        ))}
-      </ul>
-    )
-  }
 </article>
