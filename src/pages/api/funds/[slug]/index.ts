@@ -3,8 +3,8 @@ import { getFund } from "@/lib/funds/store";
 
 export const prerender = false;
 
-export const GET: APIRoute = ({ params }) => {
-  const fund = getFund(params.slug!);
+export const GET: APIRoute = async ({ params }) => {
+  const fund = await getFund(params.slug!);
   if (!fund) {
     return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
   }

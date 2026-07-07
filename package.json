@@ -16,6 +16,8 @@
     "@astrojs/react": "^6.0.1",
     "@astrojs/rss": "^4.0.15-beta.4",
     "@astrojs/sitemap": "^3.6.1-beta.3",
+    "@aws-sdk/client-dynamodb": "^3.1081.0",
+    "@aws-sdk/lib-dynamodb": "^3.1081.0",
     "@lexingtonthemes/seo": "^0.3.0",
     "@polymarket/builder-relayer-client": "^0.0.10",
     "@polymarket/builder-signing-sdk": "^1.0.0",

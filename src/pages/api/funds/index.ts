@@ -3,8 +3,8 @@ import { createFund, getAllFunds, type CreateFundInput } from "@/lib/funds/store
 
 export const prerender = false;
 
-export const GET: APIRoute = () => {
-  return new Response(JSON.stringify(getAllFunds()), {
+export const GET: APIRoute = async () => {
+  return new Response(JSON.stringify(await getAllFunds()), {
     headers: { "Content-Type": "application/json" },
   });
 };

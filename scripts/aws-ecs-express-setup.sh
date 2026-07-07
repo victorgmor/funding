@@ -8,6 +8,7 @@ AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID:-$(aws sts get-caller-identity --query Account 
 GITHUB_USER="${GITHUB_USER:-victorgmor}"
 GITHUB_REPO="${GITHUB_REPO:-carriera}"
 ECR_REPOSITORY="${ECR_REPOSITORY:-carriera}"
+FUNDS_TABLE="${FUNDS_TABLE:-carriera-funds}"
 ROLE_NAME="github-actions-ecs-role"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TMP_DIR="$(mktemp -d)"
@@ -182,6 +183,59 @@ else
   aws ecr create-repository --repository-name "$ECR_REPOSITORY" --region "$AWS_REGION"
 fi
 
+# DynamoDB funds table
+if aws dynamodb describe-table --table-name "$FUNDS_TABLE" --region "$AWS_REGION" >/dev/null 2>&1; then
+  echo "DynamoDB table $FUNDS_TABLE already exists."
+else
+  echo "Creating DynamoDB table ${FUNDS_TABLE}..."
+  aws dynamodb create-table \
+    --table-name "$FUNDS_TABLE" \
+    --region "$AWS_REGION" \
+    --billing-mode PAY_PER_REQUEST \
+    --attribute-definitions \
+      AttributeName=slug,AttributeType=S \
+      AttributeName=managerId,AttributeType=S \
+      AttributeName=createdAt,AttributeType=S \
+    --key-schema AttributeName=slug,KeyType=HASH \
+    --global-secondary-indexes \
+      "IndexName=by-manager,KeySchema=[{AttributeName=managerId,KeyType=HASH},{AttributeName=createdAt,KeyType=RANGE}],Projection={ProjectionType=ALL}"
+  aws dynamodb wait table-exists --table-name "$FUNDS_TABLE" --region "$AWS_REGION"
+fi
+
+cat >"$TMP_DIR/dynamodb-policy.json" <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:Query",
+        "dynamodb:Scan"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${FUNDS_TABLE}",
+        "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${FUNDS_TABLE}/index/*"
+      ]
+    }
+  ]
+}
+EOF
+
+DDB_POLICY_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:policy/CarrieraFundsDynamoDBPolicy"
+if aws iam get-policy --policy-arn "$DDB_POLICY_ARN" >/dev/null 2>&1; then
+  echo "Policy CarrieraFundsDynamoDBPolicy exists."
+else
+  aws iam create-policy \
+    --policy-name CarrieraFundsDynamoDBPolicy \
+    --policy-document "file://$TMP_DIR/dynamodb-policy.json"
+fi
+aws iam attach-role-policy \
+  --role-name ecsTaskExecutionRole \
+  --policy-arn "$DDB_POLICY_ARN" 2>/dev/null || true
+
 echo ""
 echo "Done. Set GitHub Actions variables on ${GITHUB_USER}/${GITHUB_REPO}:"
 echo "  AWS_REGION=$AWS_REGION"
@@ -190,4 +244,5 @@ echo "  ECR_REPOSITORY=$ECR_REPOSITORY"
 echo "  ECS_SERVICE=carriera"
 echo "  ECS_CLUSTER=default"
 echo ""
+echo "DynamoDB table: $FUNDS_TABLE (FUNDS_TABLE env on ECS task)"
 echo "Then push to main — GitHub Actions will build and deploy."

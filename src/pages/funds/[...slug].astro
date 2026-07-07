@@ -17,7 +17,7 @@ if (!slug) {
   return Astro.redirect("/404");
 }
 
-const fund = getFund(slug);
+const fund = await getFund(slug);
 if (!fund) {
   return Astro.redirect("/404");
 }

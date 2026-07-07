@@ -10,14 +10,6 @@
     transform: translate3d(-50%, 0, 0);
   }
 }
-.marquee-track {
-  backface-visibility: hidden;
-  transform: translateZ(0);
-  will-change: transform;
-}
-.marquee-track svg {
-  backface-visibility: hidden;
-}
 @theme {
   --font-sans: "Geist", sans-serif;
   --font-mono: "Geist Mono", monospace;
@@ -25,4 +17,13 @@
   --color-secondary: oklch(0.396 0.076 150.1);
   --color-accent: oklch(0.717 0.157 53.0);
   --animate-marquee: marquee 40s linear infinite;
+}
+
+/* Keep inline SVGs smooth while the marquee track is moving */
+.animate-marquee svg {
+  shape-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
 }

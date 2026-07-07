@@ -5,7 +5,7 @@ import { buildFundInvestment } from "@/lib/polymarket/quote";
 export const prerender = false;
 
 export const GET: APIRoute = async ({ params, url }) => {
-  const fund = getFund(params.slug!);
+  const fund = await getFund(params.slug!);
   if (!fund) {
     return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
   }

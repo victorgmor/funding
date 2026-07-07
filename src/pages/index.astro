@@ -10,7 +10,7 @@ import { getTopCreators } from "@/lib/funds/creators";
 import { computeFundPerformance } from "@/lib/funds/performance";
 import { getAllFunds } from "@/lib/funds/store";
 
-const funds = getAllFunds();
+const funds = await getAllFunds();
 const performanceEntries = await Promise.all(
   funds.map(async (fund) => [
     fund.slug,

@@ -23,7 +23,7 @@ if (!creatorId) {
   return Astro.redirect("/404");
 }
 
-const funds = getFundsByCreator(creatorId);
+const funds = await getFundsByCreator(creatorId);
 const walletId = isCreatorWallet(creatorId) ? creatorId : null;
 
 if (funds.length === 0 && !walletId) {

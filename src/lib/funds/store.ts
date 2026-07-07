@@ -7,6 +7,15 @@ import {
   fetchPolymarketProfile,
   polymarketDisplayName,
 } from "@/lib/polymarket/profile";
+import {
+  dbGetFund,
+  dbListFunds,
+  dbListFundsByCreator,
+  dbPutFund,
+  dbSlugExists,
+  dbUpdateFundMarkets,
+  fundsTable,
+} from "@/lib/funds/dynamodb";
 import type { Fund, FundManager, MarketPosition, MarketSide } from "@/lib/funds/types";
 
 const DATA_DIR = join(process.cwd(), "data");
@@ -29,7 +38,11 @@ export type CreateFundInput = {
   managerAddress: string;
 };
 
-function readUserFunds(): Fund[] {
+function useDynamo() {
+  return Boolean(fundsTable());
+}
+
+function readUserFundsFile(): Fund[] {
   if (!existsSync(USER_FUNDS_FILE)) return [];
   try {
     return JSON.parse(readFileSync(USER_FUNDS_FILE, "utf-8")) as Fund[];
@@ -38,22 +51,65 @@ function readUserFunds(): Fund[] {
   }
 }
 
-function writeUserFunds(funds: Fund[]) {
+function writeUserFundsFile(funds: Fund[]) {
   mkdirSync(DATA_DIR, { recursive: true });
   writeFileSync(USER_FUNDS_FILE, JSON.stringify(funds, null, 2));
 }
 
-export function getAllFunds(): Fund[] {
-  return [...seedFunds, ...readUserFunds()];
+async function readUserFunds(): Promise<Fund[]> {
+  if (useDynamo()) return dbListFunds();
+  return readUserFundsFile();
 }
 
-export function getFund(slug: string): Fund | undefined {
-  return getAllFunds().find((fund) => fund.slug === slug);
+async function writeUserFund(fund: Fund): Promise<void> {
+  if (useDynamo()) {
+    await dbPutFund(fund);
+    return;
+  }
+  const funds = readUserFundsFile();
+  funds.push(fund);
+  writeUserFundsFile(funds);
 }
 
-export function getFundsByCreator(creatorId: string): Fund[] {
+async function updateUserFundMarkets(
+  slug: string,
+  markets: Fund["markets"],
+): Promise<void> {
+  if (useDynamo()) {
+    await dbUpdateFundMarkets(slug, markets);
+    return;
+  }
+  const funds = readUserFundsFile();
+  const index = funds.findIndex((row) => row.slug === slug);
+  if (index === -1) return;
+  funds[index] = { ...funds[index]!, markets };
+  writeUserFundsFile(funds);
+}
+
+export async function getAllFunds(): Promise<Fund[]> {
+  const userFunds = await readUserFunds();
+  return [...seedFunds, ...userFunds];
+}
+
+export async function getFund(slug: string): Promise<Fund | undefined> {
+  const seed = seedFunds.find((fund) => fund.slug === slug);
+  if (seed) return seed;
+  if (useDynamo()) return dbGetFund(slug);
+  return readUserFundsFile().find((fund) => fund.slug === slug);
+}
+
+export async function getFundsByCreator(creatorId: string): Promise<Fund[]> {
   const id = creatorId.toLowerCase();
-  return getAllFunds().filter((fund) => fund.manager.id.toLowerCase() === id);
+  const fromSeed = seedFunds.filter((fund) => fund.manager.id.toLowerCase() === id);
+  if (useDynamo()) {
+    const fromDb = await dbListFundsByCreator(id);
+    const seen = new Set(fromSeed.map((fund) => fund.slug));
+    return [...fromSeed, ...fromDb.filter((fund) => !seen.has(fund.slug))];
+  }
+  const fromFile = readUserFundsFile().filter(
+    (fund) => fund.manager.id.toLowerCase() === id,
+  );
+  return [...fromSeed, ...fromFile];
 }
 
 /** Backfill creation-time prices for user funds missing baselines */
@@ -65,9 +121,8 @@ export async function ensureFundBaseline(fund: Fund): Promise<Fund> {
     );
   if (hasBaseline) return fund;
 
-  const userFunds = readUserFunds();
-  const index = userFunds.findIndex((row) => row.id === fund.id);
-  if (index === -1) return fund;
+  const isSeed = seedFunds.some((row) => row.id === fund.id);
+  if (isSeed) return fund;
 
   if (!fund.createdAt) return fund;
 
@@ -79,10 +134,8 @@ export async function ensureFundBaseline(fund: Fund): Promise<Fund> {
     return fund;
   }
 
-  const updated: Fund = { ...fund, markets };
-  userFunds[index] = updated;
-  writeUserFunds(userFunds);
-  return updated;
+  await updateUserFundMarkets(fund.slug, markets);
+  return { ...fund, markets };
 }
 
 function slugify(name: string): string {
@@ -95,13 +148,19 @@ function slugify(name: string): string {
   return base || "fund";
 }
 
-function uniqueSlug(base: string, taken: Set<string>): string {
+async function uniqueSlug(base: string): Promise<string> {
   let slug = base;
   let n = 2;
-  while (taken.has(slug)) {
+  while (await slugTaken(slug)) {
     slug = `${base}-${n++}`;
   }
   return slug;
+}
+
+async function slugTaken(slug: string): Promise<boolean> {
+  if (seedFunds.some((fund) => fund.slug === slug)) return true;
+  if (useDynamo()) return dbSlugExists(slug);
+  return readUserFundsFile().some((fund) => fund.slug === slug);
 }
 
 function toMarketPosition(market: CreateFundMarketInput): MarketPosition {
@@ -169,9 +228,7 @@ export async function createFund(input: CreateFundInput): Promise<Fund> {
     validateCreateInput(input) ?? validateAddress(input.managerAddress);
   if (error) throw new Error(error);
 
-  const userFunds = readUserFunds();
-  const taken = new Set(getAllFunds().map((fund) => fund.slug));
-  const slug = uniqueSlug(slugify(input.name.trim()), taken);
+  const slug = await uniqueSlug(slugify(input.name.trim()));
 
   const createdAt = new Date().toISOString();
   const [markets, manager] = await Promise.all([
@@ -194,7 +251,6 @@ export async function createFund(input: CreateFundInput): Promise<Fund> {
     createdAt,
   };
 
-  userFunds.push(fund);
-  writeUserFunds(userFunds);
+  await writeUserFund(fund);
   return fund;
 }

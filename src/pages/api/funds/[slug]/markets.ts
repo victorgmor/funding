@@ -5,7 +5,7 @@ import { fetchLiveMarkets } from "@/lib/polymarket/gamma";
 export const prerender = false;
 
 export const GET: APIRoute = async ({ params }) => {
-  const fund = getFund(params.slug!);
+  const fund = await getFund(params.slug!);
   if (!fund) {
     return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
   }
