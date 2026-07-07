@@ -20,11 +20,11 @@ function CreatorItem({ creator }: { creator: TopCreator }) {
   return (
     <a
       href={creatorPath(creator.id)}
-      className="text-primary/60 hover:text-primary inline-flex shrink-0 items-baseline gap-2 text-sm transition-colors"
+      className="text-primary/60 hover:text-primary inline-flex shrink-0 items-center gap-2 text-sm transition-colors"
     >
       <span className="text-primary font-medium">{creator.name}</span>
       {creator.verified && (
-        <SealCheck size="sm" className="text-[#32BCFF] translate-y-0.5" />
+        <SealCheck size="sm" className="text-[#32BCFF]" />
       )}
       <span className="text-primary/40 text-xs">
         {creator.bundleCount} bundle{creator.bundleCount === 1 ? "" : "s"}
@@ -55,7 +55,7 @@ export default function TopCreatorsCarousel({ creators }: Props) {
       <div className="relative overflow-hidden">
         <div className="from-secondary pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r to-transparent" />
         <div className="from-secondary pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l to-transparent" />
-        <div className="animate-marquee flex w-max items-center gap-10 group-hover:[animation-play-state:paused]">
+        <div className="animate-marquee flex w-max transform-gpu items-center gap-10 will-change-transform group-hover:[animation-play-state:paused]">
           {track.map((creator, index) => (
             <CreatorItem key={`${creator.id}-${index}`} creator={creator} />
           ))}
