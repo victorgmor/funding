@@ -10,6 +10,14 @@
     transform: translate3d(-50%, 0, 0);
   }
 }
+.marquee-track {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: transform;
+}
+.marquee-track svg {
+  backface-visibility: hidden;
+}
 @theme {
   --font-sans: "Geist", sans-serif;
   --font-mono: "Geist Mono", monospace;
