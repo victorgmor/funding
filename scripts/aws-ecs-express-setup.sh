@@ -15,6 +15,14 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 
 echo "Account: $AWS_ACCOUNT_ID  Region: $AWS_REGION  Repo: $GITHUB_USER/$GITHUB_REPO"
 
+# ECS service-linked role (required once per account)
+if ! aws iam get-role --role-name AWSServiceRoleForECS >/dev/null 2>&1; then
+  echo "Creating ECS service-linked role..."
+  aws iam create-service-linked-role --aws-service-name ecs.amazonaws.com
+else
+  echo "ECS service-linked role already exists."
+fi
+
 # OIDC provider (ignore if exists)
 if ! aws iam get-open-id-connect-provider \
   --open-id-connect-provider-arn "arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com" \
