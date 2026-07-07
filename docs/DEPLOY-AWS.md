@@ -1,5 +1,9 @@
 # Deploy Carriera on AWS (GitHub → auto deploy)
 
+**Your repo:** https://github.com/victorgmor/carriera — push to `main` to redeploy.
+
+**Quick start:** see [DEPLOY-NOW.md](./DEPLOY-NOW.md)
+
 Carriera is an **Astro 7 SSR app** (`@astrojs/node` standalone). The recommended setup is **AWS App Runner** connected to GitHub: every push to your branch rebuilds and deploys automatically.
 
 ## Prerequisites
