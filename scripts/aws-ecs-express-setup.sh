@@ -263,8 +263,23 @@ EOF
 
 DDB_POLICY_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:policy/CarrieraFundsDynamoDBPolicy"
 if aws iam get-policy --policy-arn "$DDB_POLICY_ARN" >/dev/null 2>&1; then
-  echo "Policy CarrieraFundsDynamoDBPolicy exists."
+  echo "Updating CarrieraFundsDynamoDBPolicy..."
+  aws iam create-policy-version \
+    --policy-arn "$DDB_POLICY_ARN" \
+    --policy-document "file://$TMP_DIR/dynamodb-policy.json" \
+    --set-as-default
+  # IAM keeps at most 5 versions; drop the oldest non-default one if needed.
+  OLD_VERSIONS="$(aws iam list-policy-versions \
+    --policy-arn "$DDB_POLICY_ARN" \
+    --query 'Versions[?IsDefaultVersion==`false`].VersionId' \
+    --output text)"
+  if [[ "$(wc -w <<<"$OLD_VERSIONS" | tr -d ' ')" -ge 4 ]]; then
+    aws iam delete-policy-version \
+      --policy-arn "$DDB_POLICY_ARN" \
+      --version-id "$(awk '{print $1}' <<<"$OLD_VERSIONS")"
+  fi
 else
+  echo "Creating CarrieraFundsDynamoDBPolicy..."
   aws iam create-policy \
     --policy-name CarrieraFundsDynamoDBPolicy \
     --policy-document "file://$TMP_DIR/dynamodb-policy.json"
