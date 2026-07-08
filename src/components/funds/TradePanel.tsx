@@ -221,7 +221,7 @@ export function TradePanelInner({ fund }: Props) {
       </div>
 
       {restoring ? (
-        <p className="text-primary/40 min-h-9 text-sm" aria-hidden />
+        <p className="text-primary/50 text-sm">Loading wallet…</p>
       ) : !isConnected ? (
         <div className="space-y-3" data-onboarding="connect">
           <p className="text-primary/60 text-sm">Connect to enter this bundle.</p>

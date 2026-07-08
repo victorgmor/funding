@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { useAccount, useSignMessage } from "wagmi";
+import { useSignMessage } from "wagmi";
+import ConnectWallet from "@/components/app/ConnectWallet";
 import { isCreatorWallet } from "@/lib/funds/creator";
-import { isUserFund } from "@/lib/funds/store";
+import { isFundOwner, isUserFund } from "@/lib/funds/editable";
 import type { Fund, MarketSide } from "@/lib/funds/types";
 import type { SearchMarket } from "@/lib/polymarket/gamma";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
@@ -43,12 +44,10 @@ export default function FundOwnerControls({ fund }: Props) {
 export function FundOwnerControlsInner({ fund }: Props) {
   if (!isUserFund(fund) || !isCreatorWallet(fund.manager.id)) return null;
 
-  const { address, restoring } = useWalletSession();
+  const { address, walletAddress, isConnected, restoring } = useWalletSession();
   const { signMessageAsync, isPending: signing } = useSignMessage();
 
-  const isOwner =
-    !!address &&
-    address.toLowerCase() === fund.manager.id.toLowerCase();
+  const isOwner = isFundOwner(fund, walletAddress);
 
   const [managing, setManaging] = useState(false);
   const [name, setName] = useState(fund.name);
@@ -252,7 +251,25 @@ export function FundOwnerControlsInner({ fund }: Props) {
   const inputClass =
     "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/60 w-full rounded border px-3 py-2 text-sm focus:border-primary/30 focus:outline-none";
 
-  if (restoring || !address || !isOwner) return null;
+  if (!isOwner) return null;
+
+  if (!isConnected || !address) {
+    return (
+      <div className="border-primary/10 bg-primary/5 mb-4 rounded-lg border p-4">
+        <p className="text-primary text-sm font-medium">Creator controls</p>
+        <p className="text-primary/60 mt-1 text-xs">
+          {restoring
+            ? "Restoring wallet…"
+            : "Connect the wallet that created this bundle to edit or close it."}
+        </p>
+        {!restoring && (
+          <div className="mt-3">
+            <ConnectWallet variant="panel" />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="border-primary/10 bg-primary/5 mb-4 rounded-lg border p-4">

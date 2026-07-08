@@ -42,6 +42,7 @@ export function useWalletSession() {
 
   return {
     address: isConnected ? address : undefined,
+    walletAddress: (isConnected ? address : sessionAddress) ?? undefined,
     displayAddress: (isConnected ? address : sessionAddress) ?? undefined,
     isConnected,
     status,

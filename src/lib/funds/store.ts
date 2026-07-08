@@ -19,6 +19,9 @@ import {
 } from "@/lib/funds/dynamodb";
 import type { Fund, FundManager, MarketPosition, MarketSide } from "@/lib/funds/types";
 import { isCreatorWallet } from "@/lib/funds/creator";
+import { isUserFund } from "@/lib/funds/editable";
+
+export { isUserFund } from "@/lib/funds/editable";
 
 const DATA_DIR = join(process.cwd(), "data");
 const USER_FUNDS_FILE = join(DATA_DIR, "user-funds.json");
@@ -83,13 +86,6 @@ async function replaceUserFund(fund: Fund): Promise<void> {
   if (index === -1) throw new Error("Bundle not found");
   funds[index] = fund;
   writeUserFundsFile(funds);
-}
-
-export function isUserFund(fund: Fund): boolean {
-  return (
-    isCreatorWallet(fund.manager.id) &&
-    !seedFunds.some((row) => row.id === fund.id)
-  );
 }
 
 async function getEditableUserFund(
