@@ -53,6 +53,40 @@ function TradePanelInner({ fund }: Props) {
     reconnect();
   }, [reconnect]);
 
+  useEffect(() => {
+    if (investedView !== "exit" || !address) return;
+
+    let cancelled = false;
+
+    async function loadExitQuote() {
+      setError(null);
+      setResults(null);
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/funds/${fund.slug}/quote`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "exit", address }),
+        });
+        const data = await res.json();
+        if (cancelled) return;
+        if (!res.ok) throw new Error(data.error ?? "Quote failed");
+        setQuote(data);
+      } catch (e) {
+        if (cancelled) return;
+        setQuote(null);
+        setError(e instanceof Error ? e.message : "Quote failed");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadExitQuote();
+    return () => {
+      cancelled = true;
+    };
+  }, [investedView, address, fund.slug]);
+
   function resetTrade() {
     setQuote(null);
     setResults(null);
@@ -227,14 +261,20 @@ function TradePanelInner({ fund }: Props) {
             </p>
           )}
 
-          <button
-            type="button"
-            disabled={loading || (!isBuy && !address)}
-            onClick={preview}
-            className="border-primary/10 text-primary hover:bg-primary/10 mb-4 w-full rounded-full border py-2.5 text-sm font-medium disabled:opacity-50"
-          >
-            {loading ? "Loading…" : "Preview orders"}
-          </button>
+          {!isBuy && loading && !exitQuote && (
+            <p className="text-primary/50 mb-4 text-sm">Loading exit quote…</p>
+          )}
+
+          {isBuy && (
+            <button
+              type="button"
+              disabled={loading}
+              onClick={preview}
+              className="border-primary/10 text-primary hover:bg-primary/10 mb-4 w-full rounded-full border py-2.5 text-sm font-medium disabled:opacity-50"
+            >
+              {loading ? "Loading…" : "Preview orders"}
+            </button>
+          )}
 
           {error && <p className="text-red-400 mb-3 text-xs">{error}</p>}
 
