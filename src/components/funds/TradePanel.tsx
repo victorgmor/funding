@@ -32,7 +32,7 @@ export default function TradePanel({ fund }: Props) {
   );
 }
 
-function TradePanelInner({ fund }: Props) {
+export function TradePanelInner({ fund }: Props) {
   const { address, isConnected, status: accountStatus } = useAccount();
   const restoring = accountStatus === "connecting" || accountStatus === "reconnecting";
   const { onPolygon, switching } = useEnsurePolygon();

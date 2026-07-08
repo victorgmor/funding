@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { connect, signMessage } from "@wagmi/core/actions";
-import { polygon } from "wagmi/chains";
+import { useAccount, useSignMessage } from "wagmi";
 import { isCreatorWallet } from "@/lib/funds/creator";
 import { isUserFund } from "@/lib/funds/store";
 import type { Fund, MarketSide } from "@/lib/funds/types";
 import type { SearchMarket } from "@/lib/polymarket/gamma";
-import { wagmiConfig } from "@/lib/wagmi/config";
-import { useSharedAccount } from "@/lib/wagmi/useSharedAccount";
 
 type Props = {
   fund: Fund;
@@ -29,15 +26,12 @@ function redistribute(items: SelectedMarket[]): SelectedMarket[] {
   return items.map((item, i) => ({ ...item, weight: weights[i]! }));
 }
 
-async function signBundleAction(message: string) {
-  const signature = await signMessage(wagmiConfig, { message });
+async function signBundleAction(
+  message: string,
+  signMessageAsync: (args: { message: string }) => Promise<`0x${string}`>,
+) {
+  const signature = await signMessageAsync({ message });
   return { message, signature };
-}
-
-async function connectWallet() {
-  const connector = wagmiConfig.connectors[0];
-  if (!connector) throw new Error("No wallet connector available");
-  await connect(wagmiConfig, { connector, chainId: polygon.id });
 }
 
 export default function FundOwnerControls({ fund }: Props) {
@@ -45,14 +39,15 @@ export default function FundOwnerControls({ fund }: Props) {
   return <FundOwnerControlsInner fund={fund} />;
 }
 
-function FundOwnerControlsInner({ fund }: Props) {
-  const { address, isConnected, restoring } = useSharedAccount();
-  const [connecting, setConnecting] = useState(false);
-  const [signing, setSigning] = useState(false);
+export function FundOwnerControlsInner({ fund }: Props) {
+  if (!isUserFund(fund) || !isCreatorWallet(fund.manager.id)) return null;
+
+  const { address, status } = useAccount();
+  const { signMessageAsync, isPending: signing } = useSignMessage();
+  const restoring = status === "connecting" || status === "reconnecting";
 
   const isOwner =
-    isConnected &&
-    address &&
+    !!address &&
     address.toLowerCase() === fund.manager.id.toLowerCase();
 
   const [managing, setManaging] = useState(false);
@@ -183,9 +178,8 @@ function FundOwnerControlsInner({ fund }: Props) {
     setError(null);
 
     try {
-      setSigning(true);
       const message = await requestChallenge("manage");
-      const { signature } = await signBundleAction(message);
+      const { signature } = await signBundleAction(message, signMessageAsync);
 
       const res = await fetch(`/api/funds/${fund.slug}`, {
         method: "PATCH",
@@ -215,8 +209,6 @@ function FundOwnerControlsInner({ fund }: Props) {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save changes");
       setBusy(false);
-    } finally {
-      setSigning(false);
     }
   }
 
@@ -234,9 +226,8 @@ function FundOwnerControlsInner({ fund }: Props) {
     setError(null);
 
     try {
-      setSigning(true);
       const message = await requestChallenge("close");
-      const { signature } = await signBundleAction(message);
+      const { signature } = await signBundleAction(message, signMessageAsync);
 
       const res = await fetch(`/api/funds/${fund.slug}/close`, {
         method: "POST",
@@ -255,56 +246,16 @@ function FundOwnerControlsInner({ fund }: Props) {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not close bundle");
       setBusy(false);
-    } finally {
-      setSigning(false);
-    }
-  }
-
-  async function handleConnect() {
-    setConnecting(true);
-    setError(null);
-    try {
-      await connectWallet();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not connect wallet");
-    } finally {
-      setConnecting(false);
     }
   }
 
   const inputClass =
     "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/60 w-full rounded border px-3 py-2 text-sm focus:border-primary/30 focus:outline-none";
 
-  if (restoring) {
-    return (
-      <p className="text-primary/60 mt-4 text-sm">Restoring wallet…</p>
-    );
-  }
-
-  if (!isConnected) {
-    return (
-      <div className="border-primary/10 bg-primary/5 mt-6 rounded-lg border p-4">
-        <p className="text-primary mb-1 text-sm font-medium">Creator controls</p>
-        <p className="text-primary/60 mb-3 text-xs">
-          Connect the wallet that created this bundle to manage or close it.
-        </p>
-        <button
-          type="button"
-          disabled={connecting}
-          onClick={handleConnect}
-          className="bg-accent text-secondary hover:opacity-90 w-full rounded px-3 py-2 text-sm font-medium disabled:opacity-50"
-        >
-          {connecting ? "Connecting…" : "Connect wallet"}
-        </button>
-        {error && <p className="text-red-400 mt-2 text-sm">{error}</p>}
-      </div>
-    );
-  }
-
-  if (!isOwner) return null;
+  if (restoring || !address || !isOwner) return null;
 
   return (
-    <div className="border-primary/10 bg-primary/5 mt-6 rounded-lg border p-4">
+    <div className="border-primary/10 bg-primary/5 mb-4 rounded-lg border p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-primary text-sm font-medium">Creator controls</p>
