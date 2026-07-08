@@ -23,6 +23,7 @@ export const GET: APIRoute = async ({ url }) => {
       name: polymarketDisplayName(profile, address),
       verified: Boolean(profile?.verifiedBadge),
       profileImage: polymarketProfileImage(profile),
+      proxyWallet: profile?.proxyWallet ?? null,
     }),
     {
       headers: {

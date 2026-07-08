@@ -17,8 +17,7 @@ import {
   type WalletClient,
 } from "viem";
 import { polygon } from "wagmi/chains";
-import { fetchPolymarketProfile } from "@/lib/polymarket/profile";
-import { fetchSafeAddress } from "@/lib/polymarket/relayer";
+import { fetchRelayer, fetchSafeAddress } from "@/lib/polymarket/relayer";
 import { deriveDepositWalletAddress } from "@/lib/polymarket/positions";
 import {
   DEPOSIT_WALLET_DOMAIN_NAME,
@@ -28,7 +27,6 @@ import {
   PROXY_FACTORY,
   PROXY_INIT_CODE_HASH,
   RELAY_HUB,
-  RELAYER_URL,
   SAFE_INIT_CODE_HASH,
   type GiftWalletKind,
   type NoncePayload,
@@ -129,18 +127,14 @@ async function fetchRelayPayload(
   address: Address,
   type: "PROXY",
 ): Promise<RelayPayload> {
-  const res = await fetch(
-    `${RELAYER_URL}/relay-payload?address=${address}&type=${type}`,
-  );
+  const res = await fetchRelayer("relay-payload", { address, type });
   const data = (await res.json()) as RelayPayload;
   if (!res.ok) throw new Error("Could not reach Polymarket relayer");
   return data;
 }
 
 async function fetchNonce(address: Address, type: string): Promise<string> {
-  const res = await fetch(
-    `${RELAYER_URL}/nonce?address=${address}&type=${type}`,
-  );
+  const res = await fetchRelayer("nonce", { address, type });
   const data = (await res.json()) as NoncePayload;
   if (!res.ok) throw new Error("Could not fetch Polymarket nonce");
   return data.nonce;
@@ -199,15 +193,24 @@ function createProxyStructHash(
   );
 }
 
+async function fetchProfileProxyWallet(owner: Address): Promise<string | null> {
+  const res = await fetch(`/api/polymarket/profile?address=${owner}`);
+  if (!res.ok) return null;
+  const data = (await res.json()) as { proxyWallet?: string };
+  const proxy = data.proxyWallet?.trim();
+  if (proxy && /^0x[a-fA-F0-9]{40}$/i.test(proxy)) return proxy;
+  return null;
+}
+
 async function pickGiftSource(
   owner: Address,
   amountUsdc: number,
 ): Promise<GiftSource | null> {
   const needed = parseUnits(amountUsdc.toFixed(6), 6);
-  const [deposit, safe, profile] = await Promise.all([
+  const [deposit, safe, profileWallet] = await Promise.all([
     deriveDepositWalletAddress(owner),
     fetchSafeAddress(owner),
-    fetchPolymarketProfile(owner),
+    fetchProfileProxyWallet(owner),
   ]);
 
   const wallets: { kind: GiftWalletKind; address: Address }[] = [];
@@ -221,8 +224,7 @@ async function pickGiftSource(
   }
 
   add("deposit", deposit);
-  const profileWallet = profile?.proxyWallet?.trim();
-  if (profileWallet && /^0x[a-fA-F0-9]{40}$/i.test(profileWallet)) {
+  if (profileWallet) {
     add("deposit", profileWallet as Address);
   }
   if (safe) add("safe", safe);

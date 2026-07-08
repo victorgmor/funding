@@ -28,6 +28,9 @@ export function formatUnlockPaymentError(error: unknown): string {
   if (lower.includes("builder")) {
     return "Payment service unavailable — builder credentials not configured";
   }
+  if (lower.includes("networkerror") || lower.includes("failed to fetch")) {
+    return "Could not reach payment service — check connection and try again";
+  }
 
   return raw.length > 160 ? `${raw.slice(0, 160)}…` : raw;
 }
