@@ -108,7 +108,7 @@ export async function dbUpdateFundMarkets(
 
 export async function dbUpdateFund(fund: Fund): Promise<void> {
   await docClient().send(
-    UpdateCommand({
+    new UpdateCommand({
       TableName: TABLE,
       Key: { slug: fund.slug },
       UpdateExpression: "SET fund = :fund",
