@@ -8,7 +8,12 @@ import { wagmiConfig } from "@/lib/wagmi/config";
 import { useEnsurePolygon } from "@/lib/wagmi/useEnsurePolygon";
 import WagmiScope from "@/components/app/WagmiScope";
 import ConnectWallet from "@/components/app/ConnectWallet";
+import TradeOnboarding, {
+  completeTradeOnboardingOnSuccess,
+} from "@/components/funds/TradeOnboarding";
 import { useFundInvestment } from "@/components/funds/InvestedBadge";
+import { useUsdcBalance } from "@/lib/wagmi/useUsdcBalance";
+import { resetTradeOnboarding } from "@/lib/trade/onboarding-storage";
 
 type Props = {
   fund: Fund;
@@ -40,11 +45,22 @@ function TradePanelInner({ fund }: Props) {
   const [trading, setTrading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [investRefresh, setInvestRefresh] = useState(0);
+  const [guideKey, setGuideKey] = useState(0);
 
   const { invested, investment, loading: investmentLoading } =
     useFundInvestment(fund.slug, investRefresh);
 
+  const { balanceUsdc, loading: usdcLoading } = useUsdcBalance(
+    address as `0x${string}` | undefined,
+  );
+
   const isBuy = !invested || investedView === "topup";
+  const closed = fund.status === "closed";
+  const canEnter =
+    !closed &&
+    !invested &&
+    investedView === null &&
+    !investmentLoading;
 
   useEffect(() => {
     if (investedView !== "exit" || !address) return;
@@ -135,6 +151,7 @@ function TradePanelInner({ fund }: Props) {
         : await executeExitQuote(walletClient, quote as ExitQuote, onStatus);
       setResults(legResults);
       if (legResults.some((r) => r.status === "filled")) {
+        completeTradeOnboardingOnSuccess();
         setInvestRefresh((n) => n + 1);
         setInvestedView(null);
       }
@@ -162,10 +179,34 @@ function TradePanelInner({ fund }: Props) {
         : "Your position";
 
   return (
-    <div className="bg-primary/5 border-primary/10 rounded-lg border p-5 lg:sticky lg:top-24">
+    <>
+      <TradeOnboarding
+        isConnected={isConnected}
+        onPolygon={onPolygon}
+        restoring={restoring}
+        canEnter={canEnter}
+        usdcBalance={isConnected && onPolygon ? balanceUsdc : null}
+        usdcLoading={usdcLoading}
+        restartKey={guideKey}
+      />
+
+      <div className="bg-primary/5 border-primary/10 rounded-lg border p-5 lg:sticky lg:top-24">
       <div className="mb-4 flex items-center justify-between gap-2">
         <h2 className={headerClass}>{sectionTitle}</h2>
-        {invested && investedView && (
+        <div className="flex items-center gap-2">
+          {canEnter && (
+            <button
+              type="button"
+              onClick={() => {
+                resetTradeOnboarding();
+                setGuideKey((k) => k + 1);
+              }}
+              className="text-primary/40 hover:text-primary text-[0.65rem] font-medium uppercase"
+            >
+              Guide
+            </button>
+          )}
+          {invested && investedView && (
           <button
             type="button"
             onClick={() => {
@@ -176,19 +217,24 @@ function TradePanelInner({ fund }: Props) {
           >
             Back
           </button>
-        )}
+          )}
+        </div>
       </div>
 
       {restoring ? (
         <p className="text-primary/60 text-sm">Restoring wallet…</p>
       ) : !isConnected ? (
-        <div className="space-y-3">
+        <div className="space-y-3" data-onboarding="connect">
           <p className="text-primary/60 text-sm">Connect to enter this bundle.</p>
           <ConnectWallet variant="panel" />
         </div>
       ) : !onPolygon ? (
         <p className="text-primary/60 text-sm">
           {switching ? "Switching to Polygon…" : "Connecting to Polygon…"}
+        </p>
+      ) : closed && !invested ? (
+        <p className="text-primary/60 text-sm">
+          This bundle is closed to new entries.
         </p>
       ) : investmentLoading ? (
         <p className="text-primary/50 text-sm">Loading position…</p>
@@ -205,13 +251,15 @@ function TradePanelInner({ fund }: Props) {
           </p>
 
           <div className="mt-5 flex gap-2">
-            <button
-              type="button"
-              onClick={() => openInvestedView("topup")}
-              className="border-primary/10 text-primary hover:bg-primary/10 flex-1 rounded-full border py-2 text-[0.65rem] font-medium uppercase"
-            >
-              Top up
-            </button>
+            {!closed && (
+              <button
+                type="button"
+                onClick={() => openInvestedView("topup")}
+                className="border-primary/10 text-primary hover:bg-primary/10 flex-1 rounded-full border py-2 text-[0.65rem] font-medium uppercase"
+              >
+                Top up
+              </button>
+            )}
             <button
               type="button"
               onClick={() => openInvestedView("exit")}
@@ -223,14 +271,27 @@ function TradePanelInner({ fund }: Props) {
         </>
       ) : (
         <>
-          {isBuy && (
-            <div className="mb-4">
-              <label
-                className={`${headerClass} mb-2 block`}
-                htmlFor="trade-amount"
-              >
-                Amount
-              </label>
+          {isBuy && closed && (
+            <p className="text-primary/60 mb-4 text-sm">
+              This bundle is closed — top-ups are disabled.
+            </p>
+          )}
+
+          {isBuy && !closed && (
+            <div className="mb-4" data-onboarding="amount">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <label
+                  className={headerClass}
+                  htmlFor="trade-amount"
+                >
+                  Amount
+                </label>
+                {isConnected && onPolygon && !usdcLoading && (
+                  <span className="text-primary/50 text-[0.65rem] tabular-nums">
+                    ${balanceUsdc.toFixed(2)} USDC
+                  </span>
+                )}
+              </div>
               <div className="border-primary/10 flex items-center gap-2 rounded-full border py-1 pl-3 pr-1">
                 <span className="text-primary/40 text-sm">$</span>
                 <input
@@ -256,11 +317,12 @@ function TradePanelInner({ fund }: Props) {
             <p className="text-primary/50 mb-4 text-sm">Loading exit quote…</p>
           )}
 
-          {isBuy && (
+          {isBuy && !closed && (
             <button
               type="button"
               disabled={loading}
               onClick={preview}
+              data-onboarding="preview"
               className="border-primary/10 text-primary hover:bg-primary/10 mb-4 w-full rounded-full border py-2.5 text-sm font-medium disabled:opacity-50"
             >
               {loading ? "Loading…" : "Preview orders"}
@@ -333,6 +395,7 @@ function TradePanelInner({ fund }: Props) {
                   type="button"
                   disabled={trading}
                   onClick={execute}
+                  data-onboarding="buy"
                   className="bg-accent hover:opacity-90 w-full rounded-full py-2.5 text-sm font-medium text-white disabled:opacity-50"
                 >
                   {trading
@@ -361,6 +424,7 @@ function TradePanelInner({ fund }: Props) {
           )}
         </>
       )}
-    </div>
+      </div>
+    </>
   );
 }

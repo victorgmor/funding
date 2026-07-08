@@ -1,15 +1,15 @@
 import type { APIRoute } from "astro";
 import { verifyBundleSignature } from "@/lib/auth/bundle-auth";
-import { getFund, updateFund, type UpdateFundInput } from "@/lib/funds/store";
+import { closeFund, type CloseFundInput } from "@/lib/funds/store";
 
 export const prerender = false;
 
-export const PATCH: APIRoute = async ({ params, request }) => {
+export const POST: APIRoute = async ({ params, request }) => {
   const slug = params.slug!;
-  let body: UpdateFundInput;
+  let body: CloseFundInput;
 
   try {
-    body = (await request.json()) as UpdateFundInput;
+    body = (await request.json()) as CloseFundInput;
   } catch {
     return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
       status: 400,
@@ -21,7 +21,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     message: body.message,
     signature: body.signature,
     managerAddress: body.managerAddress,
-    action: "manage",
+    action: "close",
     slug,
   });
   if (authError) {
@@ -32,26 +32,16 @@ export const PATCH: APIRoute = async ({ params, request }) => {
   }
 
   try {
-    const fund = await updateFund(slug, body);
+    const fund = await closeFund(slug, body);
     return new Response(JSON.stringify(fund), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Could not update bundle";
+    const message = e instanceof Error ? e.message : "Could not close bundle";
     const status = message.includes("not found") ? 404 : 400;
     return new Response(JSON.stringify({ error: message }), {
       status,
       headers: { "Content-Type": "application/json" },
     });
   }
-};
-
-export const GET: APIRoute = async ({ params }) => {
-  const fund = await getFund(params.slug!);
-  if (!fund) {
-    return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
-  }
-  return new Response(JSON.stringify(fund), {
-    headers: { "Content-Type": "application/json" },
-  });
 };

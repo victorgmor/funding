@@ -6,6 +6,7 @@ import Text from "@/components/fundations/elements/Text.astro";
 import Wrapper from "@/components/fundations/containers/Wrapper.astro";
 import MarketBasket from "@/components/funds/MarketBasket";
 import FundPerformanceCell from "@/components/funds/FundPerformanceCell";
+import FundOwnerControls from "@/components/funds/FundOwnerControls";
 import TradePanel from "@/components/funds/TradePanel";
 import SealCheck from "@/components/fundations/icons/SealCheck.astro";
 import { getFund } from "@/lib/funds/store";
@@ -36,6 +37,13 @@ const performance = await computeFundPerformance(fund);
             <Text tag="h1" variant="displaySM" class="text-primary font-semibold">
               {fund.name}
             </Text>
+            {
+              fund.status === "closed" && (
+                <span class="border-primary/20 text-primary/60 rounded-full border px-2.5 py-0.5 text-[0.65rem] font-medium uppercase">
+                  Closed
+                </span>
+              )
+            }
           </div>
           <div class="mt-2 flex items-center gap-2">
             <span class="text-primary/50 text-[0.65rem] font-medium uppercase"
@@ -63,6 +71,8 @@ const performance = await computeFundPerformance(fund);
           variant="header"
         />
       </div>
+
+      <FundOwnerControls client:load fund={fund} />
 
       <div class="mt-8 grid gap-8 lg:grid-cols-3">
         <div class="lg:col-span-2 space-y-6">

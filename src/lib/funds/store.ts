@@ -13,10 +13,12 @@ import {
   dbListFundsByCreator,
   dbPutFund,
   dbSlugExists,
+  dbUpdateFund,
   dbUpdateFundMarkets,
   fundsTable,
 } from "@/lib/funds/dynamodb";
 import type { Fund, FundManager, MarketPosition, MarketSide } from "@/lib/funds/types";
+import { isCreatorWallet } from "@/lib/funds/creator";
 
 const DATA_DIR = join(process.cwd(), "data");
 const USER_FUNDS_FILE = join(DATA_DIR, "user-funds.json");
@@ -31,12 +33,22 @@ export type CreateFundMarketInput = {
   weight: number;
 };
 
-export type CreateFundInput = {
+export type UpdateFundInput = {
   name: string;
   thesis: string;
   markets: CreateFundMarketInput[];
   managerAddress: string;
+  message: string;
+  signature: `0x${string}`;
 };
+
+export type CloseFundInput = {
+  managerAddress: string;
+  message: string;
+  signature: `0x${string}`;
+};
+
+export type CreateFundInput = UpdateFundInput;
 
 function useDynamo() {
   return Boolean(fundsTable());
@@ -59,6 +71,120 @@ function writeUserFundsFile(funds: Fund[]) {
 async function readUserFunds(): Promise<Fund[]> {
   if (useDynamo()) return dbListFunds();
   return readUserFundsFile();
+}
+
+async function replaceUserFund(fund: Fund): Promise<void> {
+  if (useDynamo()) {
+    await dbUpdateFund(fund);
+    return;
+  }
+  const funds = readUserFundsFile();
+  const index = funds.findIndex((row) => row.slug === fund.slug);
+  if (index === -1) throw new Error("Bundle not found");
+  funds[index] = fund;
+  writeUserFundsFile(funds);
+}
+
+export function isUserFund(fund: Fund): boolean {
+  return (
+    isCreatorWallet(fund.manager.id) &&
+    !seedFunds.some((row) => row.id === fund.id)
+  );
+}
+
+async function getEditableUserFund(
+  slug: string,
+  managerAddress: string,
+): Promise<Fund> {
+  const fund = await getFund(slug);
+  if (!fund || !isUserFund(fund)) {
+    throw new Error("Bundle not found");
+  }
+  if (fund.manager.id.toLowerCase() !== managerAddress.toLowerCase()) {
+    throw new Error("Only the creator can manage this bundle");
+  }
+  return fund;
+}
+
+async function mergeMarketsOnUpdate(
+  existing: MarketPosition[],
+  input: CreateFundMarketInput[],
+): Promise<MarketPosition[]> {
+  const existingByGamma = new Map(existing.map((m) => [m.gammaMarketId, m]));
+  const positions = input.map((market) => {
+    const base = toMarketPosition(market);
+    const prev = existingByGamma.get(market.gammaMarketId);
+    if (
+      prev &&
+      prev.tokenId === base.tokenId &&
+      prev.entryPrice != null &&
+      prev.entryPrice > 0
+    ) {
+      return { ...base, entryPrice: prev.entryPrice };
+    }
+    return base;
+  });
+
+  const needPrices = positions.filter(
+    (m) => m.entryPrice == null || !Number.isFinite(m.entryPrice) || m.entryPrice <= 0,
+  );
+  if (needPrices.length === 0) return positions;
+
+  const priced = await captureCreationPrices(needPrices, new Date());
+  const pricedByGamma = new Map(priced.map((m) => [m.gammaMarketId, m.entryPrice]));
+
+  return positions.map((m) => {
+    if (m.entryPrice != null && m.entryPrice > 0) return m;
+    const entryPrice = pricedByGamma.get(m.gammaMarketId);
+    return entryPrice != null ? { ...m, entryPrice } : m;
+  });
+}
+
+export async function updateFund(
+  slug: string,
+  input: UpdateFundInput,
+): Promise<Fund> {
+  const error =
+    validateCreateInput(input) ??
+    validateAddress(input.managerAddress) ??
+    validatePublishAuth(input);
+  if (error) throw new Error(error);
+
+  const fund = await getEditableUserFund(slug, input.managerAddress);
+  if (fund.status === "closed") {
+    throw new Error("Closed bundles cannot be edited");
+  }
+
+  const markets = await mergeMarketsOnUpdate(fund.markets, input.markets);
+
+  const updated: Fund = {
+    ...fund,
+    name: input.name.trim(),
+    description: input.thesis.trim().slice(0, 120),
+    thesis: input.thesis.trim(),
+    markets,
+  };
+
+  await replaceUserFund(updated);
+  return updated;
+}
+
+export async function closeFund(
+  slug: string,
+  input: CloseFundInput,
+): Promise<Fund> {
+  const error =
+    validateAddress(input.managerAddress) ?? validatePublishAuth(input);
+  if (error) throw new Error(error);
+
+  const fund = await getEditableUserFund(slug, input.managerAddress);
+  if (fund.status === "closed") {
+    throw new Error("Bundle is already closed");
+  }
+
+  const updated: Fund = { ...fund, status: "closed" };
+  await replaceUserFund(updated);
+  return updated;
 }
 
 async function writeUserFund(fund: Fund): Promise<void> {
@@ -214,6 +340,14 @@ function validateAddress(address: string | undefined): string | null {
   return null;
 }
 
+function validatePublishAuth(input: CreateFundInput): string | null {
+  if (!input.message?.trim()) return "Wallet signature required";
+  if (!input.signature || !/^0x[a-fA-F0-9]+$/.test(input.signature)) {
+    return "Wallet signature required";
+  }
+  return null;
+}
+
 async function resolveManager(address: string): Promise<FundManager> {
   const profile = await fetchPolymarketProfile(address);
   return {
@@ -225,7 +359,9 @@ async function resolveManager(address: string): Promise<FundManager> {
 
 export async function createFund(input: CreateFundInput): Promise<Fund> {
   const error =
-    validateCreateInput(input) ?? validateAddress(input.managerAddress);
+    validateCreateInput(input) ??
+    validateAddress(input.managerAddress) ??
+    validatePublishAuth(input);
   if (error) throw new Error(error);
 
   const slug = await uniqueSlug(slugify(input.name.trim()));

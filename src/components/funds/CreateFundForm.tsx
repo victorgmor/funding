@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useSignMessage } from "wagmi";
 import type { MarketSide } from "@/lib/funds/types";
 import type { SearchMarket } from "@/lib/polymarket/gamma";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
@@ -51,6 +51,7 @@ export default function CreateFundForm() {
 
 function CreateFundFormInner() {
   const { address, isConnected } = useAccount();
+  const { signMessageAsync, isPending: signing } = useSignMessage();
   const [name, setName] = useState("");
   const [thesis, setThesis] = useState("");
   const [query, setQuery] = useState("");
@@ -146,6 +147,16 @@ function CreateFundFormInner() {
     setPublishError(null);
 
     try {
+      const challengeRes = await fetch(
+        `/api/auth/publish-challenge?address=${encodeURIComponent(address)}`,
+      );
+      const challenge = await challengeRes.json();
+      if (!challengeRes.ok) {
+        throw new Error(challenge.error ?? "Could not start publish");
+      }
+
+      const signature = await signMessageAsync({ message: challenge.message });
+
       const res = await fetch("/api/funds", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -153,6 +164,8 @@ function CreateFundFormInner() {
           name: name.trim(),
           thesis: thesis.trim(),
           managerAddress: address,
+          message: challenge.message,
+          signature,
           markets: selected.map((market) => ({
             gammaMarketId: market.gammaMarketId,
             conditionId: market.conditionId,
@@ -331,10 +344,14 @@ function CreateFundFormInner() {
       <button
         type="button"
         onClick={publish}
-        disabled={!canPublish || publishing}
+        disabled={!canPublish || publishing || signing}
         className="bg-accent hover:bg-accent/80 disabled:bg-accent/40 flex h-11 items-center justify-center rounded-full px-5 text-base font-medium text-white transition-all disabled:cursor-not-allowed"
       >
-        {publishing ? "Publishing…" : "Publish fund"}
+        {signing
+          ? "Sign in wallet…"
+          : publishing
+            ? "Publishing…"
+            : "Publish fund"}
       </button>
     </form>
   );

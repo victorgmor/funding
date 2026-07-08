@@ -106,6 +106,17 @@ export async function dbUpdateFundMarkets(
   );
 }
 
+export async function dbUpdateFund(fund: Fund): Promise<void> {
+  await docClient().send(
+    UpdateCommand({
+      TableName: TABLE,
+      Key: { slug: fund.slug },
+      UpdateExpression: "SET fund = :fund",
+      ExpressionAttributeValues: { ":fund": fund },
+    }),
+  );
+}
+
 export async function dbSlugExists(slug: string): Promise<boolean> {
   const row = await docClient().send(
     new GetCommand({

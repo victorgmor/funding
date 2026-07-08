@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { verifyPublishSignature } from "@/lib/auth/publish-challenge";
 import { createFund, getAllFunds, type CreateFundInput } from "@/lib/funds/store";
 
 export const prerender = false;
@@ -21,6 +22,18 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   try {
+    const authError = await verifyPublishSignature({
+      message: body.message,
+      signature: body.signature,
+      managerAddress: body.managerAddress,
+    });
+    if (authError) {
+      return new Response(JSON.stringify({ error: authError }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const fund = await createFund(body);
     return new Response(JSON.stringify(fund), {
       status: 201,
