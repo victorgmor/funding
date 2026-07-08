@@ -106,6 +106,21 @@ cat >"$TMP_DIR/ecs-express-policy.json" <<EOF
           "iam:PassedToService": "ecs.amazonaws.com"
         }
       }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetPolicy",
+        "iam:CreatePolicy",
+        "iam:CreatePolicyVersion",
+        "iam:ListPolicyVersions",
+        "iam:DeletePolicyVersion",
+        "iam:AttachRolePolicy"
+      ],
+      "Resource": [
+        "arn:aws:iam::${AWS_ACCOUNT_ID}:policy/CarrieraFundsDynamoDBPolicy",
+        "arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsTaskExecutionRole"
+      ]
     }
   ]
 }
@@ -144,7 +159,11 @@ for policy in GitHubActionsECSExpressPolicy GitHubActionsECRPolicy; do
   DOC="$TMP_DIR/ecs-express-policy.json"
   [[ "$policy" == "GitHubActionsECRPolicy" ]] && DOC="$TMP_DIR/ecr-policy.json"
   if aws iam get-policy --policy-arn "$POLICY_ARN" >/dev/null 2>&1; then
-    echo "Policy $policy exists."
+    echo "Updating $policy..."
+    aws iam create-policy-version \
+      --policy-arn "$POLICY_ARN" \
+      --policy-document "file://$DOC" \
+      --set-as-default
   else
     aws iam create-policy --policy-name "$policy" --policy-document "file://$DOC"
   fi
@@ -236,57 +255,7 @@ else
   aws dynamodb wait table-exists --table-name "$ENTITLEMENTS_TABLE" --region "$AWS_REGION"
 fi
 
-cat >"$TMP_DIR/dynamodb-policy.json" <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "dynamodb:GetItem",
-        "dynamodb:PutItem",
-        "dynamodb:UpdateItem",
-        "dynamodb:DeleteItem",
-        "dynamodb:Query",
-        "dynamodb:Scan"
-      ],
-      "Resource": [
-        "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${FUNDS_TABLE}",
-        "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${FUNDS_TABLE}/index/*",
-        "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${CHALLENGES_TABLE}",
-        "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${ENTITLEMENTS_TABLE}"
-      ]
-    }
-  ]
-}
-EOF
-
-DDB_POLICY_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:policy/CarrieraFundsDynamoDBPolicy"
-if aws iam get-policy --policy-arn "$DDB_POLICY_ARN" >/dev/null 2>&1; then
-  echo "Updating CarrieraFundsDynamoDBPolicy..."
-  aws iam create-policy-version \
-    --policy-arn "$DDB_POLICY_ARN" \
-    --policy-document "file://$TMP_DIR/dynamodb-policy.json" \
-    --set-as-default
-  # IAM keeps at most 5 versions; drop the oldest non-default one if needed.
-  OLD_VERSIONS="$(aws iam list-policy-versions \
-    --policy-arn "$DDB_POLICY_ARN" \
-    --query 'Versions[?IsDefaultVersion==`false`].VersionId' \
-    --output text)"
-  if [[ "$(wc -w <<<"$OLD_VERSIONS" | tr -d ' ')" -ge 4 ]]; then
-    aws iam delete-policy-version \
-      --policy-arn "$DDB_POLICY_ARN" \
-      --version-id "$(awk '{print $1}' <<<"$OLD_VERSIONS")"
-  fi
-else
-  echo "Creating CarrieraFundsDynamoDBPolicy..."
-  aws iam create-policy \
-    --policy-name CarrieraFundsDynamoDBPolicy \
-    --policy-document "file://$TMP_DIR/dynamodb-policy.json"
-fi
-aws iam attach-role-policy \
-  --role-name ecsTaskExecutionRole \
-  --policy-arn "$DDB_POLICY_ARN" 2>/dev/null || true
+"$SCRIPT_DIR/sync-dynamodb-iam.sh"
 
 echo ""
 echo "Done. Set GitHub Actions variables on ${GITHUB_USER}/${GITHUB_REPO}:"

@@ -32,6 +32,12 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-actions-ecs-role
           role-session-name: GitHubActionsCarrieraDeploy
 
+      - name: Sync DynamoDB IAM policy
+        run: ./scripts/sync-dynamodb-iam.sh
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}
+          AWS_ACCOUNT_ID: ${{ env.AWS_ACCOUNT_ID }}
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
