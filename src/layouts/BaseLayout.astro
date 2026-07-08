@@ -12,6 +12,12 @@ import Navigation from "@/components/global/Navigation.astro";
 >
   <head>
     <BaseHead />
+    <script is:inline>
+      try {
+        const raw = localStorage.getItem("carriera:wallet-session");
+        if (raw) document.documentElement.dataset.walletSession = "1";
+      } catch {}
+    </script>
   </head>
   <body class="flex flex-col bg-secondary  min-h-svh">
     <Navigation />

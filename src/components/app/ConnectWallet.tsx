@@ -1,5 +1,4 @@
 import {
-  useAccount,
   useConnect,
   useDisconnect,
 } from "wagmi";
@@ -9,32 +8,34 @@ import { creatorPath } from "@/lib/funds/creator";
 import { addressDisplayFallback } from "@/lib/polymarket/profile";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
 import { useEnsurePolygon } from "@/lib/wagmi/useEnsurePolygon";
+import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 type Props = {
   variant?: "nav" | "panel" | "create";
 };
 
 export default function ConnectWallet({ variant = "panel" }: Props) {
-  const { address, isConnected, status } = useAccount();
+  const { address, displayAddress, isConnected, restoring } = useWalletSession();
   const { connect, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
   const { switching } = useEnsurePolygon();
-  const { name: displayName } = usePolymarketProfile(address);
-
-  const restoring = status === "connecting" || status === "reconnecting";
+  const { name: displayName } = usePolymarketProfile(address ?? displayAddress);
 
   if (restoring) {
-    return (
-      <span
-        className={
-          variant === "create"
-            ? "text-primary/60 text-sm"
-            : "text-primary/60 text-sm"
-        }
-      >
-        Restoring wallet…
-      </span>
-    );
+    if (variant === "panel" || variant === "create") {
+      return <span className="text-primary/40 block min-h-9 text-sm" aria-hidden />;
+    }
+
+    if (displayAddress) {
+      const label = displayName ?? addressDisplayFallback(displayAddress);
+      return (
+        <span className="text-primary/50 text-sm" aria-busy="true">
+          {label}
+        </span>
+      );
+    }
+
+    return <span className="text-primary/40 text-sm" aria-busy="true">&nbsp;</span>;
   }
 
   if (isConnected && address) {

@@ -4,6 +4,7 @@ import { isCreatorWallet } from "@/lib/funds/creator";
 import { isUserFund } from "@/lib/funds/store";
 import type { Fund, MarketSide } from "@/lib/funds/types";
 import type { SearchMarket } from "@/lib/polymarket/gamma";
+import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 type Props = {
   fund: Fund;
@@ -42,9 +43,8 @@ export default function FundOwnerControls({ fund }: Props) {
 export function FundOwnerControlsInner({ fund }: Props) {
   if (!isUserFund(fund) || !isCreatorWallet(fund.manager.id)) return null;
 
-  const { address, status } = useAccount();
+  const { address, restoring } = useWalletSession();
   const { signMessageAsync, isPending: signing } = useSignMessage();
-  const restoring = status === "connecting" || status === "reconnecting";
 
   const isOwner =
     !!address &&

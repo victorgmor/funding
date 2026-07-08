@@ -1,7 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { getAccount, watchAccount } from "@wagmi/core";
 import { useEffect, useState, type ReactNode } from "react";
 import { useDisconnect, useReconnect, WagmiProvider } from "wagmi";
 import { wagmiConfig } from "@/lib/wagmi/config";
+import { WAGMI_ACCOUNT_EVENT } from "@/lib/wagmi/wallet-session";
+import { writeWalletSession } from "@/lib/wagmi/wallet-session";
 
 export const WAGMI_DISCONNECT_EVENT = "carriera:wagmi-disconnect";
 
@@ -12,6 +15,20 @@ function WagmiLifecycle() {
   useEffect(() => {
     reconnect();
   }, [reconnect]);
+
+  useEffect(() => {
+    const sync = (account = getAccount(wagmiConfig)) => {
+      writeWalletSession(account.isConnected ? account.address : undefined);
+      window.dispatchEvent(
+        new CustomEvent(WAGMI_ACCOUNT_EVENT, { detail: account }),
+      );
+    };
+
+    sync();
+    return watchAccount(wagmiConfig, {
+      onChange: sync,
+    });
+  }, []);
 
   useEffect(() => {
     const onDisconnect = () => disconnect();
