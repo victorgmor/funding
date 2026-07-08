@@ -18,19 +18,35 @@ If `aws login` fails, install/update AWS CLI v2: https://docs.aws.amazon.com/cli
 
 ### Option B — AWS CloudShell (no local CLI)
 
+The repo is **private**, so `git clone` in CloudShell needs a GitHub token. Easier: paste the bootstrap script directly.
+
 1. Open https://console.aws.amazon.com → switch region to **eu-west-1**
 2. Click **CloudShell** (terminal icon, top bar)
-3. Run:
+3. Paste and run the entire script from `scripts/cloudshell-bootstrap.sh` in this repo.
+
+   Or from your Mac (copies script to clipboard):
+
+   ```bash
+   pbcopy < scripts/cloudshell-bootstrap.sh
+   ```
+
+   Then paste into CloudShell and press Enter.
+
+CloudShell uses your console login — no GitHub or `aws login` needed.
+
+<details>
+<summary>Alternative: clone with a GitHub token</summary>
+
+Create a token at GitHub → Settings → Developer settings → Personal access tokens (classic) → `repo` scope.
 
 ```bash
-git clone https://github.com/victorgmor/carriera.git
+git clone https://<YOUR_TOKEN>@github.com/victorgmor/carriera.git
 cd carriera
 chmod +x scripts/*.sh
 ./scripts/aws-ecs-express-setup.sh
-./scripts/aws-doctor.sh
 ```
 
-CloudShell uses your console login — no `aws login` expiry issues.
+</details>
 
 ### Fix IAM without local AWS CLI
 
