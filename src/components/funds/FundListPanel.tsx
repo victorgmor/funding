@@ -15,6 +15,8 @@ type Props = {
 type SortField = "creator" | "markets" | "performance";
 type SortDirection = "asc" | "desc";
 
+const PAGE_SIZE = 7;
+
 function filterFunds(funds: Fund[], query: string): Fund[] {
   const q = query.trim().toLowerCase();
   if (!q) return funds;
@@ -130,9 +132,14 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
   const [onlyParticipating, setOnlyParticipating] = useState(false);
   const [sortField, setSortField] = useState<SortField>("performance");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [page, setPage] = useState(1);
 
   const { slugs: participatingSlugs, loading: participatingLoading } =
     useParticipatingSlugs(funds, onlyParticipating);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, onlyParticipating, sortField, sortDirection]);
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -160,6 +167,13 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
     performanceBySlug,
   ]);
 
+  const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pagedFunds = visible.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+
   const headerBtnClass = (field: SortField, align: "left" | "right" = "left") =>
     `${headerTextClass} ${align === "right" ? "text-right" : "text-left"} py-0 uppercase transition-colors ${
       sortField === field
@@ -178,7 +192,7 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
   return (
     <div className="space-y-1">
       <div className={`px-4 pb-2 ${listGridClass} lg:items-baseline`}>
-        <div className="flex min-w-0 items-baseline justify-between gap-2">
+        <div className="flex min-w-0 items-baseline">
           <label className="flex min-w-0 flex-1 items-center gap-2">
             <SearchIcon className="text-primary/40 size-3.5 shrink-0" />
             <input
@@ -193,19 +207,6 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
               autoComplete="off"
             />
           </label>
-          <button
-            type="button"
-            onClick={() => setSettingsOpen((open) => !open)}
-            aria-label="Bundle list settings"
-            aria-expanded={settingsOpen}
-            className={`shrink-0 transition-colors ${
-              settingsOpen
-                ? "text-primary"
-                : "text-primary/50 hover:text-primary/70"
-            }`}
-          >
-            <GearIcon className="size-4" />
-          </button>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 lg:contents">
           <button
@@ -245,30 +246,9 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
         </div>
       </div>
 
-      {settingsOpen && (
-        <div className="space-y-3 px-4 pb-6">
-          <label
-            className={`${headerTextClass} text-primary float-right flex cursor-pointer items-center gap-2 uppercase`}
-          >
-            <input
-              type="checkbox"
-              checked={onlyParticipating}
-              onChange={(e) => setOnlyParticipating(e.target.checked)}
-              className="border-primary/20 text-accent ring-0 size-[0.65rem] shrink-0 rounded"
-            />
-            Only bundles I&apos;m in
-          </label>
-          {onlyParticipating && !isConnected && (
-            <p className="text-primary/50 text-xs">
-              Connect your wallet to use this filter
-            </p>
-          )}
-        </div>
-      )}
-
       {visible.length > 0 ? (
         <div className="space-y-1">
-          {visible.map((fund) => (
+          {pagedFunds.map((fund) => (
             <FundRow
               key={fund.slug}
               fund={fund}
@@ -281,6 +261,70 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
           {emptyMessage}
         </p>
       )}
+
+      <div className="relative flex items-center justify-between gap-4 px-4 pt-4 pb-2">
+        {visible.length > PAGE_SIZE ? (
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
+              className="text-primary/50 hover:text-primary disabled:text-primary/25 text-[0.65rem] font-medium uppercase transition-colors disabled:cursor-not-allowed"
+            >
+              Prev
+            </button>
+            <span className="text-primary/50 font-mono text-xs tabular-nums">
+              {currentPage} / {pageCount}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+              disabled={currentPage >= pageCount}
+              className="text-primary/50 hover:text-primary disabled:text-primary/25 text-[0.65rem] font-medium uppercase transition-colors disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        ) : (
+          <div />
+        )}
+
+        <div className="relative ml-auto">
+          {settingsOpen && (
+            <div className="border-primary/10 bg-secondary absolute right-0 bottom-full z-10 mb-2 min-w-48 rounded-lg border p-3 shadow-lg">
+              <label
+                className={`${headerTextClass} text-primary flex cursor-pointer items-center gap-2 uppercase`}
+              >
+                <input
+                  type="checkbox"
+                  checked={onlyParticipating}
+                  onChange={(e) => setOnlyParticipating(e.target.checked)}
+                  className="border-primary/20 text-accent ring-0 size-[0.65rem] shrink-0 rounded"
+                />
+                Only bundles I&apos;m in
+              </label>
+              {onlyParticipating && !isConnected && (
+                <p className="text-primary/50 mt-2 text-xs">
+                  Connect your wallet to use this filter
+                </p>
+              )}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setSettingsOpen((open) => !open)}
+            aria-label="Bundle list settings"
+            aria-expanded={settingsOpen}
+            className={`transition-colors ${
+              settingsOpen
+                ? "text-primary"
+                : "text-primary/50 hover:text-primary/70"
+            }`}
+          >
+            <GearIcon className="size-4" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

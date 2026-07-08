@@ -322,19 +322,6 @@ function CreateFundFormInner() {
             Search and add at least one Polymarket market.
           </p>
         )}
-
-        {selected.length > 0 && (
-          <p
-            className={
-              weightsValid
-                ? "text-emerald-400/80 mt-2 text-xs"
-                : "text-amber-400/80 mt-2 text-xs"
-            }
-          >
-            Weights total {totalWeight}% —{" "}
-            {weightsValid ? "ready" : "must equal 100%"}
-          </p>
-        )}
       </div>
 
       {publishError && (
