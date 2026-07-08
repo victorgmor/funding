@@ -1,15 +1,36 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider } from "wagmi";
+import { useEffect, useState, type ReactNode } from "react";
+import { useDisconnect, useReconnect, WagmiProvider } from "wagmi";
 import { wagmiConfig } from "@/lib/wagmi/config";
-import type { ReactNode } from "react";
-import { useState } from "react";
+
+export const WAGMI_DISCONNECT_EVENT = "carriera:wagmi-disconnect";
+
+function WagmiLifecycle() {
+  const { reconnect } = useReconnect();
+  const { disconnect } = useDisconnect();
+
+  useEffect(() => {
+    reconnect();
+  }, [reconnect]);
+
+  useEffect(() => {
+    const onDisconnect = () => disconnect();
+    window.addEventListener(WAGMI_DISCONNECT_EVENT, onDisconnect);
+    return () => window.removeEventListener(WAGMI_DISCONNECT_EVENT, onDisconnect);
+  }, [disconnect]);
+
+  return null;
+}
 
 export default function WagmiScope({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <WagmiProvider config={wagmiConfig} reconnectOnMount>
+      <QueryClientProvider client={queryClient}>
+        <WagmiLifecycle />
+        {children}
+      </QueryClientProvider>
     </WagmiProvider>
   );
 }

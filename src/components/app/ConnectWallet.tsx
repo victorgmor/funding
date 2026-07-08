@@ -4,6 +4,7 @@ import {
   useDisconnect,
 } from "wagmi";
 import { polygon } from "wagmi/chains";
+import { WAGMI_DISCONNECT_EVENT } from "@/components/app/WagmiScope";
 import { creatorPath } from "@/lib/funds/creator";
 import { addressDisplayFallback } from "@/lib/polymarket/profile";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
@@ -14,11 +15,27 @@ type Props = {
 };
 
 export default function ConnectWallet({ variant = "panel" }: Props) {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, status } = useAccount();
   const { connect, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
   const { switching } = useEnsurePolygon();
   const { name: displayName } = usePolymarketProfile(address);
+
+  const restoring = status === "connecting" || status === "reconnecting";
+
+  if (restoring) {
+    return (
+      <span
+        className={
+          variant === "create"
+            ? "text-primary/60 text-sm"
+            : "text-primary/60 text-sm"
+        }
+      >
+        Restoring wallet…
+      </span>
+    );
+  }
 
   if (isConnected && address) {
     if (variant === "create") {
@@ -48,7 +65,10 @@ export default function ConnectWallet({ variant = "panel" }: Props) {
         </a>
         <button
           type="button"
-          onClick={() => disconnect()}
+          onClick={() => {
+            disconnect();
+            window.dispatchEvent(new Event(WAGMI_DISCONNECT_EVENT));
+          }}
           className="text-primary hover:text-primary/80 text-sm"
         >
           Disconnect

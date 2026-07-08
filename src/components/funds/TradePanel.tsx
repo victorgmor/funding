@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  useAccount,
-  useReconnect,
-} from "wagmi";
+import { useAccount } from "wagmi";
 import { getWalletClient } from "@wagmi/core";
 import { polygon } from "wagmi/chains";
 import type { Fund, BasketQuote, ExitQuote, LegResult } from "@/lib/funds/types";
@@ -31,8 +28,8 @@ export default function TradePanel({ fund }: Props) {
 }
 
 function TradePanelInner({ fund }: Props) {
-  const { address, isConnected, isConnecting, isReconnecting } = useAccount();
-  const { reconnect } = useReconnect();
+  const { address, isConnected, status: accountStatus } = useAccount();
+  const restoring = accountStatus === "connecting" || accountStatus === "reconnecting";
   const { onPolygon, switching } = useEnsurePolygon();
   const [investedView, setInvestedView] = useState<InvestedView | null>(null);
   const [amount, setAmount] = useState("50");
@@ -48,10 +45,6 @@ function TradePanelInner({ fund }: Props) {
     useFundInvestment(fund.slug, investRefresh);
 
   const isBuy = !invested || investedView === "topup";
-
-  useEffect(() => {
-    reconnect();
-  }, [reconnect]);
 
   useEffect(() => {
     if (investedView !== "exit" || !address) return;
@@ -186,13 +179,11 @@ function TradePanelInner({ fund }: Props) {
         )}
       </div>
 
-      {!isConnected ? (
+      {restoring ? (
+        <p className="text-primary/60 text-sm">Restoring wallet…</p>
+      ) : !isConnected ? (
         <div className="space-y-3">
-          <p className="text-primary/60 text-sm">
-            {isConnecting || isReconnecting
-              ? "Restoring wallet…"
-              : "Connect to enter this bundle."}
-          </p>
+          <p className="text-primary/60 text-sm">Connect to enter this bundle.</p>
           <ConnectWallet variant="panel" />
         </div>
       ) : !onPolygon ? (
