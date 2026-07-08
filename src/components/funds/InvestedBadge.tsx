@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
 import type { FundInvestment } from "@/lib/funds/types";
-import WagmiScope from "@/components/app/WagmiScope";
+import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 type Props = {
   fundSlug: string;
@@ -27,22 +26,14 @@ function Badge({ variant }: { variant: "title" | "tab" | "row" }) {
   return <span className={className}>Invested</span>;
 }
 
-function InvestedBadgeInner({ fundSlug, variant = "title" }: Props) {
+export default function InvestedBadge({ fundSlug, variant = "title" }: Props) {
   const { invested } = useFundInvestment(fundSlug);
   if (!invested) return null;
   return <Badge variant={variant} />;
 }
 
-export default function InvestedBadge(props: Props) {
-  return (
-    <WagmiScope>
-      <InvestedBadgeInner {...props} />
-    </WagmiScope>
-  );
-}
-
 export function useFundInvestment(fundSlug: string, refreshKey = 0) {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useWalletSession();
   const [invested, setInvested] = useState(false);
   const [investment, setInvestment] = useState<FundInvestment | null>(null);
   const [loading, setLoading] = useState(false);

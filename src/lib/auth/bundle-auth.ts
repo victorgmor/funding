@@ -1,19 +1,15 @@
 import { verifyMessage, type Hex } from "viem";
 import { polygon } from "wagmi/chains";
+import {
+  consumeChallenge,
+  saveChallenge,
+  type StoredChallenge,
+} from "@/lib/auth/challenge-store";
 
 const CHALLENGE_TTL_MS = 10 * 60 * 1000;
 const NONCE_BYTES = 16;
 
 export type BundleAuthAction = "publish" | "manage" | "close";
-
-type PendingChallenge = {
-  address: string;
-  action: BundleAuthAction;
-  slug?: string;
-  expiresAt: number;
-};
-
-const pending = new Map<string, PendingChallenge>();
 
 const ACTION_TEXT: Record<BundleAuthAction, string> = {
   publish: "publish a bundle",
@@ -21,32 +17,28 @@ const ACTION_TEXT: Record<BundleAuthAction, string> = {
   close: "close a bundle",
 };
 
-function pruneExpired() {
-  const now = Date.now();
-  for (const [nonce, row] of pending) {
-    if (row.expiresAt <= now) pending.delete(nonce);
-  }
-}
-
 function randomNonce(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(NONCE_BYTES));
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export function createBundleChallenge(
+function normalizeSlug(slug?: string) {
+  return slug?.trim() ?? "";
+}
+
+export async function createBundleChallenge(
   host: string,
   address: string,
   action: BundleAuthAction,
   slug?: string,
 ) {
-  pruneExpired();
-
   const normalized = address.toLowerCase();
   if (!/^0x[a-f0-9]{40}$/.test(normalized)) {
     throw new Error("Invalid wallet address");
   }
 
-  if ((action === "manage" || action === "close") && !slug?.trim()) {
+  const bundleSlug = normalizeSlug(slug);
+  if ((action === "manage" || action === "close") && !bundleSlug) {
     throw new Error("Bundle slug required");
   }
 
@@ -54,12 +46,14 @@ export function createBundleChallenge(
   const issuedAt = new Date().toISOString();
   const expiresAt = Date.now() + CHALLENGE_TTL_MS;
 
-  pending.set(nonce, {
+  const stored: StoredChallenge = {
     address: normalized,
     action,
-    slug: slug?.trim(),
+    slug: bundleSlug,
     expiresAt,
-  });
+  };
+
+  await saveChallenge(nonce, stored);
 
   const lines = [
     `${host} wants you to ${ACTION_TEXT[action]} on Polygon:`,
@@ -68,7 +62,7 @@ export function createBundleChallenge(
     `Action: ${action}`,
   ];
 
-  if (slug?.trim()) lines.push(`Bundle: ${slug.trim()}`);
+  if (bundleSlug) lines.push(`Bundle: ${bundleSlug}`);
   lines.push(
     `Chain ID: ${polygon.id}`,
     `Nonce: ${nonce}`,
@@ -93,8 +87,6 @@ export async function verifyBundleSignature(input: {
   action: BundleAuthAction;
   slug?: string;
 }): Promise<string | null> {
-  pruneExpired();
-
   const address = parseField(input.message, "Address");
   const action = parseField(input.message, "Action") as BundleAuthAction | null;
   const bundle = parseField(input.message, "Bundle");
@@ -110,8 +102,11 @@ export async function verifyBundleSignature(input: {
     return "Signature action does not match request";
   }
 
+  const requestSlug = normalizeSlug(input.slug);
+  const messageSlug = normalizeSlug(bundle ?? undefined);
+
   if (input.action === "manage" || input.action === "close") {
-    if (!bundle || !input.slug || bundle !== input.slug) {
+    if (!messageSlug || !requestSlug || messageSlug !== requestSlug) {
       return "Signature bundle does not match request";
     }
   }
@@ -122,21 +117,6 @@ export async function verifyBundleSignature(input: {
 
   if (Number(chainId) !== polygon.id) {
     return "Signature must be on Polygon";
-  }
-
-  const pendingRow = pending.get(nonce);
-  if (
-    !pendingRow ||
-    pendingRow.address !== address.toLowerCase() ||
-    pendingRow.action !== input.action ||
-    pendingRow.slug !== input.slug
-  ) {
-    return "Challenge expired or already used — try again";
-  }
-
-  if (pendingRow.expiresAt <= Date.now()) {
-    pending.delete(nonce);
-    return "Challenge expired — try again";
   }
 
   const issuedMs = Date.parse(issuedAt);
@@ -152,6 +132,16 @@ export async function verifyBundleSignature(input: {
 
   if (!valid) return "Invalid signature";
 
-  pending.delete(nonce);
+  const consumed = await consumeChallenge(nonce, {
+    address: address.toLowerCase(),
+    action: input.action,
+    slug: requestSlug,
+    expiresAt: 0,
+  });
+
+  if (!consumed) {
+    return "Challenge expired or already used — try again";
+  }
+
   return null;
 }

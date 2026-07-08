@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { useConnect, useDisconnect } from "wagmi";
+import { connect, disconnect, getConnectors } from "@wagmi/core";
 import { polygon } from "wagmi/chains";
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
-import { WAGMI_DISCONNECT_EVENT } from "@/components/app/WagmiScope";
+import { WAGMI_DISCONNECT_EVENT } from "@/lib/wagmi/events";
+import { wagmiConfig } from "@/lib/wagmi/config";
 import { creatorPath } from "@/lib/funds/creator";
 import { addressDisplayFallback } from "@/lib/polymarket/profile";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
@@ -41,7 +42,6 @@ function WalletNavMenu({
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  const { disconnect } = useDisconnect();
 
   useEffect(() => {
     if (!open) return;
@@ -66,7 +66,7 @@ function WalletNavMenu({
 
   function disconnectWallet() {
     setOpen(false);
-    disconnect();
+    disconnect(wagmiConfig);
     window.dispatchEvent(new Event(WAGMI_DISCONNECT_EVENT));
   }
 
@@ -105,10 +105,25 @@ function WalletNavMenu({
 
 export default function ConnectWallet({ variant = "panel" }: Props) {
   const { address, displayAddress, isConnected, restoring } = useWalletSession();
-  const { connect, connectors, isPending } = useConnect();
-  const { disconnect } = useDisconnect();
+  const [connecting, setConnecting] = useState(false);
   const { switching } = useEnsurePolygon();
   const { name: displayName } = usePolymarketProfile(address ?? displayAddress);
+
+  async function connectWallet() {
+    const [connector] = getConnectors(wagmiConfig);
+    if (!connector) return;
+    setConnecting(true);
+    try {
+      await connect(wagmiConfig, { connector, chainId: polygon.id });
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  function disconnectWallet() {
+    disconnect(wagmiConfig);
+    window.dispatchEvent(new Event(WAGMI_DISCONNECT_EVENT));
+  }
 
   if (restoring) {
     if (variant === "panel" || variant === "create") {
@@ -154,10 +169,7 @@ export default function ConnectWallet({ variant = "panel" }: Props) {
         </a>
         <button
           type="button"
-          onClick={() => {
-            disconnect();
-            window.dispatchEvent(new Event(WAGMI_DISCONNECT_EVENT));
-          }}
+          onClick={disconnectWallet}
           className="text-primary hover:text-primary/80 text-sm"
         >
           Disconnect
@@ -169,15 +181,15 @@ export default function ConnectWallet({ variant = "panel" }: Props) {
   return (
     <button
       type="button"
-      disabled={isPending}
-      onClick={() => connect({ connector: connectors[0], chainId: polygon.id })}
+      disabled={connecting}
+      onClick={() => void connectWallet()}
       className={
         variant === "nav"
           ? "text-primary hover:text-primary/80 text-sm disabled:opacity-50"
           : "bg-accent text-secondary hover:opacity-90 w-full rounded px-3 py-2 text-sm font-medium disabled:opacity-50"
       }
     >
-      {isPending ? "Connecting…" : "Connect wallet"}
+      {connecting ? "Connecting…" : "Connect wallet"}
     </button>
   );
 }

@@ -4,7 +4,7 @@ import {
   verifyBundleSignature,
 } from "@/lib/auth/bundle-auth";
 
-export function createPublishChallenge(host: string, address: string) {
+export async function createPublishChallenge(host: string, address: string) {
   return createBundleChallenge(host, address, "publish");
 }
 

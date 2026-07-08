@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useAccount, useSignMessage } from "wagmi";
 import type { MarketSide } from "@/lib/funds/types";
 import type { SearchMarket } from "@/lib/polymarket/gamma";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
-import WagmiScope from "@/components/app/WagmiScope";
 import ConnectWallet from "@/components/app/ConnectWallet";
+import { signWalletMessage } from "@/lib/wagmi/signMessage";
+import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 type SelectedMarket = SearchMarket & {
   side: MarketSide;
@@ -42,16 +42,12 @@ function RemoveIcon() {
 }
 
 export default function CreateFundForm() {
-  return (
-    <WagmiScope>
-      <CreateFundFormInner />
-    </WagmiScope>
-  );
+  return <CreateFundFormInner />;
 }
 
 function CreateFundFormInner() {
-  const { address, isConnected } = useAccount();
-  const { signMessageAsync, isPending: signing } = useSignMessage();
+  const { address, isConnected } = useWalletSession();
+  const [signing, setSigning] = useState(false);
   const [name, setName] = useState("");
   const [thesis, setThesis] = useState("");
   const [query, setQuery] = useState("");
@@ -155,7 +151,14 @@ function CreateFundFormInner() {
         throw new Error(challenge.error ?? "Could not start publish");
       }
 
-      const signature = await signMessageAsync({ message: challenge.message });
+      const signature = await (async () => {
+        setSigning(true);
+        try {
+          return await signWalletMessage(challenge.message);
+        } finally {
+          setSigning(false);
+        }
+      })();
 
       const res = await fetch("/api/funds", {
         method: "POST",

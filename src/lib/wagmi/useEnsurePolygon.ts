@@ -1,19 +1,27 @@
-import { useEffect } from "react";
-import { useAccount, useChainId, useSwitchChain } from "wagmi";
+import { useEffect, useState } from "react";
+import { getAccount, switchChain, watchAccount } from "@wagmi/core";
 import { polygon } from "wagmi/chains";
+import { wagmiConfig } from "@/lib/wagmi/config";
 
 export function useEnsurePolygon() {
-  const { isConnected } = useAccount();
-  const chainId = useChainId();
-  const { switchChain, isPending } = useSwitchChain();
+  const [switching, setSwitching] = useState(false);
+  const [account, setAccount] = useState(() => getAccount(wagmiConfig));
 
-  const onPolygon = chainId === polygon.id;
+  useEffect(() => watchAccount(wagmiConfig, { onChange: setAccount }), []);
+
+  const onPolygon = account.chainId === polygon.id;
 
   useEffect(() => {
-    if (isConnected && !onPolygon) {
-      switchChain({ chainId: polygon.id });
-    }
-  }, [isConnected, onPolygon, switchChain]);
+    if (!account.isConnected || onPolygon) return;
 
-  return { onPolygon, switching: isConnected && !onPolygon && isPending };
+    setSwitching(true);
+    switchChain(wagmiConfig, { chainId: polygon.id })
+      .catch(() => undefined)
+      .finally(() => setSwitching(false));
+  }, [account.isConnected, onPolygon]);
+
+  return {
+    onPolygon,
+    switching: account.isConnected && !onPolygon && switching,
+  };
 }

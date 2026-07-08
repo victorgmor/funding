@@ -14,7 +14,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   try {
     const host = new URL(request.url).host;
-    const challenge = createPublishChallenge(host, address);
+    const challenge = await createPublishChallenge(host, address);
     return new Response(JSON.stringify(challenge), {
       headers: { "Content-Type": "application/json" },
     });

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSignMessage } from "wagmi";
 import ConnectWallet from "@/components/app/ConnectWallet";
 import { isCreatorWallet } from "@/lib/funds/creator";
 import { isFundOwner, isUserFund } from "@/lib/funds/editable";
 import type { Fund, MarketSide } from "@/lib/funds/types";
 import type { SearchMarket } from "@/lib/polymarket/gamma";
+import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 type Props = {
@@ -28,11 +28,8 @@ function redistribute(items: SelectedMarket[]): SelectedMarket[] {
   return items.map((item, i) => ({ ...item, weight: weights[i]! }));
 }
 
-async function signBundleAction(
-  message: string,
-  signMessageAsync: (args: { message: string }) => Promise<`0x${string}`>,
-) {
-  const signature = await signMessageAsync({ message });
+async function signBundleAction(message: string) {
+  const signature = await signWalletMessage(message);
   return { message, signature };
 }
 
@@ -45,7 +42,7 @@ export function FundOwnerControlsInner({ fund }: Props) {
   if (!isUserFund(fund) || !isCreatorWallet(fund.manager.id)) return null;
 
   const { address, walletAddress, isConnected, restoring } = useWalletSession();
-  const { signMessageAsync, isPending: signing } = useSignMessage();
+  const [signing, setSigning] = useState(false);
 
   const isOwner = isFundOwner(fund, walletAddress);
 
@@ -178,7 +175,10 @@ export function FundOwnerControlsInner({ fund }: Props) {
 
     try {
       const message = await requestChallenge("manage");
-      const { signature } = await signBundleAction(message, signMessageAsync);
+      setSigning(true);
+      const { signature } = await signBundleAction(message).finally(() =>
+        setSigning(false),
+      );
 
       const res = await fetch(`/api/funds/${fund.slug}`, {
         method: "PATCH",
@@ -226,7 +226,10 @@ export function FundOwnerControlsInner({ fund }: Props) {
 
     try {
       const message = await requestChallenge("close");
-      const { signature } = await signBundleAction(message, signMessageAsync);
+      setSigning(true);
+      const { signature } = await signBundleAction(message).finally(() =>
+        setSigning(false),
+      );
 
       const res = await fetch(`/api/funds/${fund.slug}/close`, {
         method: "POST",

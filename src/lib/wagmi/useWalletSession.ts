@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
+import { getAccount, watchAccount, type GetAccountReturnType } from "@wagmi/core";
+import { wagmiConfig } from "@/lib/wagmi/config";
 import {
   readWalletSession,
   WAGMI_ACCOUNT_EVENT,
@@ -10,7 +11,13 @@ export { WAGMI_ACCOUNT_EVENT } from "@/lib/wagmi/wallet-session";
 export function useWalletSession() {
   const [sessionAddress, setSessionAddress] = useState(readWalletSession);
   const [hydrated, setHydrated] = useState(() => !readWalletSession());
-  const { address, isConnected, status } = useAccount();
+  const [account, setAccount] = useState<GetAccountReturnType>(() =>
+    getAccount(wagmiConfig),
+  );
+
+  useEffect(() => {
+    return watchAccount(wagmiConfig, { onChange: setAccount });
+  }, []);
 
   useEffect(() => {
     const onAccount = (event: Event) => {
@@ -34,6 +41,7 @@ export function useWalletSession() {
     };
   }, []);
 
+  const { address, isConnected, status } = account;
   const reconnecting =
     status === "connecting" || status === "reconnecting";
   const pending =

@@ -29,7 +29,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   try {
     const host = new URL(request.url).host;
-    const challenge = createBundleChallenge(host, address, action, slug);
+    const challenge = await createBundleChallenge(host, address, action, slug);
     return new Response(JSON.stringify(challenge), {
       headers: { "Content-Type": "application/json" },
     });

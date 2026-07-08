@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useAccount } from "wagmi";
 import FundRow from "@/components/funds/FundRow";
 import GearIcon from "@/components/fundations/icons/GearIcon";
 import SearchIcon from "@/components/fundations/icons/SearchIcon";
-import WagmiScope from "@/components/app/WagmiScope";
 import type { FundPerformance } from "@/lib/funds/performance";
 import type { Fund } from "@/lib/funds/types";
+import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 type Props = {
   funds: Fund[];
@@ -57,7 +56,7 @@ function sortFunds(
 }
 
 function useParticipatingSlugs(funds: Fund[], enabled: boolean) {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useWalletSession();
   const [slugs, setSlugs] = useState<Set<string> | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -125,7 +124,7 @@ function SortIndicator({
 }
 
 function FundListPanelInner({ funds, performanceBySlug }: Props) {
-  const { isConnected } = useAccount();
+  const { isConnected } = useWalletSession();
   const [query, setQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -330,9 +329,5 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
 }
 
 export default function FundListPanel(props: Props) {
-  return (
-    <WagmiScope>
-      <FundListPanelInner {...props} />
-    </WagmiScope>
-  );
+  return <FundListPanelInner {...props} />;
 }

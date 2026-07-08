@@ -1,4 +1,3 @@
-import WagmiScope from "@/components/app/WagmiScope";
 import { useFundInvestment } from "@/components/funds/InvestedBadge";
 import { formatPercent, formatSinceDate, formatUsd } from "@/lib/funds/format";
 
@@ -111,8 +110,6 @@ export default function FundPerformanceCell({
   if (!fundSlug) return null;
 
   return (
-    <WagmiScope>
-      <FundPerformanceHeader fundSlug={fundSlug} roi={roi} since={since} />
-    </WagmiScope>
+    <FundPerformanceHeader fundSlug={fundSlug} roi={roi} since={since} />
   );
 }

@@ -5,9 +5,14 @@ import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import node from "@astrojs/node";
 
+const site =
+  process.env.SITE_URL?.trim() ||
+  process.env.PUBLIC_SITE_URL?.trim() ||
+  "http://localhost:4321";
+
 export default defineConfig({
-  output: "static",
   adapter: node({ mode: "standalone" }),
+  site,
   env: {
     schema: {
       POLY_BUILDER_API_KEY: envField.string({
@@ -30,6 +35,26 @@ export default defineConfig({
         access: "public",
         optional: true,
       }),
+      SITE_URL: envField.string({
+        context: "server",
+        access: "public",
+        optional: true,
+      }),
+      FUNDS_TABLE: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
+      CHALLENGES_TABLE: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
+      AWS_REGION: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
     },
   },
   vite: {
@@ -49,6 +74,5 @@ export default defineConfig({
     skipInline: false,
     drafts: true,
   },
-  site: "https://yourdomain.com",
   integrations: [react(), sitemap(), mdx()],
 });

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Fund } from "@/lib/funds/types";
 import type { LiveMarket } from "@/lib/polymarket/gamma";
-import WagmiScope from "@/components/app/WagmiScope";
 import { useFundInvestment } from "@/components/funds/InvestedBadge";
 
 type Props = {
@@ -17,11 +16,7 @@ function formatPrice(price: number) {
 }
 
 export default function MarketBasket({ fund }: Props) {
-  return (
-    <WagmiScope>
-      <MarketBasketInner fund={fund} />
-    </WagmiScope>
-  );
+  return <MarketBasketInner fund={fund} />;
 }
 
 function MarketBasketInner({ fund }: Props) {

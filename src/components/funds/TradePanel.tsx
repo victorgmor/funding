@@ -6,7 +6,6 @@ import { executeBuyQuote, executeExitQuote } from "@/lib/polymarket/trade";
 import { wagmiConfig } from "@/lib/wagmi/config";
 import { useEnsurePolygon } from "@/lib/wagmi/useEnsurePolygon";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
-import WagmiScope from "@/components/app/WagmiScope";
 import ConnectWallet from "@/components/app/ConnectWallet";
 import TradeOnboarding, {
   completeTradeOnboardingOnSuccess,
@@ -25,11 +24,7 @@ const headerClass =
   "text-primary/50 text-[0.65rem] font-medium leading-none tracking-wide uppercase";
 
 export default function TradePanel({ fund }: Props) {
-  return (
-    <WagmiScope>
-      <TradePanelInner fund={fund} />
-    </WagmiScope>
-  );
+  return <TradePanelInner fund={fund} />;
 }
 
 export function TradePanelInner({ fund }: Props) {

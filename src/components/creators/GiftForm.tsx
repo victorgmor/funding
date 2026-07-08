@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useAccount, useConnect, useWalletClient } from "wagmi";
+import { connect, getConnectors, getWalletClient } from "@wagmi/core";
 import { polygon } from "wagmi/chains";
-import WagmiScope from "@/components/app/WagmiScope";
 import { useEnsurePolygon } from "@/lib/wagmi/useEnsurePolygon";
+import { wagmiConfig } from "@/lib/wagmi/config";
+import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 import { formatGiftError, sendGift } from "@/lib/polymarket/send-gift";
 import type { Address } from "viem";
 
@@ -14,19 +15,10 @@ type Props = {
 const amountClass =
   "text-primary w-12 border-0 bg-transparent px-0 py-0 text-sm text-right font-medium tabular-nums [appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
 
-export default function GiftForm(props: Props) {
-  return (
-    <WagmiScope>
-      <GiftFormInner {...props} />
-    </WagmiScope>
-  );
-}
-
-function GiftFormInner({ recipient, creatorName }: Props) {
-  const { address, isConnected } = useAccount();
-  const { data: walletClient } = useWalletClient();
-  const { connect, connectors, isPending: connecting } = useConnect();
+export default function GiftForm({ recipient, creatorName }: Props) {
+  const { address, isConnected } = useWalletSession();
   const { onPolygon, switching } = useEnsurePolygon();
+  const [connecting, setConnecting] = useState(false);
   const [amount, setAmount] = useState("5");
   const [sending, setSending] = useState(false);
   const [feedback, setFeedback] = useState<{
@@ -41,7 +33,14 @@ function GiftFormInner({ recipient, creatorName }: Props) {
     setFeedback(null);
 
     if (!isConnected) {
-      connect({ connector: connectors[0], chainId: polygon.id });
+      const [connector] = getConnectors(wagmiConfig);
+      if (!connector) return;
+      setConnecting(true);
+      try {
+        await connect(wagmiConfig, { connector, chainId: polygon.id });
+      } finally {
+        setConnecting(false);
+      }
       return;
     }
 
@@ -66,6 +65,7 @@ function GiftFormInner({ recipient, creatorName }: Props) {
     setSending(true);
 
     try {
+      const walletClient = await getWalletClient(wagmiConfig);
       if (!walletClient) {
         throw new Error("Wallet not ready — reconnect and try again");
       }
@@ -102,7 +102,7 @@ function GiftFormInner({ recipient, creatorName }: Props) {
         <button
           type="button"
           disabled={busy || selfGift}
-          onClick={send}
+          onClick={() => void send()}
           className="bg-accent text-white hover:opacity-90 rounded-full px-4 py-1.5 text-sm font-medium disabled:opacity-50"
         >
           {label}
