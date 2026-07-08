@@ -2,6 +2,45 @@
 
 App Runner no longer accepts new customers (April 2026). Use **Amazon ECS Express Mode** instead — same idea: push to GitHub, AWS deploys.
 
+## Connect to AWS
+
+You need AWS credentials **once** to bootstrap IAM and DynamoDB. After that, GitHub Actions deploys automatically.
+
+### Option A — Local CLI (recommended)
+
+```bash
+npm run aws:login      # opens browser login, refreshes expired sessions
+npm run aws:doctor     # checks tables + IAM policies
+npm run aws:setup      # one-time bootstrap (safe to re-run)
+```
+
+If `aws login` fails, install/update AWS CLI v2: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+
+### Option B — AWS CloudShell (no local CLI)
+
+1. Open https://console.aws.amazon.com → switch region to **eu-west-1**
+2. Click **CloudShell** (terminal icon, top bar)
+3. Run:
+
+```bash
+git clone https://github.com/victorgmor/carriera.git
+cd carriera
+chmod +x scripts/*.sh
+./scripts/aws-ecs-express-setup.sh
+./scripts/aws-doctor.sh
+```
+
+CloudShell uses your console login — no `aws login` expiry issues.
+
+### Fix IAM without local AWS CLI
+
+If bundle save shows `not authorized to perform: dynamodb:PutItem on carriera-challenges`:
+
+1. Use **Option B** above, or run locally after `npm run aws:login`
+2. Re-run `./scripts/aws-ecs-express-setup.sh` — it updates IAM policies and attaches them to ECS roles
+3. Verify with `./scripts/aws-doctor.sh`
+4. Retry bundle create — no redeploy needed
+
 ## One-time setup
 
 ### 1. Run the AWS setup script
@@ -11,7 +50,7 @@ chmod +x scripts/aws-ecs-express-setup.sh
 ./scripts/aws-ecs-express-setup.sh
 ```
 
-Requires `aws login` (already done).
+Or use CloudShell (see above).
 
 ### 2. Add GitHub Actions variables
 

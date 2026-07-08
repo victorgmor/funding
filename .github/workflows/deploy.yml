@@ -33,10 +33,17 @@ jobs:
           role-session-name: GitHubActionsCarrieraDeploy
 
       - name: Sync DynamoDB IAM policy
+        id: sync-iam
+        continue-on-error: true
         run: ./scripts/sync-dynamodb-iam.sh
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
           AWS_ACCOUNT_ID: ${{ env.AWS_ACCOUNT_ID }}
+
+      - name: IAM sync notice
+        if: steps.sync-iam.outcome == 'failure' || steps.sync-iam.outcome == 'skipped'
+        run: |
+          echo "::warning::DynamoDB IAM policy was not synced. Bundle auth may fail until you run ./scripts/aws-ecs-express-setup.sh (or AWS CloudShell). See docs/DEPLOY-NOW.md"
 
       - name: Login to Amazon ECR
         id: login-ecr

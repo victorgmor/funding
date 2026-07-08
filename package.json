@@ -4,7 +4,9 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "astro dev",
+    "aws:login": "./scripts/aws-login.sh",
+    "aws:doctor": "./scripts/aws-doctor.sh",
+    "aws:setup": "./scripts/aws-ecs-express-setup.sh",
     "start": "node ./dist/server/entry.mjs",
     "build": "astro build",
     "preview": "astro preview",

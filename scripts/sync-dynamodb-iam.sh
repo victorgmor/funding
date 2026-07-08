@@ -56,9 +56,18 @@ if aws iam get-policy --policy-arn "$POLICY_ARN" >/dev/null 2>&1; then
   fi
 else
   echo "Creating ${POLICY_NAME}..."
-  aws iam create-policy \
+  if ! aws iam create-policy \
     --policy-name "$POLICY_NAME" \
-    --policy-document "file://$TMP_DIR/dynamodb-policy.json"
+    --policy-document "file://$TMP_DIR/dynamodb-policy.json" 2>"$TMP_DIR/create-policy.err"; then
+    if grep -q AccessDenied "$TMP_DIR/create-policy.err"; then
+      echo "WARN: no IAM permission to create ${POLICY_NAME}."
+      echo "      Run ./scripts/aws-ecs-express-setup.sh once (or use AWS CloudShell)."
+      echo "      See docs/DEPLOY-NOW.md → Fix IAM without local AWS CLI."
+      exit 2
+    fi
+    cat "$TMP_DIR/create-policy.err" >&2
+    exit 1
+  fi
 fi
 
 aws iam attach-role-policy \
