@@ -28,6 +28,8 @@ export type Fund = {
   manager: FundManager;
   markets: MarketPosition[];
   createdAt?: string;
+  /** USDC price to unlock bundle access. Omit or 0 for free. */
+  unlockPriceUsdc?: number | null;
   /** @deprecated computed live from entry prices — do not set manually */
   fundValue?: number;
   deposited?: number;

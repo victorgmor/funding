@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { canAccessFund } from "@/lib/funds/access";
 import { getFund } from "@/lib/funds/store";
 import { buildBuyQuote, buildExitQuote } from "@/lib/polymarket/quote";
 
@@ -18,6 +19,11 @@ export const POST: APIRoute = async ({ params, request }) => {
 
   try {
     if (body.action === "buy") {
+      if (!(await canAccessFund(fund, body.address))) {
+        return new Response(JSON.stringify({ error: "Unlock this bundle first" }), {
+          status: 403,
+        });
+      }
       const amount = Number(body.amount);
       if (!amount || amount < 5) {
         return new Response(

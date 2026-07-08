@@ -49,6 +49,9 @@ export function FundOwnerControlsInner({ fund }: Props) {
   const [managing, setManaging] = useState(false);
   const [name, setName] = useState(fund.name);
   const [thesis, setThesis] = useState(fund.thesis);
+  const [unlockPrice, setUnlockPrice] = useState(
+    fund.unlockPriceUsdc != null ? String(fund.unlockPriceUsdc) : "",
+  );
   const [selected, setSelected] = useState<SelectedMarket[]>([]);
   const [loadedMarkets, setLoadedMarkets] = useState(false);
   const [query, setQuery] = useState("");
@@ -80,6 +83,9 @@ export function FundOwnerControlsInner({ fund }: Props) {
         if (!res.ok) throw new Error(data.error ?? "Could not load bundle");
         setName(data.name);
         setThesis(data.thesis);
+        setUnlockPrice(
+          data.unlockPriceUsdc != null ? String(data.unlockPriceUsdc) : "",
+        );
         setSelected(data.markets);
         setLoadedMarkets(true);
       } catch (e) {
@@ -189,6 +195,9 @@ export function FundOwnerControlsInner({ fund }: Props) {
           managerAddress: address,
           message,
           signature,
+          unlockPriceUsdc: unlockPrice.trim()
+            ? Number(unlockPrice)
+            : null,
           markets: selected.map((market) => ({
             gammaMarketId: market.gammaMarketId,
             conditionId: market.conditionId,
@@ -340,6 +349,25 @@ export function FundOwnerControlsInner({ fund }: Props) {
                   rows={3}
                   value={thesis}
                   onChange={(e) => setThesis(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label
+                  className="text-primary mb-1 block text-sm"
+                  htmlFor="edit-unlock-price"
+                >
+                  Unlock price (USDC)
+                </label>
+                <input
+                  id="edit-unlock-price"
+                  type="number"
+                  min={1}
+                  step="0.01"
+                  value={unlockPrice}
+                  onChange={(e) => setUnlockPrice(e.target.value)}
+                  placeholder="Leave empty for free"
                   className={inputClass}
                 />
               </div>

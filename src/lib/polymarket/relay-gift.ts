@@ -148,14 +148,14 @@ async function fetchNonce(address: Address, type: string): Promise<string> {
 
 async function submitRelayRequest(body: unknown): Promise<string> {
   const payload = JSON.stringify(body);
-  const res = await fetch("/api/polymarket/gift/submit", {
+  const res = await fetch("/api/polymarket/relay/submit", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: payload,
   });
   const data = (await res.json()) as { hash?: string; error?: string };
-  if (!res.ok) throw new Error(data.error ?? "Gift submit failed");
-  if (!data.hash) throw new Error("Gift submitted but no transaction hash returned");
+  if (!res.ok) throw new Error(data.error ?? "Payment submit failed");
+  if (!data.hash) throw new Error("Payment submitted but no transaction hash returned");
   return data.hash;
 }
 
@@ -311,7 +311,7 @@ async function sendGiftFromSafe(
       refundReceiver: zeroAddress,
     },
     type: "SAFE",
-    metadata: "Gift",
+    metadata: "Bundle unlock",
   });
 }
 
@@ -360,7 +360,7 @@ async function sendGiftFromProxy(
       relay: relay.address,
     },
     type: "PROXY",
-    metadata: "Gift",
+    metadata: "Bundle unlock",
   });
 }
 
@@ -430,7 +430,7 @@ async function sendGiftFromDepositWallet(
   });
 }
 
-export async function sendGiftFromPolymarketBalance(
+export async function sendUsdcFromPolymarketBalance(
   walletClient: WalletClient,
   recipient: Address,
   amountUsdc: number,

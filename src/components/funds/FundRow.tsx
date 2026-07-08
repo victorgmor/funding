@@ -21,6 +21,11 @@ export default function FundRow({ fund, performance }: Props) {
         </a>
         <p className="text-primary/60 mt-0.5 line-clamp-1 text-xs">
           {fund.description}
+          {fund.unlockPriceUsdc != null && fund.unlockPriceUsdc > 0 && (
+            <span className="text-primary/40 ml-2 font-mono tabular-nums">
+              ${fund.unlockPriceUsdc.toFixed(2)}
+            </span>
+          )}
         </p>
       </div>
 

@@ -45,7 +45,7 @@ export const POST: APIRoute = async ({ request }) => {
   if (!submitRes.ok) {
     return new Response(
       JSON.stringify({
-        error: submitData.error ?? "Polymarket relayer rejected the gift",
+        error: submitData.error ?? "Polymarket relayer rejected the payment",
       }),
       { status: submitRes.status, headers: { "Content-Type": "application/json" } },
     );
@@ -71,7 +71,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (!tx) continue;
 
     if (tx.state === "STATE_FAILED" || tx.state === "STATE_INVALID") {
-      return new Response(JSON.stringify({ error: "Gift transaction failed" }), {
+      return new Response(JSON.stringify({ error: "Payment transaction failed" }), {
         status: 502,
         headers: { "Content-Type": "application/json" },
       });
@@ -85,7 +85,7 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   return new Response(
-    JSON.stringify({ error: "Gift submitted but confirmation timed out" }),
+    JSON.stringify({ error: "Payment submitted but confirmation timed out" }),
     { status: 504, headers: { "Content-Type": "application/json" } },
   );
 };

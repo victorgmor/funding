@@ -111,7 +111,7 @@ export function TradePanelInner({ fund }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           isBuy
-            ? { action: "buy", amount: Number(amount) }
+            ? { action: "buy", amount: Number(amount), address }
             : { action: "exit", address },
         ),
       });

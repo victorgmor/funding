@@ -7,10 +7,13 @@ import Wrapper from "@/components/fundations/containers/Wrapper.astro";
 import MarketBasket from "@/components/funds/MarketBasket";
 import FundPerformanceCell from "@/components/funds/FundPerformanceCell";
 import FundSidebar from "@/components/funds/FundSidebar";
+import FundPageGate from "@/components/funds/FundPageGate";
 import SealCheck from "@/components/fundations/icons/SealCheck.astro";
 import { getFund } from "@/lib/funds/store";
+import { isPaidFund } from "@/lib/funds/access";
 import { creatorPath } from "@/lib/funds/creator";
 import { computeFundPerformance } from "@/lib/funds/performance";
+import { resolvePaymentRecipient } from "@/lib/polymarket/payment-recipient";
 
 const slug = Astro.params.slug;
 if (!slug) {
@@ -23,6 +26,19 @@ if (!fund) {
 }
 
 const performance = await computeFundPerformance(fund);
+const paid = isPaidFund(fund);
+const paymentRecipient =
+  paid && /^0x[a-fA-F0-9]{40}$/i.test(fund.manager.id)
+    ? await resolvePaymentRecipient(fund.manager.id)
+    : null;
+const fundMeta = {
+  slug: fund.slug,
+  name: fund.name,
+  manager: fund.manager,
+  status: fund.status,
+  unlockPriceUsdc: fund.unlockPriceUsdc,
+  createdAt: fund.createdAt,
+};
 ---
 
 <BaseLayout>
@@ -43,6 +59,13 @@ const performance = await computeFundPerformance(fund);
                 </span>
               )
             }
+            {
+              paid && (
+                <span class="border-primary/20 text-primary/60 rounded-full border px-2.5 py-0.5 text-[0.65rem] font-medium uppercase">
+                  ${fund.unlockPriceUsdc?.toFixed(2)}
+                </span>
+              )
+            }
           </div>
           <div class="mt-2 flex items-center gap-2">
             <span class="text-primary/50 text-[0.65rem] font-medium uppercase"
@@ -60,26 +83,43 @@ const performance = await computeFundPerformance(fund);
               )
             }
           </div>
-          <p class="text-primary/60 mt-2 max-w-2xl text-sm">{fund.thesis}</p>
+          {
+            !paid && (
+              <p class="text-primary/60 mt-2 max-w-2xl text-sm">{fund.thesis}</p>
+            )
+          }
         </div>
-        <FundPerformanceCell
-          client:load
-          fundSlug={fund.slug}
-          roi={performance?.roi ?? null}
-          since={fund.createdAt}
-          variant="header"
-        />
+        {
+          !paid && (
+            <FundPerformanceCell
+              client:load
+              fundSlug={fund.slug}
+              roi={performance?.roi ?? null}
+              since={fund.createdAt}
+              variant="header"
+            />
+          )
+        }
       </div>
 
-      <div class="mt-8 grid gap-8 lg:grid-cols-3">
-        <div class="lg:col-span-2 space-y-6">
-          <MarketBasket client:load fund={fund} />
-        </div>
-
-        <div>
-          <FundSidebar client:load fund={fund} />
-        </div>
-      </div>
+      {
+        paid ? (
+          <FundPageGate
+            client:load
+            fund={fundMeta}
+            paymentRecipient={paymentRecipient}
+          />
+        ) : (
+          <div class="mt-8 grid gap-8 lg:grid-cols-3">
+            <div class="lg:col-span-2 space-y-6">
+              <MarketBasket client:load fund={fund} />
+            </div>
+            <div>
+              <FundSidebar client:load fund={fund} />
+            </div>
+          </div>
+        )
+      }
     </Wrapper>
   </section>
 </BaseLayout>

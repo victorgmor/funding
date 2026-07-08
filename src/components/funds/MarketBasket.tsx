@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Fund } from "@/lib/funds/types";
 import type { LiveMarket } from "@/lib/polymarket/gamma";
 import { useFundInvestment } from "@/components/funds/InvestedBadge";
+import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 type Props = {
   fund: Fund;
@@ -20,6 +21,7 @@ export default function MarketBasket({ fund }: Props) {
 }
 
 function MarketBasketInner({ fund }: Props) {
+  const { address } = useWalletSession();
   const [markets, setMarkets] = useState<LiveMarket[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [live, setLive] = useState(false);
@@ -34,7 +36,9 @@ function MarketBasketInner({ fund }: Props) {
 
     async function load() {
       try {
-        const res = await fetch(`/api/funds/${fund.slug}/markets`);
+        const params = new URLSearchParams();
+        if (address) params.set("address", address);
+        const res = await fetch(`/api/funds/${fund.slug}/markets?${params}`);
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Failed to load prices");
         if (cancelled) return;
@@ -53,7 +57,7 @@ function MarketBasketInner({ fund }: Props) {
       cancelled = true;
       clearInterval(id);
     };
-  }, [fund.slug]);
+  }, [fund.slug, address]);
 
   const rows = (markets ?? fund.markets).map((m) => {
     const fundMarket = fund.markets.find(

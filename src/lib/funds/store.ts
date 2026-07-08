@@ -43,6 +43,7 @@ export type UpdateFundInput = {
   managerAddress: string;
   message: string;
   signature: `0x${string}`;
+  unlockPriceUsdc?: number | null;
 };
 
 export type CloseFundInput = {
@@ -159,6 +160,7 @@ export async function updateFund(
     description: input.thesis.trim().slice(0, 120),
     thesis: input.thesis.trim(),
     markets,
+    unlockPriceUsdc: parseUnlockPrice(input.unlockPriceUsdc),
   };
 
   await replaceUserFund(updated);
@@ -296,6 +298,14 @@ function toMarketPosition(market: CreateFundMarketInput): MarketPosition {
   };
 }
 
+function parseUnlockPrice(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const price = Number(value);
+  if (!Number.isFinite(price) || price <= 0) return null;
+  if (price < 1) throw new Error("Unlock price must be at least $1");
+  return Math.round(price * 100) / 100;
+}
+
 function validateCreateInput(input: CreateFundInput): string | null {
   const name = input.name?.trim() ?? "";
   const thesis = input.thesis?.trim() ?? "";
@@ -326,6 +336,15 @@ function validateCreateInput(input: CreateFundInput): string | null {
   }
 
   if (totalWeight !== 100) return "Market weights must total 100%";
+
+  try {
+    if (input.unlockPriceUsdc != null) {
+      parseUnlockPrice(input.unlockPriceUsdc);
+    }
+  } catch (e) {
+    return e instanceof Error ? e.message : "Invalid unlock price";
+  }
+
   return null;
 }
 
@@ -381,6 +400,7 @@ export async function createFund(input: CreateFundInput): Promise<Fund> {
     manager,
     markets,
     createdAt,
+    unlockPriceUsdc: parseUnlockPrice(input.unlockPriceUsdc),
   };
 
   await writeUserFund(fund);

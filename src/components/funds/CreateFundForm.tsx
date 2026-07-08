@@ -50,6 +50,7 @@ function CreateFundFormInner() {
   const [signing, setSigning] = useState(false);
   const [name, setName] = useState("");
   const [thesis, setThesis] = useState("");
+  const [unlockPrice, setUnlockPrice] = useState("");
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -169,6 +170,9 @@ function CreateFundFormInner() {
           managerAddress: address,
           message: challenge.message,
           signature,
+          unlockPriceUsdc: unlockPrice.trim()
+            ? Number(unlockPrice)
+            : null,
           markets: selected.map((market) => ({
             gammaMarketId: market.gammaMarketId,
             conditionId: market.conditionId,
@@ -232,6 +236,25 @@ function CreateFundFormInner() {
           placeholder="Nothing ever happens in crypto. All positions are NO on hype markets."
           className={inputClass}
         />
+      </div>
+
+      <div>
+        <label className="text-primary mb-1 block text-sm" htmlFor="unlock-price">
+          Unlock price (USDC)
+        </label>
+        <input
+          id="unlock-price"
+          type="number"
+          min={1}
+          step="0.01"
+          value={unlockPrice}
+          onChange={(e) => setUnlockPrice(e.target.value)}
+          placeholder="Leave empty for free"
+          className={inputClass}
+        />
+        <p className="text-primary/50 mt-1 text-xs">
+          Paid bundles require unlock before viewing or trading.
+        </p>
       </div>
 
       <div>

@@ -10,6 +10,7 @@ GITHUB_REPO="${GITHUB_REPO:-carriera}"
 ECR_REPOSITORY="${ECR_REPOSITORY:-carriera}"
 FUNDS_TABLE="${FUNDS_TABLE:-carriera-funds}"
 CHALLENGES_TABLE="${CHALLENGES_TABLE:-carriera-challenges}"
+ENTITLEMENTS_TABLE="${ENTITLEMENTS_TABLE:-carriera-entitlements}"
 ROLE_NAME="github-actions-ecs-role"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TMP_DIR="$(mktemp -d)"
@@ -221,6 +222,20 @@ else
     --time-to-live-specification "Enabled=true,AttributeName=ttl"
 fi
 
+# DynamoDB bundle entitlements table
+if aws dynamodb describe-table --table-name "$ENTITLEMENTS_TABLE" --region "$AWS_REGION" >/dev/null 2>&1; then
+  echo "DynamoDB table $ENTITLEMENTS_TABLE already exists."
+else
+  echo "Creating DynamoDB table ${ENTITLEMENTS_TABLE}..."
+  aws dynamodb create-table \
+    --table-name "$ENTITLEMENTS_TABLE" \
+    --region "$AWS_REGION" \
+    --billing-mode PAY_PER_REQUEST \
+    --attribute-definitions AttributeName=id,AttributeType=S \
+    --key-schema AttributeName=id,KeyType=HASH
+  aws dynamodb wait table-exists --table-name "$ENTITLEMENTS_TABLE" --region "$AWS_REGION"
+fi
+
 cat >"$TMP_DIR/dynamodb-policy.json" <<EOF
 {
   "Version": "2012-10-17",
@@ -238,7 +253,8 @@ cat >"$TMP_DIR/dynamodb-policy.json" <<EOF
       "Resource": [
         "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${FUNDS_TABLE}",
         "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${FUNDS_TABLE}/index/*",
-        "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${CHALLENGES_TABLE}"
+        "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${CHALLENGES_TABLE}",
+        "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${ENTITLEMENTS_TABLE}"
       ]
     }
   ]

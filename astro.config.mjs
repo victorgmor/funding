@@ -50,6 +50,11 @@ export default defineConfig({
         access: "secret",
         optional: true,
       }),
+      ENTITLEMENTS_TABLE: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
       AWS_REGION: envField.string({
         context: "server",
         access: "secret",

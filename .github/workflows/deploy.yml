@@ -65,5 +65,6 @@ jobs:
               {"name": "POLY_BUILDER_PASSPHRASE", "value": "${{ secrets.POLY_BUILDER_PASSPHRASE }}"},
               {"name": "FUNDS_TABLE", "value": "carriera-funds"},
               {"name": "CHALLENGES_TABLE", "value": "carriera-challenges"},
+              {"name": "ENTITLEMENTS_TABLE", "value": "carriera-entitlements"},
               {"name": "AWS_REGION", "value": "${{ env.AWS_REGION }}"}
             ]

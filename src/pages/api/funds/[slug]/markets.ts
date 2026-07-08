@@ -1,13 +1,21 @@
 import type { APIRoute } from "astro";
+import { canAccessFund } from "@/lib/funds/access";
 import { getFund } from "@/lib/funds/store";
 import { fetchLiveMarkets } from "@/lib/polymarket/gamma";
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ params }) => {
+export const GET: APIRoute = async ({ params, url }) => {
   const fund = await getFund(params.slug!);
   if (!fund) {
     return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
+  }
+
+  const address = url.searchParams.get("address")?.trim();
+  if (!(await canAccessFund(fund, address))) {
+    return new Response(JSON.stringify({ error: "Unlock this bundle first" }), {
+      status: 403,
+    });
   }
 
   try {
