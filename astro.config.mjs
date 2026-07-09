@@ -60,6 +60,11 @@ export default defineConfig({
         access: "secret",
         optional: true,
       }),
+      PLATFORM_FEE_WALLET: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
     },
   },
   vite: {

@@ -1,18 +1,25 @@
 import type { WalletClient } from "viem";
-import { sendUsdcFromPolymarketBalance } from "@/lib/polymarket/relay-gift";
+import { splitUnlockPayment } from "@/lib/funds/commission";
+import {
+  sendUsdcSplitFromPolymarketBalance,
+  type UsdcPayout,
+} from "@/lib/polymarket/relay-gift";
 
 export async function payBundleUnlock(
   walletClient: WalletClient,
-  recipient: `0x${string}`,
+  creator: `0x${string}`,
+  platform: `0x${string}` | null,
   amountUsdc: number,
   onStatus?: (message: string) => void,
 ): Promise<string> {
-  return sendUsdcFromPolymarketBalance(
-    walletClient,
-    recipient,
-    amountUsdc,
-    onStatus,
-  );
+  const { creatorUsdc, commissionUsdc } = splitUnlockPayment(amountUsdc);
+  const payouts: UsdcPayout[] = [{ recipient: creator, amountUsdc: creatorUsdc }];
+
+  if (platform && commissionUsdc > 0) {
+    payouts.push({ recipient: platform, amountUsdc: commissionUsdc });
+  }
+
+  return sendUsdcSplitFromPolymarketBalance(walletClient, payouts, onStatus);
 }
 
 export function formatUnlockPaymentError(error: unknown): string {

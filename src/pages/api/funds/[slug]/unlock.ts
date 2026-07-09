@@ -4,7 +4,9 @@ import {
   fundUnlockPrice,
   isPaidFund,
 } from "@/lib/funds/access";
+import { splitUnlockPayment } from "@/lib/funds/commission";
 import { grantEntitlement } from "@/lib/funds/entitlements";
+import { getPlatformFeeWallet } from "@/lib/funds/platform-fee-wallet";
 import { getFund } from "@/lib/funds/store";
 import { resolvePaymentRecipient } from "@/lib/polymarket/payment-recipient";
 import { verifyUnlockPayment } from "@/lib/polymarket/verify-unlock-tx";
@@ -63,7 +65,16 @@ export const POST: APIRoute = async ({ params, request }) => {
     });
   }
 
-  const valid = await verifyUnlockPayment(txHash as Hash, recipient, price);
+  const split = splitUnlockPayment(price);
+  const platformWallet = getPlatformFeeWallet();
+  const valid = await verifyUnlockPayment(txHash as Hash, {
+    creator: recipient,
+    creatorAmount: split.creatorUsdc,
+    commission:
+      platformWallet && split.commissionUsdc > 0
+        ? { recipient: platformWallet, amount: split.commissionUsdc }
+        : null,
+  });
   if (!valid) {
     return new Response(
       JSON.stringify({ error: "Payment not verified — wrong amount or recipient" }),

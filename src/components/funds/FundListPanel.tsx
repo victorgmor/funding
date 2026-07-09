@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import FundRow from "@/components/funds/FundRow";
 import GearIcon from "@/components/fundations/icons/GearIcon";
 import SearchIcon from "@/components/fundations/icons/SearchIcon";
+import { fundUnlockPrice } from "@/lib/funds/access";
 import type { FundPerformance } from "@/lib/funds/performance";
 import type { Fund } from "@/lib/funds/types";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
@@ -11,7 +12,7 @@ type Props = {
   performanceBySlug: Record<string, FundPerformance | null>;
 };
 
-type SortField = "creator" | "markets" | "performance";
+type SortField = "creator" | "price" | "markets" | "performance";
 type SortDirection = "asc" | "desc";
 
 const PAGE_SIZE = 7;
@@ -36,12 +37,15 @@ function sortFunds(
   performanceBySlug: Record<string, FundPerformance | null>,
 ): Fund[] {
   const roi = (slug: string) => performanceBySlug[slug]?.roi ?? null;
+  const price = (fund: Fund) => fundUnlockPrice(fund) ?? 0;
   const factor = direction === "asc" ? 1 : -1;
 
   return [...funds].sort((a, b) => {
     switch (field) {
       case "creator":
         return factor * a.manager.name.localeCompare(b.manager.name);
+      case "price":
+        return factor * (price(a) - price(b));
       case "markets":
         return factor * (a.markets.length - b.markets.length);
       case "performance":
@@ -102,13 +106,13 @@ function useParticipatingSlugs(funds: Fund[], enabled: boolean) {
 }
 
 const defaultDirection = (field: SortField): SortDirection =>
-  field === "creator" ? "asc" : "desc";
+  field === "creator" || field === "price" ? "asc" : "desc";
 
 const headerTextClass =
   "text-[0.65rem] font-medium leading-none tracking-wide";
 
 const listGridClass =
-  "lg:grid lg:grid-cols-[2fr_1fr_0.75fr_1.2fr_1fr] lg:items-center lg:gap-4";
+  "lg:grid lg:grid-cols-[minmax(0,2.5fr)_repeat(4,minmax(0,1fr))] lg:items-center lg:gap-x-8 lg:gap-y-4";
 
 const searchClass = `${headerTextClass} text-primary placeholder:text-primary/40 min-w-0 flex-1 border-0 bg-transparent px-0 py-0 uppercase focus:outline-none focus:ring-0`;
 
@@ -173,8 +177,17 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
     currentPage * PAGE_SIZE,
   );
 
-  const headerBtnClass = (field: SortField, align: "left" | "right" = "left") =>
-    `${headerTextClass} ${align === "right" ? "text-right" : "text-left"} py-0 uppercase transition-colors ${
+  const headerBtnClass = (
+    field: SortField,
+    align: "left" | "center" | "right" = "left",
+  ) =>
+    `${headerTextClass} ${
+      align === "right"
+        ? "text-right"
+        : align === "center"
+          ? "text-center"
+          : "text-left"
+    } py-0 uppercase transition-colors ${
       sortField === field
         ? "text-primary"
         : "text-primary/50 hover:text-primary/70"
@@ -219,9 +232,17 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
               direction={sortDirection}
             />
           </button>
-          <p className={`${headerTextClass} text-primary/50 py-0 text-right uppercase lg:w-full`}>
+          <button
+            type="button"
+            onClick={() => toggleSort("price")}
+            className={`${headerBtnClass("price", "center")} lg:w-full`}
+          >
             Price
-          </p>
+            <SortIndicator
+              active={sortField === "price"}
+              direction={sortDirection}
+            />
+          </button>
           <button
             type="button"
             onClick={() => toggleSort("markets")}

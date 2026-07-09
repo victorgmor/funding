@@ -17,7 +17,7 @@ function fundPriceLabel(fund: Fund): string {
 
 export default function FundRow({ fund, performance }: Props) {
   return (
-    <article className="bg-primary/5 hover:bg-primary/8 grid grid-cols-1 gap-3 rounded-lg px-4 py-3 transition-colors lg:grid-cols-[2fr_1fr_0.75fr_1.2fr_1fr] lg:items-center lg:gap-4">
+    <article className="bg-primary/5 hover:bg-primary/8 grid grid-cols-1 gap-3 rounded-lg px-4 py-3 transition-colors lg:grid-cols-[minmax(0,2.5fr)_repeat(4,minmax(0,1fr))] lg:items-center lg:gap-x-8 lg:gap-y-4">
       <div className="min-w-0">
         <a
           href={`/funds/${fund.slug}`}
@@ -47,12 +47,12 @@ export default function FundRow({ fund, performance }: Props) {
         </div>
       </div>
 
-      <div className="min-w-0 lg:text-right">
+      <div className="min-w-0 lg:text-center">
         <p className="text-primary/50 mb-1 text-[0.65rem] font-medium uppercase lg:hidden">
           Price
         </p>
         <p
-          className={`font-mono text-sm font-medium tabular-nums ${
+          className={`inline-block min-w-[3.25rem] font-mono text-sm font-medium tabular-nums ${
             isPaidFund(fund) ? "text-primary" : "text-primary/50"
           }`}
         >

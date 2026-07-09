@@ -9,6 +9,7 @@ import {
   hexToBigInt,
   http,
   keccak256,
+  pad,
   parseUnits,
   toBytes,
   toHex,
@@ -40,6 +41,23 @@ import {
 const PROXY_CALL_TYPE = 1;
 const DEFAULT_GAS_LIMIT = "10000000";
 const OPERATION_CALL = 0;
+const MULTI_SEND_CALL_ONLY =
+  "0xA238Cbeb142c10Ef7Ad8442C87Dee7E83B2C1A08" as const;
+
+const multiSendAbi = [
+  {
+    inputs: [{ name: "transactions", type: "bytes" }],
+    name: "multiSend",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function",
+  },
+] as const;
+
+export type UsdcPayout = {
+  recipient: Address;
+  amountUsdc: number;
+};
 
 const publicClient = createPublicClient({
   chain: polygon,
@@ -242,16 +260,49 @@ async function pickGiftSource(
   return null;
 }
 
+function packMultiSendCall(to: Address, data: `0x${string}`): `0x${string}` {
+  return concat([
+    "0x00",
+    pad(to, { size: 20 }),
+    pad(0n, { size: 32 }),
+    pad(BigInt((data.length - 2) / 2), { size: 32 }),
+    data,
+  ]);
+}
+
+function encodeTokenTransfers(
+  token: Address,
+  payouts: UsdcPayout[],
+): `0x${string}`[] {
+  return payouts.map((payout) =>
+    encodeErc20TransferData(token, payout.recipient, payout.amountUsdc),
+  );
+}
+
+function totalPayoutUsdc(payouts: UsdcPayout[]): number {
+  return payouts.reduce((sum, payout) => sum + payout.amountUsdc, 0);
+}
+
 async function sendGiftFromSafe(
   walletClient: WalletClient,
   from: Address,
   safeAddress: Address,
   token: Address,
-  recipient: Address,
-  amountUsdc: number,
+  payouts: UsdcPayout[],
   onStatus?: (message: string) => void,
 ): Promise<string> {
-  const transferData = encodeErc20TransferData(token, recipient, amountUsdc);
+  const transferCalls = encodeTokenTransfers(token, payouts);
+  const data =
+    payouts.length === 1
+      ? transferCalls[0]!
+      : encodeFunctionData({
+          abi: multiSendAbi,
+          functionName: "multiSend",
+          args: [
+            concat(transferCalls.map((call) => packMultiSendCall(token, call))),
+          ],
+        });
+  const to = payouts.length === 1 ? token : MULTI_SEND_CALL_ONLY;
   const nonce = await fetchNonce(from, "SAFE");
 
   onStatus?.("Approve in wallet — simulation warning is normal");
@@ -277,9 +328,9 @@ async function sendGiftFromSafe(
     },
     primaryType: "SafeTx",
     message: {
-      to: token,
+      to,
       value: 0n,
-      data: transferData,
+      data,
       operation: OPERATION_CALL,
       safeTxGas: 0n,
       baseGas: 0n,
@@ -299,9 +350,9 @@ async function sendGiftFromSafe(
 
   return submitRelayRequest({
     from,
-    to: token,
+    to,
     proxyWallet: safeAddress,
-    data: transferData,
+    data,
     nonce,
     signature: splitAndPackSig(signature),
     signatureParams: {
@@ -321,14 +372,16 @@ async function sendGiftFromProxy(
   walletClient: WalletClient,
   from: Address,
   token: Address,
-  recipient: Address,
-  amountUsdc: number,
+  payouts: UsdcPayout[],
   onStatus?: (message: string) => void,
 ): Promise<string> {
-  const transferData = encodeErc20TransferData(token, recipient, amountUsdc);
-  const proxyData = encodeProxyTransactionData([
-    { to: token, data: transferData, value: "0" },
-  ]);
+  const proxyData = encodeProxyTransactionData(
+    encodeTokenTransfers(token, payouts).map((data) => ({
+      to: token,
+      data,
+      value: "0",
+    })),
+  );
   const relay = await fetchRelayPayload(from, "PROXY");
   const structHash = createProxyStructHash(
     from,
@@ -371,14 +424,16 @@ async function sendGiftFromDepositWallet(
   from: Address,
   walletAddress: Address,
   token: Address,
-  recipient: Address,
-  amountUsdc: number,
+  payouts: UsdcPayout[],
   onStatus?: (message: string) => void,
 ): Promise<string> {
-  const transferData = encodeErc20TransferData(token, recipient, amountUsdc);
   const nonce = await fetchNonce(from, "WALLET");
   const deadline = Math.floor(Date.now() / 1000) + 3600;
-  const calls = [{ target: token, value: "0", data: transferData }];
+  const calls = encodeTokenTransfers(token, payouts).map((data) => ({
+    target: token,
+    value: "0",
+    data,
+  }));
 
   onStatus?.("Approve in wallet — simulation warning is normal");
 
@@ -432,15 +487,16 @@ async function sendGiftFromDepositWallet(
   });
 }
 
-export async function sendUsdcFromPolymarketBalance(
+export async function sendUsdcSplitFromPolymarketBalance(
   walletClient: WalletClient,
-  recipient: Address,
-  amountUsdc: number,
+  payouts: UsdcPayout[],
   onStatus?: (message: string) => void,
 ): Promise<string> {
   const from = walletClient.account?.address;
   if (!from) throw new Error("Wallet account unavailable");
+  if (payouts.length === 0) throw new Error("No payment recipients");
 
+  const amountUsdc = totalPayoutUsdc(payouts);
   const source = await pickGiftSource(from, amountUsdc);
   if (!source) {
     throw new Error(
@@ -455,8 +511,7 @@ export async function sendUsdcFromPolymarketBalance(
         from,
         source.wallet,
         source.token,
-        recipient,
-        amountUsdc,
+        payouts,
         onStatus,
       );
     case "deposit":
@@ -465,8 +520,7 @@ export async function sendUsdcFromPolymarketBalance(
         from,
         source.wallet,
         source.token,
-        recipient,
-        amountUsdc,
+        payouts,
         onStatus,
       );
     case "proxy":
@@ -474,9 +528,21 @@ export async function sendUsdcFromPolymarketBalance(
         walletClient,
         from,
         source.token,
-        recipient,
-        amountUsdc,
+        payouts,
         onStatus,
       );
   }
+}
+
+export async function sendUsdcFromPolymarketBalance(
+  walletClient: WalletClient,
+  recipient: Address,
+  amountUsdc: number,
+  onStatus?: (message: string) => void,
+): Promise<string> {
+  return sendUsdcSplitFromPolymarketBalance(
+    walletClient,
+    [{ recipient, amountUsdc }],
+    onStatus,
+  );
 }

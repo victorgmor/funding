@@ -21,11 +21,13 @@ export type FundPageMeta = Pick<
 type Props = {
   fund: FundPageMeta;
   paymentRecipient: `0x${string}` | null;
+  platformFeeWallet: `0x${string}` | null;
 };
 
 export default function FundPageGate({
   fund,
   paymentRecipient,
+  platformFeeWallet,
 }: Props) {
   const { address, isConnected, restoring } = useWalletSession();
   const { onPolygon, switching } = useEnsurePolygon();
@@ -109,6 +111,7 @@ export default function FundPageGate({
       const txHash = await payBundleUnlock(
         walletClient,
         paymentRecipient,
+        platformFeeWallet,
         priceUsdc,
         setStatus,
       );
@@ -165,7 +168,8 @@ export default function FundPageGate({
               {paying ? "Processing…" : `Unlock for $${priceUsdc?.toFixed(2)}`}
             </button>
             <p className="text-primary/40 text-xs">
-              Pays the creator from your Polymarket cash balance. Non-refundable.
+              Pays the creator from your Polymarket cash balance. Includes a 10%
+              platform fee. Non-refundable.
             </p>
           </div>
         )}

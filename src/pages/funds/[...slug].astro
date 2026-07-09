@@ -14,6 +14,7 @@ import { isPaidFund } from "@/lib/funds/access";
 import { creatorPath } from "@/lib/funds/creator";
 import { computeFundPerformance } from "@/lib/funds/performance";
 import { resolvePaymentRecipient } from "@/lib/polymarket/payment-recipient";
+import { getPlatformFeeWallet } from "@/lib/funds/platform-fee-wallet";
 
 const slug = Astro.params.slug;
 if (!slug) {
@@ -31,6 +32,7 @@ const paymentRecipient =
   paid && /^0x[a-fA-F0-9]{40}$/i.test(fund.manager.id)
     ? await resolvePaymentRecipient(fund.manager.id)
     : null;
+const platformFeeWallet = paid ? getPlatformFeeWallet() : null;
 const fundMeta = {
   slug: fund.slug,
   name: fund.name,
@@ -108,6 +110,7 @@ const fundMeta = {
             client:load
             fund={fundMeta}
             paymentRecipient={paymentRecipient}
+            platformFeeWallet={platformFeeWallet}
           />
         ) : (
           <div class="mt-8 grid gap-8 lg:grid-cols-3">
