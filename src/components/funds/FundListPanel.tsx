@@ -112,7 +112,7 @@ const headerTextClass =
   "text-[0.65rem] font-medium leading-none tracking-wide";
 
 const listGridClass =
-  "lg:grid lg:grid-cols-[minmax(0,2.5fr)_repeat(4,minmax(0,1fr))] lg:items-center lg:gap-x-8 lg:gap-y-4";
+  "lg:grid lg:grid-cols-[minmax(0,2.5fr)_repeat(4,minmax(0,1fr))_minmax(5.5rem,auto)] lg:items-center lg:gap-x-8 lg:gap-y-4";
 
 const searchClass = `${headerTextClass} text-primary placeholder:text-primary/40 min-w-0 flex-1 border-0 bg-transparent px-0 py-0 uppercase focus:outline-none focus:ring-0`;
 
@@ -266,6 +266,11 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
               direction={sortDirection}
             />
           </button>
+          <p
+            className={`${headerTextClass} text-primary/50 py-0 text-right uppercase lg:w-full`}
+          >
+            Access
+          </p>
         </div>
       </div>
 
