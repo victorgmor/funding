@@ -1,6 +1,7 @@
 import FundPerformanceCell from "@/components/funds/FundPerformanceCell";
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { creatorPath } from "@/lib/funds/creator";
+import { isPaidFund } from "@/lib/funds/access";
 import type { FundPerformance } from "@/lib/funds/performance";
 import type { Fund } from "@/lib/funds/types";
 
@@ -9,9 +10,14 @@ type Props = {
   performance: FundPerformance | null;
 };
 
+function fundPriceLabel(fund: Fund): string {
+  if (isPaidFund(fund)) return `$${fund.unlockPriceUsdc!.toFixed(2)}`;
+  return "FREE";
+}
+
 export default function FundRow({ fund, performance }: Props) {
   return (
-    <article className="bg-primary/5 hover:bg-primary/8 grid grid-cols-1 gap-3 rounded-lg px-4 py-3 transition-colors lg:grid-cols-[2fr_1fr_1.2fr_1fr] lg:items-center lg:gap-4">
+    <article className="bg-primary/5 hover:bg-primary/8 grid grid-cols-1 gap-3 rounded-lg px-4 py-3 transition-colors lg:grid-cols-[2fr_1fr_0.75fr_1.2fr_1fr] lg:items-center lg:gap-4">
       <div className="min-w-0">
         <a
           href={`/funds/${fund.slug}`}
@@ -21,11 +27,6 @@ export default function FundRow({ fund, performance }: Props) {
         </a>
         <p className="text-primary/60 mt-0.5 line-clamp-1 text-xs">
           {fund.description}
-          {fund.unlockPriceUsdc != null && fund.unlockPriceUsdc > 0 && (
-            <span className="text-primary/40 ml-2 font-mono tabular-nums">
-              ${fund.unlockPriceUsdc.toFixed(2)}
-            </span>
-          )}
         </p>
       </div>
 
@@ -44,6 +45,19 @@ export default function FundRow({ fund, performance }: Props) {
             <SealCheck size="sm" className="text-[#32BCFF]" />
           )}
         </div>
+      </div>
+
+      <div className="min-w-0 lg:text-right">
+        <p className="text-primary/50 mb-1 text-[0.65rem] font-medium uppercase lg:hidden">
+          Price
+        </p>
+        <p
+          className={`font-mono text-sm font-medium tabular-nums ${
+            isPaidFund(fund) ? "text-primary" : "text-primary/50"
+          }`}
+        >
+          {fundPriceLabel(fund)}
+        </p>
       </div>
 
       <div className="min-w-0">
