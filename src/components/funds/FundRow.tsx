@@ -1,3 +1,7 @@
+import {
+  fundListGridClass,
+  fundListTrailingClass,
+} from "@/components/funds/fund-list-layout";
 import FundPerformanceCell from "@/components/funds/FundPerformanceCell";
 import Eye from "@/components/fundations/icons/Eye";
 import LockOpen from "@/components/fundations/icons/LockOpen";
@@ -19,7 +23,9 @@ function fundPriceLabel(fund: Fund): string {
 
 export default function FundRow({ fund, performance }: Props) {
   return (
-    <article className="bg-primary/5 hover:bg-primary/8 grid grid-cols-1 gap-3 rounded-lg px-4 py-3 transition-colors lg:grid-cols-[minmax(0,2.5fr)_repeat(4,minmax(0,1fr))_auto] lg:items-center lg:gap-x-8 lg:gap-y-4">
+    <article
+      className={`bg-primary/5 hover:bg-primary/8 grid grid-cols-1 gap-3 rounded-lg px-4 py-3 transition-colors ${fundListGridClass}`}
+    >
       <div className="min-w-0">
         <a
           href={`/funds/${fund.slug}`}
@@ -71,31 +77,32 @@ export default function FundRow({ fund, performance }: Props) {
         </p>
       </div>
 
-      <div className="min-w-0 lg:text-right">
-        <p className="text-primary/50 mb-1 text-[0.65rem] font-medium uppercase lg:hidden">
-          Thesis ROI
-        </p>
-        <FundPerformanceCell
-          roi={performance?.roi ?? null}
-          since={fund.createdAt}
-        />
-      </div>
-
-      <div className="min-w-0 lg:flex lg:justify-end">
-        <p className="text-primary/50 mb-1 text-[0.65rem] font-medium uppercase lg:hidden">
-          Access
-        </p>
-        <a
-          href={`/funds/${fund.slug}`}
-          aria-label={isPaidFund(fund) ? "Unlock bundle" : "View bundle"}
-          className="text-primary hover:text-primary/70 inline-flex shrink-0 items-center justify-center transition-colors"
-        >
-          {isPaidFund(fund) ? (
-            <LockOpen size="sm" aria-hidden />
-          ) : (
-            <Eye size="sm" aria-hidden />
-          )}
-        </a>
+      <div className={fundListTrailingClass}>
+        <div className="min-w-0 text-right">
+          <p className="text-primary/50 mb-1 text-[0.65rem] font-medium uppercase lg:hidden">
+            Thesis ROI
+          </p>
+          <FundPerformanceCell
+            roi={performance?.roi ?? null}
+            since={fund.createdAt}
+          />
+        </div>
+        <div className="flex flex-col items-center">
+          <p className="text-primary/50 mb-1 text-[0.65rem] font-medium uppercase lg:hidden">
+            Access
+          </p>
+          <a
+            href={`/funds/${fund.slug}`}
+            aria-label={isPaidFund(fund) ? "Unlock bundle" : "View bundle"}
+            className="text-primary hover:text-primary/70 inline-flex shrink-0 items-center justify-center transition-colors"
+          >
+            {isPaidFund(fund) ? (
+              <LockOpen size="sm" aria-hidden />
+            ) : (
+              <Eye size="sm" aria-hidden />
+            )}
+          </a>
+        </div>
       </div>
     </article>
   );

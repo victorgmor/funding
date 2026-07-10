@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import FundRow from "@/components/funds/FundRow";
+import {
+  fundListGridClass,
+  fundListTrailingClass,
+} from "@/components/funds/fund-list-layout";
 import GearIcon from "@/components/fundations/icons/GearIcon";
 import SearchIcon from "@/components/fundations/icons/SearchIcon";
 import { fundUnlockPrice } from "@/lib/funds/access";
@@ -111,9 +115,6 @@ const defaultDirection = (field: SortField): SortDirection =>
 const headerTextClass =
   "text-[0.65rem] font-medium leading-none tracking-wide";
 
-const listGridClass =
-  "lg:grid lg:grid-cols-[minmax(0,2.5fr)_repeat(4,minmax(0,1fr))_auto] lg:items-center lg:gap-x-8 lg:gap-y-4";
-
 const searchClass = `${headerTextClass} text-primary placeholder:text-primary/40 min-w-0 flex-1 border-0 bg-transparent px-0 py-0 uppercase focus:outline-none focus:ring-0`;
 
 function SortIndicator({
@@ -203,7 +204,7 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
 
   return (
     <div className="space-y-1">
-      <div className={`px-4 pb-2 ${listGridClass} lg:items-baseline`}>
+      <div className={`px-4 pb-2 ${fundListGridClass} lg:items-baseline`}>
         <div className="flex min-w-0 items-baseline">
           <label className="flex min-w-0 flex-1 items-center gap-2">
             <SearchIcon className="text-primary/40 size-3.5 shrink-0" />
@@ -254,23 +255,25 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
               direction={sortDirection}
             />
           </button>
-          <button
-            type="button"
-            onClick={() => toggleSort("performance")}
-            className={`${headerBtnClass("performance", "right")} lg:w-full`}
-            title="Thesis ROI since publish — not your wallet balance"
-          >
-            Performance
-            <SortIndicator
-              active={sortField === "performance"}
-              direction={sortDirection}
-            />
-          </button>
-          <p
-            className={`${headerTextClass} text-primary/50 py-0 text-right uppercase lg:w-full`}
-          >
-            Access
-          </p>
+          <div className={`${fundListTrailingClass} min-w-[11rem]`}>
+            <button
+              type="button"
+              onClick={() => toggleSort("performance")}
+              className={`${headerBtnClass("performance", "right")} w-full`}
+              title="Thesis ROI since publish — not your wallet balance"
+            >
+              Performance
+              <SortIndicator
+                active={sortField === "performance"}
+                direction={sortDirection}
+              />
+            </button>
+            <p
+              className={`${headerTextClass} text-primary/50 py-0 text-center uppercase`}
+            >
+              Access
+            </p>
+          </div>
         </div>
       </div>
 
