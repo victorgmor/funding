@@ -88,7 +88,7 @@ export default function FundRow({ fund, performance }: Props) {
         <a
           href={`/funds/${fund.slug}`}
           aria-label={isPaidFund(fund) ? "Unlock bundle" : "View bundle"}
-          className="bg-accent text-secondary hover:opacity-90 inline-flex size-8 shrink-0 items-center justify-center rounded-full"
+          className="text-primary hover:text-primary/70 inline-flex shrink-0 items-center justify-center transition-colors"
         >
           {isPaidFund(fund) ? (
             <LockOpen size="sm" aria-hidden />
