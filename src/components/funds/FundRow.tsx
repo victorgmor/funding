@@ -1,4 +1,6 @@
 import FundPerformanceCell from "@/components/funds/FundPerformanceCell";
+import Eye from "@/components/fundations/icons/Eye";
+import LockOpen from "@/components/fundations/icons/LockOpen";
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { creatorPath } from "@/lib/funds/creator";
 import { isPaidFund } from "@/lib/funds/access";
@@ -15,14 +17,9 @@ function fundPriceLabel(fund: Fund): string {
   return "FREE";
 }
 
-function fundAccessLabel(fund: Fund): string {
-  if (isPaidFund(fund)) return "Unlock";
-  return "View";
-}
-
 export default function FundRow({ fund, performance }: Props) {
   return (
-    <article className="bg-primary/5 hover:bg-primary/8 grid grid-cols-1 gap-3 rounded-lg px-4 py-3 transition-colors lg:grid-cols-[minmax(0,2.5fr)_repeat(4,minmax(0,1fr))_minmax(5.5rem,auto)] lg:items-center lg:gap-x-8 lg:gap-y-4">
+    <article className="bg-primary/5 hover:bg-primary/8 grid grid-cols-1 gap-3 rounded-lg px-4 py-3 transition-colors lg:grid-cols-[minmax(0,2.5fr)_repeat(4,minmax(0,1fr))_auto] lg:items-center lg:gap-x-8 lg:gap-y-4">
       <div className="min-w-0">
         <a
           href={`/funds/${fund.slug}`}
@@ -90,9 +87,14 @@ export default function FundRow({ fund, performance }: Props) {
         </p>
         <a
           href={`/funds/${fund.slug}`}
-          className="bg-accent text-secondary hover:opacity-90 inline-flex shrink-0 items-center justify-center rounded-full px-4 py-1.5 text-xs font-medium whitespace-nowrap"
+          aria-label={isPaidFund(fund) ? "Unlock bundle" : "View bundle"}
+          className="bg-accent text-secondary hover:opacity-90 inline-flex size-8 shrink-0 items-center justify-center rounded-full"
         >
-          {fundAccessLabel(fund)}
+          {isPaidFund(fund) ? (
+            <LockOpen size="sm" aria-hidden />
+          ) : (
+            <Eye size="sm" aria-hidden />
+          )}
         </a>
       </div>
     </article>
