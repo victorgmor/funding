@@ -7,6 +7,8 @@ import type { Fund } from "@/lib/funds/types";
 
 type Props = {
   fund: Fund;
+  lead?: boolean;
+  searchFocused?: boolean;
 };
 
 function feedSnippet(fund: Fund): string {
@@ -15,7 +17,11 @@ function feedSnippet(fund: Fund): string {
   return fund.description.trim();
 }
 
-export default function FundFeedCard({ fund }: Props) {
+export default function FundFeedCard({
+  fund,
+  lead = false,
+  searchFocused = false,
+}: Props) {
   const paid = isPaidFund(fund);
   const snippet = feedSnippet(fund);
   const published = formatPublishedAgo(fund.createdAt);
@@ -24,7 +30,15 @@ export default function FundFeedCard({ fund }: Props) {
   const showAvatar = isCreatorWallet(fund.manager.id);
 
   return (
-    <article className="border-primary/10 border-b py-8 last:border-b-0">
+    <article
+      className={`border-primary/10 border-b py-8 last:border-b-0 ${
+        lead
+          ? `border-t transition-colors ${
+              searchFocused ? "border-t-primary" : "border-t-primary/10"
+            }`
+          : ""
+      }`}
+    >
       <div className="mb-4 flex items-center gap-3">
         {showAvatar ? (
           <a href={creatorPath(fund.manager.id)} className="shrink-0">

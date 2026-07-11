@@ -128,6 +128,7 @@ function SortIndicator({
 function FundListPanelInner({ funds }: Props) {
   const { isConnected } = useWalletSession();
   const [query, setQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [onlyParticipating, setOnlyParticipating] = useState(false);
   const [sortField, setSortField] = useState<SortField>("published");
@@ -191,12 +192,14 @@ function FundListPanelInner({ funds }: Props) {
   return (
     <div className="max-w-2xl">
       <div className="pb-5">
-        <label className="border-primary/30 flex items-center gap-2 border-b pb-2 transition-colors focus-within:border-primary">
+        <label className="flex items-center gap-2 pb-2">
           <SearchIcon className="text-primary/35 size-4 shrink-0" />
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
             placeholder="Search calls"
             aria-label="Search calls"
             className="text-primary placeholder:text-primary/35 w-full appearance-none border-0 bg-transparent py-1 text-base shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 [&::-webkit-search-cancel-button]:appearance-none"
@@ -258,8 +261,13 @@ function FundListPanelInner({ funds }: Props) {
 
       {visible.length > 0 ? (
         <div>
-          {pagedFunds.map((fund) => (
-            <FundFeedCard key={fund.slug} fund={fund} />
+          {pagedFunds.map((fund, index) => (
+            <FundFeedCard
+              key={fund.slug}
+              fund={fund}
+              lead={index === 0}
+              searchFocused={searchFocused}
+            />
           ))}
         </div>
       ) : (
