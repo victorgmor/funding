@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import ConnectWallet from "@/components/app/ConnectWallet";
+import UnlockPriceField from "@/components/funds/UnlockPriceField";
 import { isCreatorWallet } from "@/lib/funds/creator";
 import { isFundOwner, isUserFund } from "@/lib/funds/editable";
 import type { Fund, MarketSide } from "@/lib/funds/types";
@@ -353,24 +354,11 @@ export function FundOwnerControlsInner({ fund }: Props) {
                 />
               </div>
 
-              <div>
-                <label
-                  className="text-primary mb-1 block text-sm"
-                  htmlFor="edit-unlock-price"
-                >
-                  Unlock price (pUSD)
-                </label>
-                <input
-                  id="edit-unlock-price"
-                  type="number"
-                  min={1}
-                  step="0.01"
-                  value={unlockPrice}
-                  onChange={(e) => setUnlockPrice(e.target.value)}
-                  placeholder="Leave empty for free"
-                  className={inputClass}
-                />
-              </div>
+              <UnlockPriceField
+                id="edit-unlock-price"
+                value={unlockPrice}
+                onChange={setUnlockPrice}
+              />
 
               <div>
                 <label

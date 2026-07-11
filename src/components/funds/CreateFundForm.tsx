@@ -3,6 +3,7 @@ import type { MarketSide } from "@/lib/funds/types";
 import type { SearchMarket } from "@/lib/polymarket/gamma";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
 import ConnectWallet from "@/components/app/ConnectWallet";
+import UnlockPriceField from "@/components/funds/UnlockPriceField";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
@@ -238,24 +239,11 @@ function CreateFundFormInner() {
         />
       </div>
 
-      <div>
-        <label className="text-primary mb-1 block text-sm" htmlFor="unlock-price">
-          Unlock price (pUSD)
-        </label>
-        <input
-          id="unlock-price"
-          type="number"
-          min={1}
-          step="0.01"
-          value={unlockPrice}
-          onChange={(e) => setUnlockPrice(e.target.value)}
-          placeholder="Leave empty for free"
-          className={inputClass}
-        />
-        <p className="text-primary/50 mt-1 text-xs">
-          Paid bundles require unlock before viewing or trading.
-        </p>
-      </div>
+      <UnlockPriceField
+        id="unlock-price"
+        value={unlockPrice}
+        onChange={setUnlockPrice}
+      />
 
       <div>
         <label className="text-primary mb-1 block text-sm" htmlFor="market-search">
