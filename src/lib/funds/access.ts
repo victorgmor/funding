@@ -27,17 +27,6 @@ export async function canAccessFund(
   return hasEntitlement(wallet, fund.slug);
 }
 
-export function fundNeedsPurchase(
-  fund: Fund,
-  wallet?: string,
-  accessBySlug?: Record<string, boolean> | null,
-): boolean {
-  if (!isPaidFund(fund)) return false;
-  if (isFundOwnerWallet(fund, wallet)) return false;
-  if (!wallet) return true;
-  return !(accessBySlug?.[fund.slug] ?? false);
-}
-
 export function redactFund(fund: Fund): Fund {
   return {
     ...fund,

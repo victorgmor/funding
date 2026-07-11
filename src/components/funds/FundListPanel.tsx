@@ -2,11 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import FundRow from "@/components/funds/FundRow";
 import {
   fundListGridClass,
-  fundListTrailingClass,
 } from "@/components/funds/fund-list-layout";
 import GearIcon from "@/components/fundations/icons/GearIcon";
 import SearchIcon from "@/components/fundations/icons/SearchIcon";
-import { fundUnlockPrice, isPaidFund } from "@/lib/funds/access";
+import { fundUnlockPrice } from "@/lib/funds/access";
 import type { FundPerformance } from "@/lib/funds/performance";
 import type { Fund } from "@/lib/funds/types";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
@@ -109,55 +108,6 @@ function useParticipatingSlugs(funds: Fund[], enabled: boolean) {
   return { slugs, loading };
 }
 
-function useFundAccessBySlug(funds: Fund[]) {
-  const { address, isConnected } = useWalletSession();
-  const [accessBySlug, setAccessBySlug] = useState<Record<
-    string,
-    boolean
-  > | null>(null);
-
-  useEffect(() => {
-    if (!isConnected || !address) {
-      setAccessBySlug(null);
-      return;
-    }
-
-    const paidFunds = funds.filter(isPaidFund);
-    if (paidFunds.length === 0) {
-      setAccessBySlug({});
-      return;
-    }
-
-    let cancelled = false;
-
-    async function load() {
-      try {
-        const results = await Promise.all(
-          paidFunds.map(async (fund) => {
-            const res = await fetch(
-              `/api/funds/${fund.slug}/access?address=${address}`,
-            );
-            const data = (await res.json()) as { access?: boolean };
-            return [fund.slug, Boolean(data.access)] as const;
-          }),
-        );
-        if (!cancelled) {
-          setAccessBySlug(Object.fromEntries(results));
-        }
-      } catch {
-        if (!cancelled) setAccessBySlug({});
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [funds, address, isConnected]);
-
-  return accessBySlug;
-}
-
 const defaultDirection = (field: SortField): SortDirection =>
   field === "creator" || field === "price" ? "asc" : "desc";
 
@@ -178,7 +128,7 @@ function SortIndicator({
 }
 
 function FundListPanelInner({ funds, performanceBySlug }: Props) {
-  const { address, isConnected } = useWalletSession();
+  const { isConnected } = useWalletSession();
   const [query, setQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -189,7 +139,6 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
 
   const { slugs: participatingSlugs, loading: participatingLoading } =
     useParticipatingSlugs(funds, onlyParticipating);
-  const accessBySlug = useFundAccessBySlug(funds);
 
   useEffect(() => {
     setPage(1);
@@ -305,25 +254,18 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
               direction={sortDirection}
             />
           </button>
-          <div className={`${fundListTrailingClass} min-w-[11rem]`}>
-            <button
-              type="button"
-              onClick={() => toggleSort("performance")}
-              className={`${headerBtnClass("performance", "right")} w-full`}
-              title="Thesis ROI since publish — not your wallet balance"
-            >
-              Performance
-              <SortIndicator
-                active={sortField === "performance"}
-                direction={sortDirection}
-              />
-            </button>
-            <p
-              className={`${headerTextClass} text-primary/50 py-0 text-center uppercase`}
-            >
-              Access
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={() => toggleSort("performance")}
+            className={`${headerBtnClass("performance", "right")} lg:w-full`}
+            title="Thesis ROI since publish — not your wallet balance"
+          >
+            Performance
+            <SortIndicator
+              active={sortField === "performance"}
+              direction={sortDirection}
+            />
+          </button>
         </div>
       </div>
 
@@ -334,8 +276,6 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
               key={fund.slug}
               fund={fund}
               performance={performanceBySlug[fund.slug] ?? null}
-              accessBySlug={accessBySlug}
-              wallet={isConnected ? address : undefined}
             />
           ))}
         </div>
