@@ -3,17 +3,19 @@ import {
   fundListTrailingClass,
 } from "@/components/funds/fund-list-layout";
 import FundPerformanceCell from "@/components/funds/FundPerformanceCell";
-import Eye from "@/components/fundations/icons/Eye";
-import LockOpen from "@/components/fundations/icons/LockOpen";
+import ArrowSquareRight from "@/components/fundations/icons/ArrowSquareRight";
+import CurrencyDollarSimple from "@/components/fundations/icons/CurrencyDollarSimple";
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { creatorPath } from "@/lib/funds/creator";
-import { isPaidFund } from "@/lib/funds/access";
+import { fundNeedsPurchase, isPaidFund } from "@/lib/funds/access";
 import type { FundPerformance } from "@/lib/funds/performance";
 import type { Fund } from "@/lib/funds/types";
 
 type Props = {
   fund: Fund;
   performance: FundPerformance | null;
+  accessBySlug?: Record<string, boolean> | null;
+  wallet?: string;
 };
 
 function fundPriceLabel(fund: Fund): string {
@@ -21,7 +23,14 @@ function fundPriceLabel(fund: Fund): string {
   return "FREE";
 }
 
-export default function FundRow({ fund, performance }: Props) {
+export default function FundRow({
+  fund,
+  performance,
+  accessBySlug,
+  wallet,
+}: Props) {
+  const needsPurchase = fundNeedsPurchase(fund, wallet, accessBySlug);
+
   return (
     <article
       className={`bg-primary/5 hover:bg-primary/8 grid grid-cols-1 gap-3 rounded-lg px-4 py-3 transition-colors ${fundListGridClass}`}
@@ -93,13 +102,13 @@ export default function FundRow({ fund, performance }: Props) {
           </p>
           <a
             href={`/funds/${fund.slug}`}
-            aria-label={isPaidFund(fund) ? "Unlock bundle" : "View bundle"}
+            aria-label={needsPurchase ? "Purchase bundle" : "Open bundle"}
             className="text-primary hover:text-primary/70 inline-flex shrink-0 items-center justify-center transition-colors"
           >
-            {isPaidFund(fund) ? (
-              <LockOpen size="sm" aria-hidden />
+            {needsPurchase ? (
+              <CurrencyDollarSimple size="sm" aria-hidden />
             ) : (
-              <Eye size="sm" aria-hidden />
+              <ArrowSquareRight size="sm" aria-hidden />
             )}
           </a>
         </div>
