@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { connect, disconnect, getConnectors } from "@wagmi/core";
 import { polygon } from "wagmi/chains";
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
+import SignOut from "@/components/fundations/icons/SignOut";
 import { WAGMI_DISCONNECT_EVENT } from "@/lib/wagmi/events";
 import { wagmiConfig } from "@/lib/wagmi/config";
 import { creatorPath } from "@/lib/funds/creator";
@@ -93,8 +94,9 @@ function WalletNavMenu({
             type="button"
             role="menuitem"
             onClick={disconnectWallet}
-            className="text-primary hover:bg-primary/5 w-full rounded-md px-3 py-2 text-left text-sm transition-colors"
+            className="text-primary hover:bg-primary/5 flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors"
           >
+            <SignOut size="sm" aria-hidden />
             Disconnect
           </button>
         </div>
@@ -170,8 +172,9 @@ export default function ConnectWallet({ variant = "panel" }: Props) {
         <button
           type="button"
           onClick={disconnectWallet}
-          className="text-primary hover:text-primary/80 text-sm"
+          className="text-primary hover:text-primary/80 inline-flex items-center gap-2 text-sm"
         >
+          <SignOut size="sm" aria-hidden />
           Disconnect
         </button>
       </div>
