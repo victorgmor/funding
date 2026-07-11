@@ -27,7 +27,7 @@ export const POST: APIRoute = async ({ params, request }) => {
       const amount = Number(body.amount);
       if (!amount || amount < 5) {
         return new Response(
-          JSON.stringify({ error: "Minimum $5 USDC per basket" }),
+          JSON.stringify({ error: "Minimum $5 pUSD per basket" }),
           { status: 400 },
         );
       }

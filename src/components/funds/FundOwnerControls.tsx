@@ -358,7 +358,7 @@ export function FundOwnerControlsInner({ fund }: Props) {
                   className="text-primary mb-1 block text-sm"
                   htmlFor="edit-unlock-price"
                 >
-                  Unlock price (USDC)
+                  Unlock price (pUSD)
                 </label>
                 <input
                   id="edit-unlock-price"

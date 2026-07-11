@@ -70,7 +70,7 @@ const STEPS: Step[] = [
   },
   {
     id: "usdc",
-    title: "USDC on Polygon",
+    title: "pUSD on Polygon",
     show: (ctx) => ctx.isConnected && ctx.onPolygon && ctx.canEnter,
     body: null,
   },
@@ -81,7 +81,7 @@ const STEPS: Step[] = [
     body: (
       <>
         <p>
-          Enter how much USDC to invest (minimum ~$5). Your total is split
+          Enter how much pUSD to invest (minimum ~$5). Your total is split
           across markets by each leg&apos;s weight.
         </p>
         <p className="mt-2">
@@ -134,8 +134,8 @@ function UsdcStepBody({
   return (
     <>
       <p>
-        You need USDC on Polygon to enter a bundle. Carriera checks both native
-        and bridged USDC in your wallet.
+        You need pUSD on Polygon to enter a bundle. Carriera checks both native
+        and bridged pUSD in your wallet.
       </p>
       <p className="border-primary/10 bg-primary/5 mt-3 rounded border px-3 py-2 font-mono text-sm tabular-nums">
         {loading ? (
@@ -153,7 +153,7 @@ function UsdcStepBody({
       </p>
       {low && (
         <p className="text-accent mt-2 text-sm">
-          Add at least $5 USDC on Polygon before entering. Bridge or swap on{" "}
+          Add at least $5 pUSD on Polygon before entering. Bridge or swap on{" "}
           <a
             href="https://wallet.polygon.technology/polygon-bridge"
             target="_blank"

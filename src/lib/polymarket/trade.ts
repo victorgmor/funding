@@ -162,7 +162,7 @@ function formatTradeError(
     lower.includes("insufficient")
   ) {
     const short = `${trading.depositAddress.slice(0, 6)}…${trading.depositAddress.slice(-4)}`;
-    return `Fund your Polymarket deposit wallet (${short}) with USDC on Polygon — deposit at polymarket.com`;
+    return `Fund your Polymarket deposit wallet (${short}) with pUSD on Polygon — deposit at polymarket.com`;
   }
 
   if (lower.includes("signer") && lower.includes("api key")) {

@@ -282,7 +282,7 @@ export function TradePanelInner({ fund }: Props) {
                 </label>
                 {isConnected && onPolygon && !usdcLoading && (
                   <span className="text-primary/50 text-[0.65rem] tabular-nums">
-                    ${balanceUsdc.toFixed(2)} USDC
+                    ${balanceUsdc.toFixed(2)} pUSD
                   </span>
                 )}
               </div>
@@ -296,7 +296,7 @@ export function TradePanelInner({ fund }: Props) {
                   onChange={(e) => setAmount(e.target.value)}
                   className="text-primary w-full border-0 bg-transparent py-1.5 text-sm font-medium tabular-nums [appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
-                <span className="text-primary/40 pr-2 text-xs">USDC</span>
+                <span className="text-primary/40 pr-2 text-xs">pUSD</span>
               </div>
             </div>
           )}

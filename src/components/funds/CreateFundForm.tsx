@@ -240,7 +240,7 @@ function CreateFundFormInner() {
 
       <div>
         <label className="text-primary mb-1 block text-sm" htmlFor="unlock-price">
-          Unlock price (USDC)
+          Unlock price (pUSD)
         </label>
         <input
           id="unlock-price"
