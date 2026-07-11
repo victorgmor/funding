@@ -7,18 +7,10 @@ import Hero from "@/components/landing/Hero.astro";
 import TopCreatorsCarousel from "@/components/landing/TopCreatorsCarousel";
 import FundListPanel from "@/components/funds/FundListPanel";
 import { getTopCreators } from "@/lib/funds/creators";
-import { computeFundPerformance } from "@/lib/funds/performance";
 import { getAllFunds } from "@/lib/funds/store";
 
 const funds = await getAllFunds();
-const performanceEntries = await Promise.all(
-  funds.map(async (fund) => [
-    fund.slug,
-    await computeFundPerformance(fund),
-  ] as const),
-);
-const performanceBySlug = Object.fromEntries(performanceEntries);
-const topCreators = getTopCreators(funds, performanceBySlug);
+const topCreators = getTopCreators(funds);
 ---
 
 <BaseLayout>
@@ -33,11 +25,7 @@ const topCreators = getTopCreators(funds, performanceBySlug);
         )
       }
       <div class="mt-8">
-        <FundListPanel
-          client:load
-          funds={funds}
-          performanceBySlug={performanceBySlug}
-        />
+        <FundListPanel client:load funds={funds} />
       </div>
     </Wrapper>
   </section>

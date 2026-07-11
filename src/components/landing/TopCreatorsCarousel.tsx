@@ -1,6 +1,5 @@
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { creatorPath } from "@/lib/funds/creator";
-import { formatPercent } from "@/lib/funds/format";
 import type { TopCreator } from "@/lib/funds/creators";
 
 type Props = {
@@ -15,8 +14,6 @@ function loopCreators(creators: TopCreator[], min = 8): TopCreator[] {
 }
 
 function CreatorItem({ creator }: { creator: TopCreator }) {
-  const roiPositive = (creator.bestRoi ?? 0) >= 0;
-
   return (
     <a
       href={creatorPath(creator.id)}
@@ -29,17 +26,8 @@ function CreatorItem({ creator }: { creator: TopCreator }) {
         </span>
       )}
       <span className="text-primary/40 text-xs">
-        {creator.bundleCount} bundle{creator.bundleCount === 1 ? "" : "s"}
+        {creator.bundleCount} call{creator.bundleCount === 1 ? "" : "s"}
       </span>
-      {creator.bestRoi != null && (
-        <span
-          className={`font-mono text-xs tabular-nums ${
-            roiPositive ? "text-emerald-400" : "text-red-400"
-          }`}
-        >
-          {formatPercent(creator.bestRoi)}
-        </span>
-      )}
     </a>
   );
 }
@@ -50,9 +38,9 @@ export default function TopCreatorsCarousel({ creators }: Props) {
   const track = [...loopCreators(creators), ...loopCreators(creators)];
 
   return (
-    <section aria-label="Top creators" className="group">
+    <section aria-label="Creator spotlights" className="group">
       <p className="text-primary/50 mb-3 text-[0.65rem] font-medium tracking-wide uppercase">
-        Top creators
+        Creator spotlights
       </p>
       <div className="relative overflow-hidden">
         <div className="from-secondary pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r to-transparent" />

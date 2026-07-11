@@ -1,24 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
-import FundRow from "@/components/funds/FundRow";
-import {
-  fundListGridClass,
-} from "@/components/funds/fund-list-layout";
+import FundFeedCard from "@/components/funds/FundFeedCard";
 import GearIcon from "@/components/fundations/icons/GearIcon";
 import SearchIcon from "@/components/fundations/icons/SearchIcon";
 import { fundUnlockPrice } from "@/lib/funds/access";
-import type { FundPerformance } from "@/lib/funds/performance";
 import type { Fund } from "@/lib/funds/types";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 type Props = {
   funds: Fund[];
-  performanceBySlug: Record<string, FundPerformance | null>;
 };
 
-type SortField = "creator" | "price" | "markets" | "performance";
+type SortField = "published" | "creator" | "price" | "markets";
 type SortDirection = "asc" | "desc";
 
 const PAGE_SIZE = 7;
+
+const SORT_OPTIONS: { field: SortField; label: string }[] = [
+  { field: "published", label: "Latest" },
+  { field: "creator", label: "Creator" },
+  { field: "price", label: "Price" },
+  { field: "markets", label: "Markets" },
+];
 
 function filterFunds(funds: Fund[], query: string): Fund[] {
   const q = query.trim().toLowerCase();
@@ -37,25 +39,22 @@ function sortFunds(
   funds: Fund[],
   field: SortField,
   direction: SortDirection,
-  performanceBySlug: Record<string, FundPerformance | null>,
 ): Fund[] {
-  const roi = (slug: string) => performanceBySlug[slug]?.roi ?? null;
   const price = (fund: Fund) => fundUnlockPrice(fund) ?? 0;
+  const publishedAt = (fund: Fund) =>
+    fund.createdAt ? new Date(fund.createdAt).getTime() : 0;
   const factor = direction === "asc" ? 1 : -1;
 
   return [...funds].sort((a, b) => {
     switch (field) {
+      case "published":
+        return factor * (publishedAt(a) - publishedAt(b));
       case "creator":
         return factor * a.manager.name.localeCompare(b.manager.name);
       case "price":
         return factor * (price(a) - price(b));
       case "markets":
         return factor * (a.markets.length - b.markets.length);
-      case "performance":
-        return (
-          factor *
-          ((roi(a.slug) ?? -Infinity) - (roi(b.slug) ?? -Infinity))
-        );
       default:
         return 0;
     }
@@ -114,7 +113,7 @@ const defaultDirection = (field: SortField): SortDirection =>
 const headerTextClass =
   "text-[0.65rem] font-medium leading-none tracking-wide";
 
-const searchClass = `${headerTextClass} text-primary placeholder:text-primary/40 min-w-0 flex-1 border-0 bg-transparent px-0 py-0 uppercase focus:outline-none focus:ring-0`;
+const searchClass = `${headerTextClass} text-primary placeholder:text-primary/40 min-w-0 flex-1 border-0 bg-transparent px-0 py-0 focus:outline-none focus:ring-0`;
 
 function SortIndicator({
   active,
@@ -124,16 +123,16 @@ function SortIndicator({
   direction: SortDirection;
 }) {
   if (!active) return null;
-  return <span className="ml-1">{direction === "asc" ? "↑" : "↓"}</span>;
+  return <span className="ml-0.5">{direction === "asc" ? "↑" : "↓"}</span>;
 }
 
-function FundListPanelInner({ funds, performanceBySlug }: Props) {
+function FundListPanelInner({ funds }: Props) {
   const { isConnected } = useWalletSession();
   const [query, setQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [onlyParticipating, setOnlyParticipating] = useState(false);
-  const [sortField, setSortField] = useState<SortField>("performance");
+  const [sortField, setSortField] = useState<SortField>("published");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [page, setPage] = useState(1);
 
@@ -159,7 +158,7 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
       if (!participatingSlugs) return [];
       next = next.filter((fund) => participatingSlugs.has(fund.slug));
     }
-    return sortFunds(next, sortField, sortDirection, performanceBySlug);
+    return sortFunds(next, sortField, sortDirection);
   }, [
     funds,
     query,
@@ -167,7 +166,6 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
     participatingSlugs,
     sortField,
     sortDirection,
-    performanceBySlug,
   ]);
 
   const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
@@ -177,19 +175,10 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
     currentPage * PAGE_SIZE,
   );
 
-  const headerBtnClass = (
-    field: SortField,
-    align: "left" | "center" | "right" = "left",
-  ) =>
-    `${headerTextClass} ${
-      align === "right"
-        ? "text-right"
-        : align === "center"
-          ? "text-center"
-          : "text-left"
-    } py-0 uppercase transition-colors ${
+  const sortBtnClass = (field: SortField) =>
+    `${headerTextClass} rounded-full px-3 py-1.5 uppercase transition-colors ${
       sortField === field
-        ? "text-primary"
+        ? "bg-primary/10 text-primary"
         : "text-primary/50 hover:text-primary/70"
     }`;
 
@@ -199,84 +188,57 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
       : participatingLoading
         ? "Checking your positions…"
         : "You're not in any bundles yet"
-    : "No bundles match your search";
+    : "No calls match your search";
+
+  const feedLabel =
+    sortField === "published"
+      ? "Latest calls"
+      : `${SORT_OPTIONS.find((o) => o.field === sortField)?.label ?? "Calls"}`;
 
   return (
-    <div className="space-y-1">
-      <div className={`px-4 pb-2 ${fundListGridClass} lg:items-baseline`}>
-        <div className="flex min-w-0 items-baseline">
-          <label className="flex min-w-0 flex-1 items-center gap-2">
-            <SearchIcon className="text-primary/40 size-3.5 shrink-0" />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              placeholder={searchFocused ? "" : "Search bundles"}
-              aria-label="Search bundles"
-              className={searchClass}
-              autoComplete="off"
-            />
-          </label>
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 lg:contents">
-          <button
-            type="button"
-            onClick={() => toggleSort("creator")}
-            className={`${headerBtnClass("creator")} lg:w-full`}
-          >
-            Creator
-            <SortIndicator
-              active={sortField === "creator"}
-              direction={sortDirection}
-            />
-          </button>
-          <button
-            type="button"
-            onClick={() => toggleSort("price")}
-            className={`${headerBtnClass("price", "center")} lg:w-full`}
-          >
-            Price
-            <SortIndicator
-              active={sortField === "price"}
-              direction={sortDirection}
-            />
-          </button>
-          <button
-            type="button"
-            onClick={() => toggleSort("markets")}
-            className={`${headerBtnClass("markets")} lg:w-full`}
-          >
-            Markets
-            <SortIndicator
-              active={sortField === "markets"}
-              direction={sortDirection}
-            />
-          </button>
-          <button
-            type="button"
-            onClick={() => toggleSort("performance")}
-            className={`${headerBtnClass("performance", "right")} lg:w-full`}
-            title="Thesis ROI since publish — not your wallet balance"
-          >
-            Performance
-            <SortIndicator
-              active={sortField === "performance"}
-              direction={sortDirection}
-            />
-          </button>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4">
+        <label className="flex min-w-0 flex-1 items-center gap-2">
+          <SearchIcon className="text-primary/40 size-3.5 shrink-0" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+            placeholder={searchFocused ? "" : "Search calls…"}
+            aria-label="Search calls"
+            className={searchClass}
+            autoComplete="off"
+          />
+        </label>
+
+        <div className="flex flex-wrap items-center gap-1">
+          {SORT_OPTIONS.map(({ field, label }) => (
+            <button
+              key={field}
+              type="button"
+              onClick={() => toggleSort(field)}
+              className={sortBtnClass(field)}
+            >
+              {label}
+              <SortIndicator
+                active={sortField === field}
+                direction={sortDirection}
+              />
+            </button>
+          ))}
         </div>
       </div>
 
+      <p className="text-primary/40 px-4 text-[0.65rem] font-medium uppercase">
+        {feedLabel} · {visible.length} call{visible.length === 1 ? "" : "s"}
+      </p>
+
       {visible.length > 0 ? (
-        <div className="space-y-1">
+        <div className="space-y-2 px-4">
           {pagedFunds.map((fund) => (
-            <FundRow
-              key={fund.slug}
-              fund={fund}
-              performance={performanceBySlug[fund.slug] ?? null}
-            />
+            <FundFeedCard key={fund.slug} fund={fund} />
           ))}
         </div>
       ) : (
@@ -285,7 +247,7 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
         </p>
       )}
 
-      <div className="relative flex items-center justify-between gap-4 px-4 pt-4 pb-2">
+      <div className="relative flex items-center justify-between gap-4 px-4 pt-2 pb-2">
         {visible.length > PAGE_SIZE ? (
           <div className="flex items-center gap-3">
             <button
@@ -336,7 +298,7 @@ function FundListPanelInner({ funds, performanceBySlug }: Props) {
           <button
             type="button"
             onClick={() => setSettingsOpen((open) => !open)}
-            aria-label="Bundle list settings"
+            aria-label="Feed settings"
             aria-expanded={settingsOpen}
             className={`transition-colors ${
               settingsOpen

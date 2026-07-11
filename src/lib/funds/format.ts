@@ -22,6 +22,26 @@ export function formatSinceDate(iso: string): string {
   return `${day}/${month}`;
 }
 
+export function formatPublishedAgo(iso?: string): string | null {
+  if (!iso) return null;
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return null;
+
+  const diffMs = Date.now() - then;
+  const minutes = Math.floor(diffMs / 60_000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  if (days < 30) return `${Math.floor(days / 7)}w ago`;
+
+  return formatSinceDate(iso);
+}
+
 export function capLabel(deposited: number, cap: number | null): string {
   if (cap === null) return "Unlimited";
   const pct = Math.round((deposited / cap) * 100);

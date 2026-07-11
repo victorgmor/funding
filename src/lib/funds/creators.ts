@@ -1,4 +1,3 @@
-import type { FundPerformance } from "@/lib/funds/performance";
 import type { Fund } from "@/lib/funds/types";
 
 export type TopCreator = {
@@ -6,18 +5,12 @@ export type TopCreator = {
   name: string;
   verified: boolean;
   bundleCount: number;
-  bestRoi: number | null;
 };
 
-export function getTopCreators(
-  funds: Fund[],
-  performanceBySlug: Record<string, FundPerformance | null>,
-  limit = 12,
-): TopCreator[] {
+export function getTopCreators(funds: Fund[], limit = 12): TopCreator[] {
   const byId = new Map<string, TopCreator>();
 
   for (const fund of funds) {
-    const roi = performanceBySlug[fund.slug]?.roi ?? null;
     const existing = byId.get(fund.manager.id);
 
     if (!existing) {
@@ -26,23 +19,17 @@ export function getTopCreators(
         name: fund.manager.name,
         verified: fund.manager.verified,
         bundleCount: 1,
-        bestRoi: roi,
       });
       continue;
     }
 
     existing.bundleCount += 1;
-    if (roi != null && (existing.bestRoi == null || roi > existing.bestRoi)) {
-      existing.bestRoi = roi;
-    }
   }
 
   return [...byId.values()]
     .sort((a, b) => {
-      const roiA = a.bestRoi ?? -Infinity;
-      const roiB = b.bestRoi ?? -Infinity;
-      if (roiB !== roiA) return roiB - roiA;
-      return b.bundleCount - a.bundleCount;
+      if (b.bundleCount !== a.bundleCount) return b.bundleCount - a.bundleCount;
+      return a.name.localeCompare(b.name);
     })
     .slice(0, limit);
 }
