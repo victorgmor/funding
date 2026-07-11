@@ -1,5 +1,4 @@
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
-import CurrencyDollarSimple from "@/components/fundations/icons/CurrencyDollarSimple";
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { creatorPath, isCreatorWallet } from "@/lib/funds/creator";
 import { isPaidFund } from "@/lib/funds/access";
@@ -25,8 +24,8 @@ export default function FundFeedCard({ fund }: Props) {
   const showAvatar = isCreatorWallet(fund.manager.id);
 
   return (
-    <article className="border-primary/10 border-b py-7 last:border-b-0">
-      <div className="mb-3 flex items-center gap-3">
+    <article className="border-primary/10 border-b py-8 last:border-b-0">
+      <div className="mb-4 flex items-center gap-3">
         {showAvatar ? (
           <a href={creatorPath(fund.manager.id)} className="shrink-0">
             <CreatorAvatar
@@ -64,29 +63,22 @@ export default function FundFeedCard({ fund }: Props) {
       </div>
 
       <a href={`/funds/${fund.slug}`} className="group block">
-        <h2 className="text-primary group-hover:text-primary/85 flex items-center gap-2 text-xl font-semibold tracking-tight text-balance sm:text-2xl">
-          {paid && (
-            <CurrencyDollarSimple
-              size="sm"
-              className="text-accent shrink-0"
-              aria-hidden
-            />
-          )}
-          <span>{fund.name}</span>
+        <h2 className="text-primary group-hover:text-primary/85 text-xl font-semibold tracking-tight text-balance sm:text-2xl">
+          {fund.name}
         </h2>
 
         {snippet && (
-          <p className="text-primary/55 mt-2 line-clamp-2 text-sm leading-relaxed sm:text-base">
+          <p className="text-primary/65 mt-3 line-clamp-3 text-base leading-relaxed">
             {snippet}
           </p>
         )}
       </a>
 
-      <div className="mt-4 flex items-center gap-x-3 text-sm">
+      <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
         <span className="text-primary/45">{marketLabel}</span>
         {paid ? (
-          <span className="text-primary/45">
-            ${fund.unlockPriceUsdc!.toFixed(2)} to unlock
+          <span className="text-primary/55">
+            {marketCount} locked · ${fund.unlockPriceUsdc!.toFixed(2)} to unlock
           </span>
         ) : (
           <span className="text-primary/45">Free to read</span>

@@ -174,7 +174,7 @@ function FundListPanelInner({ funds }: Props) {
   );
 
   const sortTabClass = (field: SortField) =>
-    `border-b pb-2 text-sm transition-colors ${
+    `border-b-2 pb-2 text-sm transition-colors ${
       sortField === field
         ? "border-primary text-primary font-medium"
         : "border-transparent text-primary/45 hover:text-primary/70"
@@ -189,9 +189,9 @@ function FundListPanelInner({ funds }: Props) {
     : "No calls match your search";
 
   return (
-    <div className="w-full">
-      <div className="border-primary/10 focus-within:border-primary/25 border-b pb-5 transition-colors">
-        <label className="flex items-center gap-2">
+    <div className="mx-auto max-w-2xl">
+      <div className="pb-5">
+        <label className="border-primary/15 flex items-center gap-2 border-b pb-2">
           <SearchIcon className="text-primary/35 size-4 shrink-0" />
           <input
             type="search"
@@ -199,7 +199,7 @@ function FundListPanelInner({ funds }: Props) {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search calls"
             aria-label="Search calls"
-            className="text-primary placeholder:text-primary/35 w-full border-0 bg-transparent py-1 text-base shadow-none ring-0 focus:border-0 focus:ring-0 focus:outline-none"
+            className="text-primary placeholder:text-primary/35 w-full appearance-none border-0 bg-transparent py-1 text-base shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 [&::-webkit-search-cancel-button]:appearance-none"
             autoComplete="off"
           />
         </label>
