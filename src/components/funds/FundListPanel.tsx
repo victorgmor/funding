@@ -190,7 +190,7 @@ function FundListPanelInner({ funds }: Props) {
 
   return (
     <div className="w-full">
-      <div className="border-primary/10 border-b pb-5">
+      <div className="border-primary/10 focus-within:border-primary/25 border-b pb-5 transition-colors">
         <label className="flex items-center gap-2">
           <SearchIcon className="text-primary/35 size-4 shrink-0" />
           <input
@@ -199,7 +199,7 @@ function FundListPanelInner({ funds }: Props) {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search calls"
             aria-label="Search calls"
-            className="text-primary placeholder:text-primary/35 w-full border-0 bg-transparent py-1 text-base focus:outline-none"
+            className="text-primary placeholder:text-primary/35 w-full border-0 bg-transparent py-1 text-base shadow-none ring-0 focus:border-0 focus:ring-0 focus:outline-none"
             autoComplete="off"
           />
         </label>
