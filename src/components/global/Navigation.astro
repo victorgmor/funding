@@ -23,7 +23,12 @@ const navLinks = [
       >
         {
           navLinks.map((link) => (
-            <a href={link.href} class="hover:text-primary text-sm duration-300">
+            <a
+              href={link.href}
+              class="hover:text-primary text-sm duration-300"
+              target={link.href.startsWith("http") ? "_blank" : undefined}
+              rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
+            >
               {link.label}
             </a>
           ))

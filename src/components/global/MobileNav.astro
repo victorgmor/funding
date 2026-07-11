@@ -22,7 +22,12 @@ const { links = [] } = Astro.props;
     </div>
     <nav class="mt-12 flex flex-col gap-3 ">
       {links.map((link) => (
-        <a href={link.href} class="hover:text-primary/40 duration-300 text-primary text-sm">
+        <a
+          href={link.href}
+          class="hover:text-primary/40 duration-300 text-primary text-sm"
+          target={link.href.startsWith("http") ? "_blank" : undefined}
+          rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
+        >
           {link.label}
         </a>
       ))}

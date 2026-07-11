@@ -24,7 +24,6 @@ function MarketBasketInner({ fund }: Props) {
   const { address } = useWalletSession();
   const [markets, setMarkets] = useState<LiveMarket[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [live, setLive] = useState(false);
   const { investment } = useFundInvestment(fund.slug);
 
   const investedByToken = new Map(
@@ -43,7 +42,6 @@ function MarketBasketInner({ fund }: Props) {
         if (!res.ok) throw new Error(data.error ?? "Failed to load prices");
         if (cancelled) return;
         setMarkets(data.markets);
-        setLive(true);
         setError(null);
       } catch (e) {
         if (cancelled) return;
@@ -79,21 +77,6 @@ function MarketBasketInner({ fund }: Props) {
 
   return (
     <div className="bg-primary/5 border-primary/10 rounded-lg border p-5 lg:p-6">
-      <div className="mb-4 flex items-baseline justify-between gap-3">
-        <div>
-          <h2 className={headerClass}>Market basket</h2>
-          <p className="text-primary/40 mt-1 text-xs">
-            {fund.markets.length} markets · weights total 100%
-          </p>
-        </div>
-        {live && (
-          <span className="text-primary/40 inline-flex items-center gap-1.5 text-[0.65rem] font-medium uppercase">
-            <span className="size-1.5 rounded-full bg-emerald-400" aria-hidden />
-            Live
-          </span>
-        )}
-      </div>
-
       {error && <p className="text-red-400 mb-3 text-xs">{error}</p>}
 
       <div className={`${headerClass} mb-2 hidden gap-4 px-1 lg:grid lg:grid-cols-[1fr_auto_auto_auto]`}>
