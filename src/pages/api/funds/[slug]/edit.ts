@@ -33,7 +33,7 @@ export const GET: APIRoute = async ({ params }) => {
         thesis: fund.thesis,
         status: fund.status,
         managerId: fund.manager.id,
-        unlockPriceUsdc: data.unlockPriceUsdc ?? null,
+        unlockPriceUsdc: fund.unlockPriceUsdc ?? null,
         markets,
       }),
       { headers: { "Content-Type": "application/json" } },
