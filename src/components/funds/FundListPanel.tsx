@@ -189,9 +189,9 @@ function FundListPanelInner({ funds }: Props) {
     : "No calls match your search";
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="max-w-2xl">
       <div className="pb-5">
-        <label className="border-primary/15 flex items-center gap-2 border-b pb-2">
+        <label className="border-primary/30 flex items-center gap-2 border-b pb-2 transition-colors focus-within:border-primary">
           <SearchIcon className="text-primary/35 size-4 shrink-0" />
           <input
             type="search"
