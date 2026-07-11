@@ -174,7 +174,7 @@ function FundListPanelInner({ funds }: Props) {
   );
 
   const sortTabClass = (field: SortField) =>
-    `border-b-2 pb-2 text-sm transition-colors ${
+    `border-b pb-2 text-sm transition-colors ${
       sortField === field
         ? "border-primary text-primary font-medium"
         : "border-transparent text-primary/45 hover:text-primary/70"

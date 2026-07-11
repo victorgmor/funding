@@ -6,13 +6,6 @@ type Props = {
   creators: TopCreator[];
 };
 
-function loopCreators(creators: TopCreator[], min = 8): TopCreator[] {
-  if (creators.length === 0) return [];
-  const out: TopCreator[] = [];
-  while (out.length < min) out.push(...creators);
-  return out;
-}
-
 function CreatorItem({ creator }: { creator: TopCreator }) {
   return (
     <a
@@ -35,21 +28,15 @@ function CreatorItem({ creator }: { creator: TopCreator }) {
 export default function TopCreatorsCarousel({ creators }: Props) {
   if (creators.length === 0) return null;
 
-  const track = [...loopCreators(creators), ...loopCreators(creators)];
-
   return (
-    <section aria-label="Creator spotlights" className="group">
+    <section aria-label="Creator spotlights">
       <p className="text-primary/50 mb-3 text-[0.65rem] font-medium tracking-wide uppercase">
         Creator spotlights
       </p>
-      <div className="relative overflow-hidden">
-        <div className="from-secondary pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r to-transparent" />
-        <div className="from-secondary pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l to-transparent" />
-        <div className="animate-marquee flex w-max transform-gpu items-center gap-10 will-change-transform group-hover:[animation-play-state:paused]">
-          {track.map((creator, index) => (
-            <CreatorItem key={`${creator.id}-${index}`} creator={creator} />
-          ))}
-        </div>
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
+        {creators.map((creator) => (
+          <CreatorItem key={creator.id} creator={creator} />
+        ))}
       </div>
     </section>
   );

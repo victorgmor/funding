@@ -16,18 +16,16 @@ const topCreators = getTopCreators(funds);
 <BaseLayout>
   <section>
     <Wrapper variant="standard" class="py-24">
-      <div class="max-w-2xl w-full">
-        <Hero />
-        {
-          topCreators.length > 0 && (
-            <div class="mt-10">
-              <TopCreatorsCarousel client:visible creators={topCreators} />
-            </div>
-          )
-        }
-        <div class="mt-8">
-          <FundListPanel client:load funds={funds} />
-        </div>
+      <Hero />
+      {
+        topCreators.length > 0 && (
+          <div class="mt-10">
+            <TopCreatorsCarousel client:visible creators={topCreators} />
+          </div>
+        )
+      }
+      <div class="mt-8">
+        <FundListPanel client:load funds={funds} />
       </div>
     </Wrapper>
   </section>
