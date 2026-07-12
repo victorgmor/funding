@@ -1,4 +1,6 @@
 import { GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { demoMemory, ensureDemoMemory } from "@/lib/demo/memory";
+import { useDemoStore } from "@/lib/demo/mode";
 import type { Fund, Mandate, MandatePosition } from "@/lib/funds/types";
 import { listMandatesByFund, setMandateStatus } from "@/lib/funds/mandates";
 import { listPositionsByFund } from "@/lib/funds/mandate-positions";
@@ -122,6 +124,11 @@ export async function settleFund(fund: Fund): Promise<FundSettlement> {
 export async function getFundSettlement(
   fundSlug: string,
 ): Promise<FundSettlement | undefined> {
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    return demoMemory.settlements.get(fundSlug);
+  }
+
   const row = await mandateDocClient().send(
     new GetCommand({
       TableName: mandatesTableName(),
@@ -136,6 +143,12 @@ export async function getFundSettlement(
 }
 
 async function saveFundSettlement(settlement: FundSettlement): Promise<void> {
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    demoMemory.settlements.set(settlement.fundSlug, settlement);
+    return;
+  }
+
   await mandateDocClient().send(
     new PutCommand({
       TableName: mandatesTableName(),

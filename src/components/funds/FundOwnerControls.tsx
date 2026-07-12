@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import ConnectWallet from "@/components/app/ConnectWallet";
-import UnlockPriceField from "@/components/funds/UnlockPriceField";
 import { isCreatorWallet } from "@/lib/funds/creator";
 import { isFundOwner, isUserFund } from "@/lib/funds/editable";
 import type { Fund } from "@/lib/funds/types";
@@ -31,9 +30,6 @@ export function FundOwnerControlsInner({ fund }: Props) {
   const [managing, setManaging] = useState(false);
   const [name, setName] = useState(fund.name);
   const [thesis, setThesis] = useState(fund.thesis);
-  const [unlockPrice, setUnlockPrice] = useState(
-    fund.unlockPriceUsdc != null ? String(fund.unlockPriceUsdc) : "",
-  );
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,9 +51,6 @@ export function FundOwnerControlsInner({ fund }: Props) {
         if (!res.ok) throw new Error(data.error ?? "Could not load fund");
         setName(data.name);
         setThesis(data.thesis);
-        setUnlockPrice(
-          data.unlockPriceUsdc != null ? String(data.unlockPriceUsdc) : "",
-        );
         setLoaded(true);
       } catch (e) {
         if (cancelled) return;
@@ -102,7 +95,6 @@ export function FundOwnerControlsInner({ fund }: Props) {
           managerAddress: address,
           message,
           signature,
-          unlockPriceUsdc: unlockPrice.trim() ? Number(unlockPrice) : null,
         }),
       });
 
@@ -163,7 +155,7 @@ export function FundOwnerControlsInner({ fund }: Props) {
 
   if (!isConnected || !address) {
     return (
-      <div className="border-primary/10 bg-primary/5 mb-4 rounded-lg border p-4">
+      <div className="border-primary/10 border-b pb-4">
         <p className="text-primary text-sm font-medium">Creator controls</p>
         <p className="text-primary/60 mt-1 text-xs">
           {restoring
@@ -180,7 +172,7 @@ export function FundOwnerControlsInner({ fund }: Props) {
   }
 
   return (
-    <div className="border-primary/10 bg-primary/5 mb-4 rounded-lg border p-4">
+    <div className="border-primary/10 border-b pb-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-primary text-sm font-medium">Creator controls</p>
@@ -248,12 +240,6 @@ export function FundOwnerControlsInner({ fund }: Props) {
                   className={inputClass}
                 />
               </div>
-
-              <UnlockPriceField
-                id="edit-unlock-price"
-                value={unlockPrice}
-                onChange={setUnlockPrice}
-              />
 
               <div className="flex flex-wrap gap-2">
                 <button

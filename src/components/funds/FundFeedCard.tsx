@@ -1,15 +1,16 @@
-import ArrowRight from "@/components/fundations/icons/ArrowRight";
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
+import PnlAmount from "@/components/funds/PnlAmount";
 import PoolCapBar from "@/components/funds/PoolCapBar";
+import ProfitShareLabel from "@/components/funds/ProfitShareLabel";
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { creatorPath, isCreatorWallet } from "@/lib/funds/creator";
-import { isPaidFund } from "@/lib/funds/access";
 import { formatPublishedAgo } from "@/lib/funds/format";
 import type { Fund } from "@/lib/funds/types";
 
 type Props = {
   fund: Fund;
   deposited?: number;
+  profitUsdc?: number | null;
   lead?: boolean;
   searchFocused?: boolean;
 };
@@ -23,17 +24,19 @@ function feedSnippet(fund: Fund): string {
 export default function FundFeedCard({
   fund,
   deposited = 0,
+  profitUsdc = null,
   lead = false,
   searchFocused = false,
 }: Props) {
-  const paid = isPaidFund(fund);
   const snippet = feedSnippet(fund);
   const published = formatPublishedAgo(fund.createdAt);
   const showAvatar = isCreatorWallet(fund.manager.id);
+  const profitShare = fund.managerProfitSharePct ?? 0;
+  const pnlAmount = profitUsdc ?? 0;
 
   return (
     <article
-      className={`border-primary/10 border-b py-8 last:border-b-0 ${
+      className={`border-primary/10 border-b py-4 last:border-b-0 ${
         lead
           ? `border-t transition-colors ${
               searchFocused ? "border-t-primary" : "border-t-primary/10"
@@ -41,32 +44,38 @@ export default function FundFeedCard({
           : ""
       }`}
     >
-      <div className="mb-4 flex items-center gap-3">
-        {showAvatar ? (
-          <a href={creatorPath(fund.manager.id)} className="shrink-0">
-            <CreatorAvatar
-              address={fund.manager.id}
-              name={fund.manager.name}
-              size="sm"
-            />
-          </a>
-        ) : (
-          <div
-            className="bg-primary/10 text-primary border-primary/10 flex size-10 shrink-0 items-center justify-center rounded-full border text-base font-semibold"
-            aria-hidden
-          >
-            {fund.manager.name.trim().charAt(0).toUpperCase() || "?"}
-          </div>
-        )}
+      <div className="flex items-center justify-between gap-4">
+        <a href={`/funds/${fund.slug}`} className="group flex min-w-0 flex-1 items-center gap-2.5">
+          <h2 className="text-primary group-hover:text-primary/85 truncate text-lg font-semibold tracking-tight sm:text-xl">
+            {fund.name}
+          </h2>
+        </a>
 
-        <div className="text-primary/50 min-w-0 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm">
+        <div className="text-primary/45 flex shrink-0 items-center gap-1.5 text-sm">
+          {showAvatar ? (
+            <a href={creatorPath(fund.manager.id)} className="shrink-0">
+              <CreatorAvatar
+                address={fund.manager.id}
+                name={fund.manager.name}
+                size="2xs"
+              />
+            </a>
+          ) : (
+            <div
+              className="bg-primary/10 text-primary/70 border-primary/10 flex size-5 shrink-0 items-center justify-center rounded-full border text-[0.65rem] font-semibold"
+              aria-hidden
+            >
+              {fund.manager.name.trim().charAt(0).toUpperCase() || "?"}
+            </div>
+          )}
+
           <a
             href={creatorPath(fund.manager.id)}
-            className="text-primary hover:text-primary/80 inline-flex items-center gap-1 font-medium transition-colors"
+            className="text-primary/70 hover:text-primary inline-flex items-center gap-1 transition-colors"
           >
             {fund.manager.name}
             {fund.manager.verified && (
-              <SealCheck size="sm" className="text-[#32BCFF]" />
+              <SealCheck size="xs" className="text-[#32BCFF]" />
             )}
           </a>
           {published && (
@@ -78,35 +87,22 @@ export default function FundFeedCard({
         </div>
       </div>
 
-      <a href={`/funds/${fund.slug}`} className="group block">
-        <h2 className="text-primary group-hover:text-primary/85 text-xl font-semibold tracking-tight text-balance sm:text-2xl">
-          {fund.name}
-        </h2>
-
-        {snippet && (
-          <p className="text-primary/65 mt-3 line-clamp-3 text-base leading-relaxed">
+      {snippet && (
+        <a href={`/funds/${fund.slug}`} className="mt-1.5 block">
+          <p className="text-primary/60 hover:text-primary/75 line-clamp-1 text-sm leading-snug transition-colors">
             {snippet}
           </p>
-        )}
-      </a>
+        </a>
+      )}
 
-      <div className="mt-5 space-y-3">
-        <PoolCapBar deposited={deposited} capUsdc={fund.capUsdc} />
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-          {paid && (
-            <span className="text-primary/55">
-              ${fund.unlockPriceUsdc!.toFixed(2)} to unlock
-            </span>
-          )}
-          <a
-            href={`/funds/${fund.slug}`}
-            className="text-primary/50 hover:text-primary ml-auto inline-flex items-center gap-1 transition-colors"
-          >
-            View fund
-            <ArrowRight size="xs" />
-          </a>
-        </div>
-      </div>
+      <a href={`/funds/${fund.slug}`} className="mt-3.5 block">
+        <PoolCapBar
+          deposited={deposited}
+          capUsdc={fund.capUsdc}
+          primaryTrailing={<PnlAmount amount={pnlAmount} />}
+          secondaryTrailing={<ProfitShareLabel pct={profitShare} />}
+        />
+      </a>
     </article>
   );
 }

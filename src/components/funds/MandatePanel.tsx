@@ -12,6 +12,8 @@ import type {
   TradingSession,
 } from "@/lib/funds/types";
 import type { MandateSettlement } from "@/lib/funds/settlement";
+import { notifyPoolUpdated } from "@/lib/funds/pool-events";
+import { formatUsdExact } from "@/lib/funds/format";
 import {
   createTradingClient,
   executeMandateTrade,
@@ -137,6 +139,7 @@ export default function MandatePanel({ fund }: Props) {
       if (!res.ok) throw new Error(data.error ?? "Commit failed");
 
       await refresh();
+      notifyPoolUpdated(fund.slug);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Commit failed");
     } finally {
@@ -253,7 +256,7 @@ export default function MandatePanel({ fund }: Props) {
   const depositBalance = summary?.depositBalanceUsdc;
 
   return (
-    <div className="bg-primary/5 border-primary/10 rounded-lg border p-5 lg:sticky lg:top-24">
+    <div className="border-primary/10 border-b pb-4 lg:sticky lg:top-24 lg:self-start">
       {address && onPolygon && sessionActive && (
         <FundTradeAutopilot
           fundSlug={fund.slug}
@@ -263,10 +266,11 @@ export default function MandatePanel({ fund }: Props) {
         />
       )}
 
-      <h2 className={`${headerClass} mb-4`}>
+      <h2 className="text-primary/45 text-xs uppercase tracking-wide">
         {hasMandate ? "Your mandate" : "Join fund"}
       </h2>
 
+      <div className="mt-3">
       {restoring ? (
         <p className="text-primary/50 text-sm">Loading wallet…</p>
       ) : !isConnected ? (
@@ -286,27 +290,27 @@ export default function MandatePanel({ fund }: Props) {
         <>
           {hasMandate && summary?.mandate && (
             <>
-              <p className="text-primary font-mono text-3xl font-semibold tabular-nums">
-                ${summary.mandate.notionalUsdc.toFixed(2)}
+              <p className="text-primary mt-2 font-mono text-lg font-semibold tabular-nums">
+                {formatUsdExact(summary.mandate.notionalUsdc)}
               </p>
-              <p className="text-primary/50 mt-1 text-xs">
+              <p className="text-primary/45 mt-1 font-mono text-xs tabular-nums">
                 Deployable{" "}
                 <span className="text-primary/70 font-mono tabular-nums">
-                  ${summary.mandate.cashUsdc.toFixed(2)}
+                  {formatUsdExact(summary.mandate.cashUsdc)}
                 </span>
                 {" · "}
                 Pool{" "}
                 <span className="text-primary/70 font-mono tabular-nums">
-                  ${summary.totalNotional.toFixed(2)}
+                  {formatUsdExact(summary.totalNotional)}
                 </span>
               </p>
             </>
           )}
 
           {hasMandate && (
-            <div className="border-primary/10 mt-4 rounded-lg border px-3 py-3 text-xs">
+            <div className="border-primary/10 mt-4 border-t pt-4 text-xs">
               <div className="flex items-center justify-between gap-2">
-                <p className={headerClass}>Auto-trading</p>
+                <p className="text-primary/45 uppercase tracking-wide">Auto-trading</p>
                 {sessionActive ? (
                   <span className="text-emerald-400">Active</span>
                 ) : (
@@ -346,7 +350,7 @@ export default function MandatePanel({ fund }: Props) {
                 </label>
                 {depositBalance != null && (
                   <span className="text-primary/50 text-[0.65rem] tabular-nums">
-                    ${depositBalance.toFixed(2)} deposit wallet
+                    {formatUsdExact(depositBalance)} deposit wallet
                   </span>
                 )}
               </div>
@@ -387,39 +391,44 @@ export default function MandatePanel({ fund }: Props) {
           )}
 
           {closed && summary?.mandateSettlement && (
-            <div className="border-primary/10 mt-5 rounded-lg border px-3 py-3 text-xs">
-              <p className={headerClass}>Your close settlement</p>
+            <div className="border-primary/10 mt-4 border-t pt-4 text-xs">
+              <p className="text-primary/45 uppercase tracking-wide">Your close settlement</p>
               <p className="text-primary mt-2 font-mono tabular-nums">
-                Final value ${summary.mandateSettlement.finalValueUsdc.toFixed(2)}
+                Final value {formatUsdExact(summary.mandateSettlement.finalValueUsdc)}
               </p>
               <p className="text-primary/60 mt-1">
                 Profit{" "}
                 <span className="text-primary font-mono tabular-nums">
-                  ${summary.mandateSettlement.profitUsdc.toFixed(2)}
+                  {formatUsdExact(summary.mandateSettlement.profitUsdc)}
                 </span>
                 {" · "}
                 Manager share{" "}
                 <span className="text-primary font-mono tabular-nums">
-                  ${summary.mandateSettlement.managerShareUsdc.toFixed(2)}
+                  {formatUsdExact(summary.mandateSettlement.managerShareUsdc)}
                 </span>
               </p>
               <p className="text-emerald-400 mt-1 font-mono tabular-nums">
-                Your profit ${summary.mandateSettlement.investorProfitUsdc.toFixed(2)}
+                Your profit {formatUsdExact(summary.mandateSettlement.investorProfitUsdc)}
               </p>
             </div>
           )}
 
           {(summary?.positions?.length ?? 0) > 0 && (
-            <div className="border-primary/10 mt-5 rounded-lg border">
-              <p className={`${headerClass} border-primary/10 border-b px-3 py-2`}>
+            <div className="border-primary/10 mt-4 border-t pt-4">
+              <p className="text-primary/45 text-xs uppercase tracking-wide">
                 Positions
               </p>
-              <ul className="divide-primary/10 divide-y text-xs">
-                {summary!.positions.map((pos) => (
-                  <li key={pos.id} className="space-y-1 px-3 py-3">
+              <ul className="mt-2">
+                {summary!.positions.map((pos, index) => (
+                  <li
+                    key={pos.id}
+                    className={`border-primary/10 space-y-1 py-3 text-xs ${
+                      index > 0 ? "border-t" : ""
+                    }`}
+                  >
                     <p className="text-primary/80 line-clamp-2">{pos.question}</p>
                     <p className="text-primary font-mono tabular-nums">
-                      {pos.shares.toFixed(2)} shares · ${pos.costUsdc.toFixed(2)}
+                      {pos.shares.toFixed(2)} shares · {formatUsdExact(pos.costUsdc)}
                       <span className="text-primary/50 ml-1 uppercase">
                         {pos.side}
                       </span>
@@ -431,8 +440,8 @@ export default function MandatePanel({ fund }: Props) {
           )}
 
           {pendingTrades.length > 0 && (
-            <div className="border-primary/10 mt-5 rounded-lg border">
-              <p className={`${headerClass} border-primary/10 border-b px-3 py-2`}>
+            <div className="border-primary/10 mt-4 border-t pt-4">
+              <p className="text-primary/45 text-xs uppercase tracking-wide">
                 Pending fan-out ({pendingTrades.length})
                 {sessionActive && (
                   <span className="text-primary/40 ml-2 normal-case">
@@ -440,13 +449,18 @@ export default function MandatePanel({ fund }: Props) {
                   </span>
                 )}
               </p>
-              <ul className="divide-primary/10 divide-y text-xs">
-                {pendingTrades.map((trade) => (
-                  <li key={trade.id} className="space-y-2 px-3 py-3">
+              <ul className="mt-2">
+                {pendingTrades.map((trade, index) => (
+                  <li
+                    key={trade.id}
+                    className={`border-primary/10 space-y-2 py-3 text-xs ${
+                      index > 0 ? "border-t" : ""
+                    }`}
+                  >
                     <p className="text-primary/80 line-clamp-2">{trade.question}</p>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-primary font-mono tabular-nums">
-                        ${trade.usdcAmount.toFixed(2)}{" "}
+                        {formatUsdExact(trade.usdcAmount)}{" "}
                         <span className="text-primary/50 uppercase">
                           {trade.side}
                         </span>
@@ -487,6 +501,7 @@ export default function MandatePanel({ fund }: Props) {
           )}
         </>
       )}
+      </div>
 
       {error && <p className="text-red-400 mt-3 text-xs">{error}</p>}
     </div>

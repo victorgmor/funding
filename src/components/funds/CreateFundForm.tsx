@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
 import ConnectWallet from "@/components/app/ConnectWallet";
-import UnlockPriceField from "@/components/funds/UnlockPriceField";
 import { defaultLifecycleDate } from "@/lib/funds/lifecycle";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
@@ -15,7 +14,6 @@ function CreateFundFormInner() {
   const [signing, setSigning] = useState(false);
   const [name, setName] = useState("");
   const [thesis, setThesis] = useState("");
-  const [unlockPrice, setUnlockPrice] = useState("");
   const [capUsdc, setCapUsdc] = useState("");
   const [profitSharePct, setProfitSharePct] = useState("10");
   const [raiseEndsAt, setRaiseEndsAt] = useState(() => defaultLifecycleDate(30));
@@ -67,7 +65,6 @@ function CreateFundFormInner() {
           managerAddress: address,
           message: challenge.message,
           signature,
-          unlockPriceUsdc: unlockPrice.trim() ? Number(unlockPrice) : null,
           capUsdc: capUsdc.trim() ? Number(capUsdc) : null,
           managerProfitSharePct: Number(profitSharePct),
           raiseEndsAt,
@@ -128,12 +125,6 @@ function CreateFundFormInner() {
         />
       </div>
 
-      <UnlockPriceField
-        id="unlock-price"
-        value={unlockPrice}
-        onChange={setUnlockPrice}
-      />
-
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="text-primary mb-1 block text-sm" htmlFor="raise-ends">
@@ -182,7 +173,7 @@ function CreateFundFormInner() {
             id="profit-share"
             type="number"
             min={0}
-            max={100}
+            max={50}
             step={0.5}
             value={profitSharePct}
             onChange={(e) => setProfitSharePct(e.target.value)}
@@ -192,7 +183,8 @@ function CreateFundFormInner() {
           <span className="text-primary/50 text-sm">%</span>
         </div>
         <p className="text-primary/50 mt-2 text-xs">
-          Your cut of each investor&apos;s profit when the fund closes profitably.
+          Your cut of each investor&apos;s profit when the fund closes
+          profitably. Max 50%.
         </p>
       </div>
 

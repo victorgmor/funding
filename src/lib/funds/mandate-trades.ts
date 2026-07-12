@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { demoMemory, ensureDemoMemory } from "@/lib/demo/memory";
+import { useDemoStore } from "@/lib/demo/mode";
 import type { FanoutSlice, MandateTrade, MarketSide } from "@/lib/funds/types";
 import {
   mandateDocClient,
@@ -8,6 +10,13 @@ import {
 } from "@/lib/funds/mandate-db";
 
 export async function listTradesByFund(fundSlug: string): Promise<MandateTrade[]> {
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    return [...demoMemory.trades.values()]
+      .filter((row) => row.fundSlug === fundSlug)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
   const rows = await mandateDocClient().send(
     new QueryCommand({
       TableName: mandatesTableName(),
@@ -90,6 +99,12 @@ export async function markTradeStatus(
 }
 
 async function saveTrade(trade: MandateTrade): Promise<void> {
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    demoMemory.trades.set(trade.id, trade);
+    return;
+  }
+
   await mandateDocClient().send(
     new PutCommand({
       TableName: mandatesTableName(),

@@ -1,3 +1,16 @@
+const usdExact = (value: number) =>
+  Math.abs(value).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+export function formatUsdExact(value: number, signed = false): string {
+  const prefix = value < 0 ? "-" : signed && value > 0 ? "+" : "";
+  return `${prefix}${usdExact(value)}`;
+}
+
 export function formatUsd(value: number, signed = false): string {
   const abs = Math.abs(value);
   let formatted: string;
@@ -43,7 +56,13 @@ export function formatPublishedAgo(iso?: string): string | null {
 }
 
 export function formatPoolCapLabel(capUsdc?: number | null): string {
-  if (capUsdc != null && capUsdc > 0) return `$${capUsdc.toFixed(0)} cap`;
+  if (capUsdc != null && capUsdc > 0) {
+    return `${capUsdc.toLocaleString("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    })} cap`;
+  }
   return "∞ cap";
 }
 

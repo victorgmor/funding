@@ -1,7 +1,7 @@
 import type { Fund } from "@/lib/funds/types";
 import { buildLifecycleStages, type LifecycleStageView } from "@/lib/funds/lifecycle";
 
-type Props = { fund: Fund };
+type Props = { fund: Fund; variant?: "default" | "compact" };
 
 function StageIcon({ stage }: { stage: LifecycleStageView["id"] }) {
   if (stage === "deposit") {
@@ -104,8 +104,49 @@ function StageBlock({ stage }: { stage: LifecycleStageView }) {
   return <div className="min-w-0 flex-1 px-1 py-3">{content}</div>;
 }
 
-export default function FundLifecycleStepper({ fund }: Props) {
+function CompactStageRow({ stage }: { stage: LifecycleStageView }) {
+  const active = stage.state === "current";
+  const muted = stage.state === "future";
+
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5">
+      <div className="flex min-w-0 items-center gap-2">
+        <StageDot active={active} />
+        <span
+          className={
+            active
+              ? "text-primary truncate text-sm font-semibold"
+              : muted
+                ? "text-primary/35 truncate text-sm"
+                : "text-primary/55 truncate text-sm"
+          }
+        >
+          {stage.label}
+        </span>
+      </div>
+      <span
+        className={`shrink-0 text-xs ${
+          active ? "text-primary/70" : muted ? "text-primary/30" : "text-primary/45"
+        }`}
+      >
+        {stage.line1}
+      </span>
+    </div>
+  );
+}
+
+export default function FundLifecycleStepper({ fund, variant = "default" }: Props) {
   const stages = buildLifecycleStages(fund);
+
+  if (variant === "compact") {
+    return (
+      <div className="border-primary/10 divide-primary/10 mt-3.5 divide-y border-y">
+        {stages.map((stage) => (
+          <CompactStageRow key={stage.id} stage={stage} />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="border-primary/10 bg-primary/5 mt-6 rounded-lg border p-4 sm:p-5">

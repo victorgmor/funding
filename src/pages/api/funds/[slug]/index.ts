@@ -1,5 +1,4 @@
 import type { APIRoute } from "astro";
-import { canAccessFund, redactFund } from "@/lib/funds/access";
 import { verifyBundleSignature } from "@/lib/auth/bundle-auth";
 import { getFund, updateFund, type UpdateFundInput } from "@/lib/funds/store";
 
@@ -47,20 +46,13 @@ export const PATCH: APIRoute = async ({ params, request }) => {
   }
 };
 
-export const GET: APIRoute = async ({ params, url }) => {
+export const GET: APIRoute = async ({ params }) => {
   const fund = await getFund(params.slug!);
   if (!fund) {
     return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
   }
 
-  const address = url.searchParams.get("address")?.trim();
-  if (await canAccessFund(fund, address)) {
-    return new Response(JSON.stringify(fund), {
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  return new Response(JSON.stringify(redactFund(fund)), {
+  return new Response(JSON.stringify(fund), {
     headers: { "Content-Type": "application/json" },
   });
 };

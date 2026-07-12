@@ -24,8 +24,6 @@ export type Fund = {
   status: FundStatus;
   manager: FundManager;
   createdAt?: string;
-  /** USDC price to unlock fund access. Omit or 0 for free. */
-  unlockPriceUsdc?: number | null;
   /** ISO — last day manager may open new risk */
   tradingEndsAt?: string | null;
   /** ISO — last day new mandates accepted */
@@ -34,7 +32,7 @@ export type Fund = {
   closedAt?: string | null;
   /** Max virtual pool size in USDC */
   capUsdc?: number | null;
-  /** Manager share of mandate profits on close (0–100) */
+  /** Manager share of mandate profits on close (0–50) */
   managerProfitSharePct?: number;
   /** @deprecated legacy field — ignored */
   fundValue?: number;

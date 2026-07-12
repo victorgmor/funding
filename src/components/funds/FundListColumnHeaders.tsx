@@ -9,13 +9,12 @@ export default function FundListColumnHeaders() {
       <div className="min-w-0" aria-hidden="true" />
       <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 lg:contents">
         <p className={`${headerClass} lg:w-full`}>Creator</p>
-        <p className={`${headerClass} text-center lg:w-full`}>Price</p>
         <p className={`${headerClass} lg:w-full`}>Pool</p>
         <p
           className={`${headerClass} text-right lg:w-full`}
           title="Fund performance since publish — not your mandate balance"
         >
-          Performance
+          PnL
         </p>
       </div>
     </div>

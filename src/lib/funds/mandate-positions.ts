@@ -1,4 +1,6 @@
 import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { demoMemory, ensureDemoMemory } from "@/lib/demo/memory";
+import { useDemoStore } from "@/lib/demo/mode";
 import type { MandatePosition, MandateTrade } from "@/lib/funds/types";
 import {
   mandateDocClient,
@@ -13,6 +15,13 @@ function positionKey(mandateId: string, tokenId: string) {
 export async function listPositionsByFund(
   fundSlug: string,
 ): Promise<MandatePosition[]> {
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    return [...demoMemory.positions.values()]
+      .filter((row) => row.fundSlug === fundSlug)
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  }
+
   const rows = await mandateDocClient().send(
     new QueryCommand({
       TableName: mandatesTableName(),
@@ -95,6 +104,12 @@ function mergePosition(
 }
 
 async function savePosition(position: MandatePosition): Promise<void> {
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    demoMemory.positions.set(position.id, position);
+    return;
+  }
+
   await mandateDocClient().send(
     new PutCommand({
       TableName: mandatesTableName(),

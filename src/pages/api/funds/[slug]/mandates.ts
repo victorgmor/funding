@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { verifyBundleSignature } from "@/lib/auth/bundle-auth";
-import { canAccessFund } from "@/lib/funds/access";
+import { ensureDemoWalletMandates } from "@/lib/demo/memory";
+import { useDemoStore } from "@/lib/demo/mode";
 import { upsertMandateCommitment, getMandate } from "@/lib/funds/mandates";
 import {
   buildVirtualPool,
@@ -12,6 +13,7 @@ import { readDepositWalletBalanceUsdc } from "@/lib/polymarket/deposit-balance";
 import { getMandateSettlement } from "@/lib/funds/settlement";
 import { listPositionsByWallet } from "@/lib/funds/mandate-positions";
 import { getTradingSession } from "@/lib/funds/trading-sessions";
+import { fetchTokenMidPrices } from "@/lib/polymarket/clob-prices";
 
 export const prerender = false;
 
@@ -26,6 +28,10 @@ export const GET: APIRoute = async ({ params, url }) => {
     return new Response(JSON.stringify({ error: "Wallet required" }), {
       status: 400,
     });
+  }
+
+  if (useDemoStore()) {
+    ensureDemoWalletMandates(address);
   }
 
   try {
@@ -51,10 +57,26 @@ export const GET: APIRoute = async ({ params, url }) => {
         : Promise.resolve(undefined),
     ]);
 
+    let mandateValueUsdc: number | null = null;
+    let mandateProfitUsdc: number | null = null;
+    if (mandate) {
+      const mids = await fetchTokenMidPrices(positions.map((p) => p.tokenId));
+      const positionsValue = positions.reduce(
+        (sum, pos) => sum + pos.shares * (mids.get(pos.tokenId) ?? pos.avgPrice),
+        0,
+      );
+      mandateValueUsdc =
+        Math.round((mandate.cashUsdc + positionsValue) * 100) / 100;
+      mandateProfitUsdc =
+        Math.round((mandateValueUsdc - mandate.notionalUsdc) * 100) / 100;
+    }
+
     return new Response(
       JSON.stringify({
         fundSlug: fund.slug,
         mandate: mandate ?? null,
+        mandateValueUsdc,
+        mandateProfitUsdc,
         totalNotional: pool.totalNotional,
         capRemaining: poolCapRemaining(fund, pool.totalNotional),
         raiseOpen: poolRaiseOpen(fund),
@@ -101,12 +123,6 @@ export const POST: APIRoute = async ({ params, request }) => {
     if (!address) {
       return new Response(JSON.stringify({ error: "Wallet required" }), {
         status: 400,
-      });
-    }
-
-    if (!(await canAccessFund(fund, address))) {
-      return new Response(JSON.stringify({ error: "Unlock this fund first" }), {
-        status: 403,
       });
     }
 

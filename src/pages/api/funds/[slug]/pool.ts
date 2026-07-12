@@ -1,10 +1,11 @@
 import type { APIRoute } from "astro";
-import { canAccessFund, isFundOwnerWallet } from "@/lib/funds/access";
+import { isFundOwnerWallet } from "@/lib/funds/access";
 import {
   buildVirtualPool,
   maskMandateWallet,
   redactPoolForInvestor,
 } from "@/lib/funds/pool";
+import { computeFundPoolPerformance } from "@/lib/funds/performance";
 import { getFund } from "@/lib/funds/store";
 
 export const prerender = false;
@@ -17,12 +18,6 @@ export const GET: APIRoute = async ({ params, url }) => {
 
   const address = url.searchParams.get("address") ?? undefined;
   const isOwner = isFundOwnerWallet(fund, address);
-
-  if (!isOwner && !(await canAccessFund(fund, address))) {
-    return new Response(JSON.stringify({ error: "Access required" }), {
-      status: 403,
-    });
-  }
 
   try {
     let pool = await buildVirtualPool(fund);
@@ -42,7 +37,9 @@ export const GET: APIRoute = async ({ params, url }) => {
       };
     }
 
-    return new Response(JSON.stringify(pool), {
+    const performance = await computeFundPoolPerformance(fund);
+
+    return new Response(JSON.stringify({ ...pool, performance }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (e) {

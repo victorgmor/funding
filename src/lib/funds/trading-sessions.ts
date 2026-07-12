@@ -1,4 +1,6 @@
 import { GetCommand, PutCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import { demoMemory, ensureDemoMemory } from "@/lib/demo/memory";
+import { useDemoStore } from "@/lib/demo/mode";
 import type { TradingSession } from "@/lib/funds/types";
 import { encryptJson, decryptJson } from "@/lib/funds/session-crypto";
 import {
@@ -14,6 +16,10 @@ export type StoredClobCreds = {
 };
 
 type StoredPayload = TradingSession & { creds: StoredClobCreds };
+
+function sessionKey(fundSlug: string, wallet: string) {
+  return `${fundSlug}#${wallet.toLowerCase()}`;
+}
 
 export async function getTradingSession(
   fundSlug: string,
@@ -38,6 +44,12 @@ async function readPayload(
   wallet: string,
 ): Promise<StoredPayload | undefined> {
   const normalized = wallet.toLowerCase();
+
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    const enc = demoMemory.sessions.get(sessionKey(fundSlug, normalized));
+    return enc ? decryptJson<StoredPayload>(enc) : undefined;
+  }
 
   const row = await mandateDocClient().send(
     new GetCommand({
@@ -77,16 +89,21 @@ export async function saveTradingSession(input: {
   const enc = encryptJson(session);
   const normalized = session.investorWallet;
 
-  await mandateDocClient().send(
-    new PutCommand({
-      TableName: mandatesTableName(),
-      Item: {
-        fundSlug: input.fundSlug,
-        sk: mandateSk("session", normalized),
-        sessionEnc: enc,
-      },
-    }),
-  );
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    demoMemory.sessions.set(sessionKey(input.fundSlug, normalized), enc);
+  } else {
+    await mandateDocClient().send(
+      new PutCommand({
+        TableName: mandatesTableName(),
+        Item: {
+          fundSlug: input.fundSlug,
+          sk: mandateSk("session", normalized),
+          sessionEnc: enc,
+        },
+      }),
+    );
+  }
 
   const { creds: _creds, ...publicSession } = session;
   return publicSession;
@@ -97,6 +114,12 @@ export async function revokeTradingSession(
   wallet: string,
 ): Promise<void> {
   const normalized = wallet.toLowerCase();
+
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    demoMemory.sessions.delete(sessionKey(fundSlug, normalized));
+    return;
+  }
 
   await mandateDocClient().send(
     new DeleteCommand({

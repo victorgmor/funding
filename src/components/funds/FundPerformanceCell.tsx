@@ -1,4 +1,4 @@
-import { formatPercent, formatSinceDate, formatUsd } from "@/lib/funds/format";
+import { formatPercent, formatSinceDate, formatUsdExact } from "@/lib/funds/format";
 import { useMandate } from "@/lib/funds/useMandate";
 
 type Props = {
@@ -23,11 +23,11 @@ function ThesisRoi({
   if (size === "header") {
     return (
       <div className="text-right">
-        <p className={`font-mono text-2xl font-medium tabular-nums ${color}`}>
+        <p className={`font-mono text-lg font-medium tabular-nums ${color}`}>
           {formatPercent(roi)}
         </p>
         {since && (
-          <p className="text-primary/50 mt-0.5 text-sm">
+          <p className="text-primary/45 mt-0.5 text-xs">
             since {formatSinceDate(since)}
           </p>
         )}
@@ -64,13 +64,13 @@ function FundPerformanceHeader({
   if (roi == null && position == null) return null;
 
   return (
-    <div className="text-right">
+    <div className="shrink-0 text-right">
       {roi != null && <ThesisRoi roi={roi} since={since} size="header" />}
       {position != null && (
-        <p className="text-primary/60 mt-2 text-sm">
+        <p className="text-primary/45 text-xs">
           Your mandate{" "}
-          <span className="text-primary font-mono tabular-nums">
-            {formatUsd(position)}
+          <span className="text-primary/80 font-mono font-medium tabular-nums">
+            {formatUsdExact(position)}
           </span>
         </p>
       )}

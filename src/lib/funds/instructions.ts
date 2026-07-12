@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { demoMemory, ensureDemoMemory } from "@/lib/demo/memory";
+import { useDemoStore } from "@/lib/demo/mode";
 import type { ManagerInstruction, MarketSide } from "@/lib/funds/types";
 import {
   mandateDocClient,
@@ -10,6 +12,13 @@ import {
 export async function listInstructionsByFund(
   fundSlug: string,
 ): Promise<ManagerInstruction[]> {
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    return [...demoMemory.instructions.values()]
+      .filter((row) => row.fundSlug === fundSlug)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
   const rows = await mandateDocClient().send(
     new QueryCommand({
       TableName: mandatesTableName(),
@@ -31,6 +40,12 @@ export async function getInstruction(
   fundSlug: string,
   instructionId: string,
 ): Promise<ManagerInstruction | undefined> {
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    const row = demoMemory.instructions.get(instructionId);
+    return row?.fundSlug === fundSlug ? row : undefined;
+  }
+
   const rows = await listInstructionsByFund(fundSlug);
   return rows.find((row) => row.id === instructionId);
 }
@@ -83,6 +98,12 @@ export async function markInstructionStatus(
 }
 
 async function saveInstruction(instruction: ManagerInstruction): Promise<void> {
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    demoMemory.instructions.set(instruction.id, instruction);
+    return;
+  }
+
   await mandateDocClient().send(
     new PutCommand({
       TableName: mandatesTableName(),

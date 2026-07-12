@@ -20,7 +20,7 @@ export default function CreatorFundList({ funds, performanceBySlug }: Props) {
           <FundRow
             key={fund.slug}
             fund={fund}
-            deposited={poolTotals[fund.slug] ?? 0}
+            deposited={poolTotals[fund.slug]?.deposited ?? 0}
             performance={performanceBySlug[fund.slug] ?? null}
           />
         ))}

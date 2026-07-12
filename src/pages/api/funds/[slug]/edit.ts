@@ -16,7 +16,6 @@ export const GET: APIRoute = async ({ params }) => {
       thesis: fund.thesis,
       status: fund.status,
       managerId: fund.manager.id,
-      unlockPriceUsdc: fund.unlockPriceUsdc ?? null,
       capUsdc: fund.capUsdc ?? null,
       managerProfitSharePct: fund.managerProfitSharePct ?? 0,
     }),

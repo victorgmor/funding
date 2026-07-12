@@ -4,10 +4,11 @@ type Props = {
   address: string;
   name: string;
   initialImage?: string | null;
-  size?: "xs" | "sm" | "md";
+  size?: "2xs" | "xs" | "sm" | "md";
 };
 
 const sizes = {
+  "2xs": "size-6 text-xs",
   xs: "size-8 text-sm",
   sm: "size-10 text-base",
   md: "size-16 text-xl",
@@ -54,8 +55,12 @@ export default function CreatorAvatar({
       <img
         src={image}
         alt=""
-        width={size === "xs" ? 32 : size === "sm" ? 40 : 64}
-        height={size === "xs" ? 32 : size === "sm" ? 40 : 64}
+        width={
+          size === "2xs" ? 24 : size === "xs" ? 32 : size === "sm" ? 40 : 64
+        }
+        height={
+          size === "2xs" ? 24 : size === "xs" ? 32 : size === "sm" ? 40 : 64
+        }
         className={`border-primary/10 shrink-0 rounded-full border object-cover ${sizeClass}`}
       />
     );

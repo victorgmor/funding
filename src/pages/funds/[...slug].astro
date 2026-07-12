@@ -3,21 +3,18 @@ export const prerender = false;
 
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import ArrowLeft from "@/components/fundations/icons/ArrowLeft.astro";
-import Text from "@/components/fundations/elements/Text.astro";
 import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+import CreatorAvatar from "@/components/creators/CreatorAvatar";
 import FundLifecycleStepper from "@/components/funds/FundLifecycleStepper";
 import FundLifecycleTestPanel from "@/components/funds/FundLifecycleTestPanel";
 import FundPoolOverview from "@/components/funds/FundPoolOverview";
 import FundPerformanceCell from "@/components/funds/FundPerformanceCell";
 import FundSidebar from "@/components/funds/FundSidebar";
-import FundPageGate from "@/components/funds/FundPageGate";
 import SealCheck from "@/components/fundations/icons/SealCheck.astro";
 import { getFund } from "@/lib/funds/store";
-import { isPaidFund } from "@/lib/funds/access";
-import { creatorPath } from "@/lib/funds/creator";
+import { creatorPath, isCreatorWallet } from "@/lib/funds/creator";
+import { formatPublishedAgo } from "@/lib/funds/format";
 import { computeFundPerformance } from "@/lib/funds/performance";
-import { resolvePaymentRecipient } from "@/lib/polymarket/payment-recipient";
-import { getPlatformFeeWallet } from "@/lib/funds/platform-fee-wallet";
 
 const slug = Astro.params.slug;
 if (!slug) {
@@ -30,20 +27,8 @@ if (!fund) {
 }
 
 const performance = await computeFundPerformance(fund);
-const paid = isPaidFund(fund);
-const paymentRecipient =
-  paid && /^0x[a-fA-F0-9]{40}$/i.test(fund.manager.id)
-    ? await resolvePaymentRecipient(fund.manager.id)
-    : null;
-const platformFeeWallet = paid ? getPlatformFeeWallet() : null;
-const fundMeta = {
-  slug: fund.slug,
-  name: fund.name,
-  manager: fund.manager,
-  status: fund.status,
-  unlockPriceUsdc: fund.unlockPriceUsdc,
-  createdAt: fund.createdAt,
-};
+const published = formatPublishedAgo(fund.createdAt);
+const showAvatar = isCreatorWallet(fund.manager.id);
 ---
 
 <BaseLayout>
@@ -54,91 +39,80 @@ const fundMeta = {
         All funds
       </a>
 
-      <div class="mt-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div class="flex flex-wrap items-center gap-3">
-            <Text tag="h1" variant="displaySM" class="text-primary font-semibold">
-              {fund.name}
-            </Text>
-            {
-              fund.status === "closed" && (
-                <span class="border-primary/20 text-primary/60 rounded-full border px-2.5 py-0.5 text-[0.65rem] font-medium uppercase">
-                  Closed
-                </span>
-              )
-            }
-            {
-              fund.managerProfitSharePct != null && fund.managerProfitSharePct > 0 && (
-                <span class="border-primary/20 text-primary/60 rounded-full border px-2.5 py-0.5 text-[0.65rem] font-medium uppercase">
-                  {fund.managerProfitSharePct}% profit share
-                </span>
-              )
-            }
-            {
-              paid && (
-                <span class="border-primary/20 text-primary/60 rounded-full border px-2.5 py-0.5 text-[0.65rem] font-medium uppercase">
-                  ${fund.unlockPriceUsdc?.toFixed(2)}
-                </span>
-              )
-            }
-          </div>
-          <div class="mt-2 flex items-center gap-2">
-            <span class="text-primary/50 text-[0.65rem] font-medium uppercase"
-              >Creator</span
-            >
-            <a
-              href={creatorPath(fund.manager.id)}
-              class="text-primary hover:text-primary/80 text-sm"
-            >
-              {fund.manager.name}
-            </a>
-            {
-              fund.manager.verified && (
-                <SealCheck size="sm" class="text-[#32BCFF]" />
-              )
-            }
-          </div>
-          {
-            !paid && (
-              <p class="text-primary/60 mt-2 max-w-2xl text-sm">{fund.thesis}</p>
-            )
-          }
-        </div>
-        {
-          !paid && (
-            <FundPerformanceCell
-              client:load
-              fundSlug={fund.slug}
-              roi={performance?.roi ?? null}
-              since={fund.createdAt}
-              variant="header"
-            />
-          )
-        }
-      </div>
+      <div class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,672px)_minmax(280px,1fr)]">
+        <div class="min-w-0">
+          <div class="border-primary/10 border-b py-4">
+            <div class="flex items-center justify-between gap-4">
+              <div class="flex min-w-0 flex-1 items-center gap-2.5">
+                <h1 class="text-primary truncate text-lg font-semibold tracking-tight sm:text-xl">
+                  {fund.name}
+                </h1>
+              </div>
 
-      <FundLifecycleStepper client:load fund={fund} />
-      <FundLifecycleTestPanel client:load fund={fund} />
+              <FundPerformanceCell
+                client:load
+                fundSlug={fund.slug}
+                roi={performance?.roi ?? null}
+                since={fund.createdAt}
+                variant="header"
+              />
+            </div>
 
-      {
-        paid ? (
-          <FundPageGate
-            client:load
-            fund={fundMeta}
-            paymentRecipient={paymentRecipient}
-            platformFeeWallet={platformFeeWallet}
-          />
-        ) : (
-          <div class="mt-8 grid gap-8 lg:grid-cols-3">
-            <div class="lg:col-span-2 space-y-6">
+            <div class="text-primary/45 mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm">
+              {
+                showAvatar && (
+                  <a
+                    href={creatorPath(fund.manager.id)}
+                    class="inline-flex shrink-0 items-center"
+                  >
+                    <CreatorAvatar
+                      client:load
+                      address={fund.manager.id}
+                      name={fund.manager.name}
+                      size="2xs"
+                    />
+                  </a>
+                )
+              }
+              <a
+                href={creatorPath(fund.manager.id)}
+                class="text-primary/70 hover:text-primary inline-flex items-center gap-1 transition-colors"
+              >
+                {fund.manager.name}
+                {
+                  fund.manager.verified && (
+                    <SealCheck size="xs" class="text-[#32BCFF]" />
+                  )
+                }
+              </a>
+              {
+                published && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span>{published}</span>
+                  </>
+                )
+              }
+            </div>
+
+            <p class="text-primary/60 mt-1.5 line-clamp-1 text-sm leading-snug">
+              {fund.thesis}
+            </p>
+
+            <FundLifecycleStepper client:load fund={fund} variant="compact" />
+
+            <div class="mt-3.5">
               <FundPoolOverview client:load fund={fund} />
             </div>
-            <div>
-              <FundSidebar client:load fund={fund} />
-            </div>
           </div>
-        )
-      }
+
+          <FundLifecycleTestPanel client:load fund={fund} />
+        </div>
+
+        <aside class="min-w-0">
+          <FundSidebar client:load fund={fund} />
+        </aside>
+      </div>
     </Wrapper>
   </section>
 </BaseLayout>

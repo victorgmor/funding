@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ConnectWallet from "@/components/app/ConnectWallet";
 import { isFundOwner } from "@/lib/funds/editable";
+import { formatUsdExact } from "@/lib/funds/format";
 import type { Fund, FanoutSlice, VirtualPool } from "@/lib/funds/types";
 import type { MarketSide } from "@/lib/funds/types";
 import type { SearchMarket } from "@/lib/polymarket/gamma";
@@ -188,7 +189,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
     "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/60 w-full rounded border px-3 py-2 text-sm focus:border-primary/30 focus:outline-none";
 
   return (
-    <div className="border-primary/10 bg-primary/5 mb-4 rounded-lg border p-4">
+    <div className="border-primary/10 border-b pb-4">
       <p className="text-primary text-sm font-medium">Fund pool</p>
       <p className="text-primary/60 mt-1 text-xs">
         Manager view — pooled AUM with per-investor fan-out from their wallets.
@@ -208,13 +209,13 @@ export default function ManagerPoolPanel({ fund }: Props) {
             <div>
               <p className="text-primary/50 text-[0.65rem] uppercase">AUM</p>
               <p className="text-primary font-mono text-xl tabular-nums">
-                ${totalNotional.toFixed(2)}
+                {formatUsdExact(totalNotional)}
               </p>
             </div>
             <div>
               <p className="text-primary/50 text-[0.65rem] uppercase">Deployable</p>
               <p className="text-primary font-mono text-xl tabular-nums">
-                ${(pool?.totalCash ?? 0).toFixed(2)}
+                {formatUsdExact(pool?.totalCash ?? 0)}
               </p>
             </div>
             <div>
@@ -234,9 +235,9 @@ export default function ManagerPoolPanel({ fund }: Props) {
                 >
                   <span className="text-primary/70 font-mono">{m.investorWallet}</span>
                   <span className="text-primary font-mono tabular-nums">
-                    ${m.notionalUsdc.toFixed(2)}
+                    {formatUsdExact(m.notionalUsdc)}
                     <span className="text-primary/40 ml-1">
-                      (${m.cashUsdc.toFixed(2)} cash)
+                      ({formatUsdExact(m.cashUsdc)} cash)
                     </span>
                   </span>
                 </li>
@@ -330,7 +331,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
               {dryRun && (
                 <div className="border-primary/10 rounded border text-xs">
                   <p className="border-primary/10 border-b px-3 py-2 text-[0.65rem] uppercase text-primary/50">
-                    Fan-out preview · ${sliceSummary?.toFixed(2)}
+                    Fan-out preview · {formatUsdExact(sliceSummary ?? 0)}
                   </p>
                   <ul className="divide-y divide-primary/10">
                     {dryRun.slices.map((slice) => (
@@ -342,7 +343,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
                           {slice.investorWallet.slice(0, 8)}…
                         </span>
                         <span className="text-primary font-mono tabular-nums">
-                          ${slice.usdcAmount.toFixed(2)}
+                          {formatUsdExact(slice.usdcAmount)}
                           <span className="text-primary/40 ml-1">
                             ({(slice.poolShare * 100).toFixed(0)}%)
                           </span>

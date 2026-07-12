@@ -50,11 +50,6 @@ export default defineConfig({
         access: "secret",
         optional: true,
       }),
-      ENTITLEMENTS_TABLE: envField.string({
-        context: "server",
-        access: "secret",
-        optional: true,
-      }),
       MANDATES_TABLE: envField.string({
         context: "server",
         access: "secret",
@@ -65,7 +60,7 @@ export default defineConfig({
         access: "secret",
         optional: true,
       }),
-      PLATFORM_FEE_WALLET: envField.string({
+      DEMO_MODE: envField.string({
         context: "server",
         access: "secret",
         optional: true,

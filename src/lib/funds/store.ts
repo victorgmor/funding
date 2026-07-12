@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { seedFunds } from "@/data/funds";
+import { demoMemory, ensureDemoMemory } from "@/lib/demo/memory";
+import { useDemoStore } from "@/lib/demo/mode";
 import {
   fetchPolymarketProfile,
   polymarketDisplayName,
@@ -31,7 +33,6 @@ export type UpdateFundInput = {
   managerAddress: string;
   message: string;
   signature: `0x${string}`;
-  unlockPriceUsdc?: number | null;
 };
 
 export type CloseFundInput = {
@@ -60,7 +61,48 @@ export type SetLifecycleStageInput = {
 };
 
 async function replaceUserFund(fund: Fund): Promise<void> {
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    demoMemory.funds.set(fund.slug, fund);
+    return;
+  }
   await dbUpdateFund(fund);
+}
+
+async function listUserFunds(): Promise<Fund[]> {
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    return [...demoMemory.funds.values()];
+  }
+  return dbListFunds();
+}
+
+async function getUserFund(slug: string): Promise<Fund | undefined> {
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    return demoMemory.funds.get(slug);
+  }
+  return dbGetFund(slug);
+}
+
+async function saveUserFund(fund: Fund): Promise<void> {
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    if (demoMemory.funds.has(fund.slug)) {
+      throw new Error("A fund with this slug already exists");
+    }
+    demoMemory.funds.set(fund.slug, fund);
+    return;
+  }
+  await dbPutFund(fund);
+}
+
+async function userFundSlugExists(slug: string): Promise<boolean> {
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    return demoMemory.funds.has(slug);
+  }
+  return dbSlugExists(slug);
 }
 
 async function getEditableUserFund(
@@ -97,7 +139,6 @@ export async function updateFund(
     name: input.name.trim(),
     description: input.thesis.trim().slice(0, 120),
     thesis: input.thesis.trim(),
-    unlockPriceUsdc: parseUnlockPrice(input.unlockPriceUsdc),
   };
 
   await replaceUserFund(updated);
@@ -130,20 +171,22 @@ export async function closeFund(
 }
 
 export async function getAllFunds(): Promise<Fund[]> {
-  const userFunds = await dbListFunds();
+  const userFunds = await listUserFunds();
   return [...seedFunds, ...userFunds];
 }
 
 export async function getFund(slug: string): Promise<Fund | undefined> {
   const seed = seedFunds.find((fund) => fund.slug === slug);
   if (seed) return seed;
-  return dbGetFund(slug);
+  return getUserFund(slug);
 }
 
 export async function getFundsByCreator(creatorId: string): Promise<Fund[]> {
   const id = creatorId.toLowerCase();
   const fromSeed = seedFunds.filter((fund) => fund.manager.id.toLowerCase() === id);
-  const fromDb = await dbListFundsByCreator(id);
+  const fromDb = useDemoStore()
+    ? (await listUserFunds()).filter((fund) => fund.manager.id.toLowerCase() === id)
+    : await dbListFundsByCreator(id);
   const seen = new Set(fromSeed.map((fund) => fund.slug));
   return [...fromSeed, ...fromDb.filter((fund) => !seen.has(fund.slug))];
 }
@@ -169,15 +212,7 @@ async function uniqueSlug(base: string): Promise<string> {
 
 async function slugTaken(slug: string): Promise<boolean> {
   if (seedFunds.some((fund) => fund.slug === slug)) return true;
-  return dbSlugExists(slug);
-}
-
-function parseUnlockPrice(value: unknown): number | null {
-  if (value == null || value === "") return null;
-  const price = Number(value);
-  if (!Number.isFinite(price) || price <= 0) return null;
-  if (price < 1) throw new Error("Unlock price must be at least $1");
-  return Math.round(price * 100) / 100;
+  return userFundSlugExists(slug);
 }
 
 function parseOptionalIso(value: unknown): string | null {
@@ -202,8 +237,8 @@ function parseCapUsdc(value: unknown): number | null {
 function parseProfitSharePct(value: unknown): number {
   if (value == null || value === "") return 0;
   const pct = Number(value);
-  if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
-    throw new Error("Profit share must be between 0 and 100");
+  if (!Number.isFinite(pct) || pct < 0 || pct > 50) {
+    throw new Error("Profit share must be between 0 and 50");
   }
   return Math.round(pct * 100) / 100;
 }
@@ -223,9 +258,6 @@ function validateCreateInput(input: CreateFundInput): string | null {
   }
 
   try {
-    if (input.unlockPriceUsdc != null) {
-      parseUnlockPrice(input.unlockPriceUsdc);
-    }
     if (input.managerProfitSharePct != null) {
       parseProfitSharePct(input.managerProfitSharePct);
     }
@@ -285,14 +317,13 @@ export async function createFund(input: CreateFundInput): Promise<Fund> {
     status: "trading",
     manager,
     createdAt,
-    unlockPriceUsdc: parseUnlockPrice(input.unlockPriceUsdc),
     tradingEndsAt,
     raiseEndsAt,
     capUsdc: parseCapUsdc(input.capUsdc),
     managerProfitSharePct: parseProfitSharePct(input.managerProfitSharePct),
   };
 
-  await dbPutFund(fund);
+  await saveUserFund(fund);
   return fund;
 }
 

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import FundFeedCard from "@/components/funds/FundFeedCard";
+import YourMandatesPanel from "@/components/funds/YourMandatesPanel";
 import GearIcon from "@/components/fundations/icons/GearIcon";
 import SearchIcon from "@/components/fundations/icons/SearchIcon";
-import { fundUnlockPrice } from "@/lib/funds/access";
 import { usePoolTotals } from "@/lib/funds/usePoolTotals";
 import type { Fund } from "@/lib/funds/types";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
@@ -11,15 +11,14 @@ type Props = {
   funds: Fund[];
 };
 
-type SortField = "published" | "creator" | "price" | "cap";
+type SortField = "published" | "creator" | "cap";
 type SortDirection = "asc" | "desc";
 
 const PAGE_SIZE = 7;
 
 const SORT_OPTIONS: { field: SortField; label: string }[] = [
   { field: "published", label: "Latest" },
-  { field: "creator", label: "Creators" },
-  { field: "price", label: "Price" },
+  { field: "creator", label: "Managers" },
   { field: "cap", label: "Pool cap" },
 ];
 
@@ -41,7 +40,6 @@ function sortFunds(
   field: SortField,
   direction: SortDirection,
 ): Fund[] {
-  const price = (fund: Fund) => fundUnlockPrice(fund) ?? 0;
   const publishedAt = (fund: Fund) =>
     fund.createdAt ? new Date(fund.createdAt).getTime() : 0;
   const factor = direction === "asc" ? 1 : -1;
@@ -52,8 +50,6 @@ function sortFunds(
         return factor * (publishedAt(a) - publishedAt(b));
       case "creator":
         return factor * a.manager.name.localeCompare(b.manager.name);
-      case "price":
-        return factor * (price(a) - price(b));
       case "cap":
         return factor * ((a.capUsdc ?? 0) - (b.capUsdc ?? 0));
       default:
@@ -111,7 +107,7 @@ function useParticipatingSlugs(funds: Fund[], enabled: boolean) {
 }
 
 const defaultDirection = (field: SortField): SortDirection =>
-  field === "creator" || field === "price" ? "asc" : "desc";
+  field === "creator" ? "asc" : "desc";
 
 function SortIndicator({
   active,
@@ -194,7 +190,8 @@ function FundListPanelInner({ funds }: Props) {
     : "No funds match your search";
 
   return (
-    <div className="max-w-2xl">
+    <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,672px)_minmax(280px,1fr)]">
+      <div className="min-w-0">
       <div className="pb-5">
         <label className="flex items-center gap-2 pb-2">
           <SearchIcon className="text-primary/35 size-4 shrink-0" />
@@ -227,10 +224,10 @@ function FundListPanelInner({ funds }: Props) {
             </button>
           ))}
 
-          <div className="relative ml-auto">
+          <div className="ml-auto flex items-center gap-2 pb-2">
             {settingsOpen && (
-              <div className="border-primary/10 bg-secondary absolute right-0 bottom-full z-10 mb-2 min-w-48 rounded-lg border p-3 shadow-lg">
-                <label className="text-primary flex cursor-pointer items-center gap-2 text-sm">
+              <div className="flex items-center gap-3">
+                <label className="text-primary flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap">
                   <input
                     type="checkbox"
                     checked={onlyParticipating}
@@ -240,9 +237,9 @@ function FundListPanelInner({ funds }: Props) {
                   Only funds I&apos;m in
                 </label>
                 {onlyParticipating && !isConnected && (
-                  <p className="text-primary/50 mt-2 text-xs">
-                    Connect your wallet to use this filter
-                  </p>
+                  <span className="text-primary/50 text-xs whitespace-nowrap">
+                    Connect wallet
+                  </span>
                 )}
               </div>
             )}
@@ -269,7 +266,8 @@ function FundListPanelInner({ funds }: Props) {
             <FundFeedCard
               key={fund.slug}
               fund={fund}
-              deposited={poolTotals[fund.slug] ?? 0}
+              deposited={poolTotals[fund.slug]?.deposited ?? 0}
+              profitUsdc={poolTotals[fund.slug]?.profitUsdc ?? null}
               lead={index === 0}
               searchFocused={searchFocused}
             />
@@ -304,6 +302,11 @@ function FundListPanelInner({ funds }: Props) {
           </button>
         </div>
       )}
+      </div>
+
+      <aside className="min-w-0">
+        <YourMandatesPanel funds={funds} />
+      </aside>
     </div>
   );
 }

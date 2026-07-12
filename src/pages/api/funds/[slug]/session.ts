@@ -1,6 +1,5 @@
 import type { APIRoute } from "astro";
 import { verifyBundleSignature } from "@/lib/auth/bundle-auth";
-import { canAccessFund } from "@/lib/funds/access";
 import {
   getTradingSession,
   revokeTradingSession,
@@ -54,12 +53,6 @@ export const POST: APIRoute = async ({ params, request }) => {
     if (!address) {
       return new Response(JSON.stringify({ error: "Wallet required" }), {
         status: 400,
-      });
-    }
-
-    if (!(await canAccessFund(fund, address))) {
-      return new Response(JSON.stringify({ error: "Unlock this fund first" }), {
-        status: 403,
       });
     }
 
