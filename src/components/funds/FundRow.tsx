@@ -1,15 +1,16 @@
 import { fundListGridClass } from "@/components/funds/fund-list-layout";
 import FundPerformanceCell from "@/components/funds/FundPerformanceCell";
+import PoolCapBar from "@/components/funds/PoolCapBar";
 import CurrencyDollarSimple from "@/components/fundations/icons/CurrencyDollarSimple";
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { creatorPath } from "@/lib/funds/creator";
 import { isPaidFund } from "@/lib/funds/access";
-import { formatPoolCapLabel } from "@/lib/funds/format";
 import type { FundPerformance } from "@/lib/funds/performance";
 import type { Fund } from "@/lib/funds/types";
 
 type Props = {
   fund: Fund;
+  deposited?: number;
   performance: FundPerformance | null;
 };
 
@@ -18,7 +19,7 @@ function fundPriceLabel(fund: Fund): string {
   return "FREE";
 }
 
-export default function FundRow({ fund, performance }: Props) {
+export default function FundRow({ fund, deposited = 0, performance }: Props) {
   return (
     <article
       className={`bg-primary/5 hover:bg-primary/8 grid grid-cols-1 gap-3 rounded-lg px-4 py-3 transition-colors ${fundListGridClass}`}
@@ -76,9 +77,11 @@ export default function FundRow({ fund, performance }: Props) {
         <p className="text-primary/50 mb-1 text-[0.65rem] font-medium uppercase lg:hidden">
           Pool
         </p>
-        <p className="text-primary text-sm font-medium">
-          {formatPoolCapLabel(fund.capUsdc)}
-        </p>
+        <PoolCapBar
+          deposited={deposited}
+          capUsdc={fund.capUsdc}
+          variant="compact"
+        />
       </div>
 
       <div className="min-w-0 lg:text-right">

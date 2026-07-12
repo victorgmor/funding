@@ -1,12 +1,14 @@
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
+import PoolCapBar from "@/components/funds/PoolCapBar";
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { creatorPath, isCreatorWallet } from "@/lib/funds/creator";
 import { isPaidFund } from "@/lib/funds/access";
-import { formatPoolCapLabel, formatPublishedAgo } from "@/lib/funds/format";
+import { formatPublishedAgo } from "@/lib/funds/format";
 import type { Fund } from "@/lib/funds/types";
 
 type Props = {
   fund: Fund;
+  deposited?: number;
   lead?: boolean;
   searchFocused?: boolean;
 };
@@ -19,13 +21,13 @@ function feedSnippet(fund: Fund): string {
 
 export default function FundFeedCard({
   fund,
+  deposited = 0,
   lead = false,
   searchFocused = false,
 }: Props) {
   const paid = isPaidFund(fund);
   const snippet = feedSnippet(fund);
   const published = formatPublishedAgo(fund.createdAt);
-  const capLabel = formatPoolCapLabel(fund.capUsdc);
   const showAvatar = isCreatorWallet(fund.manager.id);
 
   return (
@@ -87,21 +89,23 @@ export default function FundFeedCard({
         )}
       </a>
 
-      <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-        <span className="text-primary/45">{capLabel}</span>
-        {paid ? (
-          <span className="text-primary/55">
-            ${fund.unlockPriceUsdc!.toFixed(2)} to unlock
-          </span>
-        ) : (
-          <span className="text-primary/45">Free to read</span>
-        )}
-        <a
-          href={`/funds/${fund.slug}`}
-          className="text-primary/50 hover:text-primary ml-auto transition-colors"
-        >
-          View fund →
-        </a>
+      <div className="mt-5 space-y-3">
+        <PoolCapBar deposited={deposited} capUsdc={fund.capUsdc} />
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+          {paid ? (
+            <span className="text-primary/55">
+              ${fund.unlockPriceUsdc!.toFixed(2)} to unlock
+            </span>
+          ) : (
+            <span className="text-primary/45">Free to read</span>
+          )}
+          <a
+            href={`/funds/${fund.slug}`}
+            className="text-primary/50 hover:text-primary ml-auto transition-colors"
+          >
+            View fund →
+          </a>
+        </div>
       </div>
     </article>
   );

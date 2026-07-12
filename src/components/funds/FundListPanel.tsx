@@ -3,6 +3,7 @@ import FundFeedCard from "@/components/funds/FundFeedCard";
 import GearIcon from "@/components/fundations/icons/GearIcon";
 import SearchIcon from "@/components/fundations/icons/SearchIcon";
 import { fundUnlockPrice } from "@/lib/funds/access";
+import { usePoolTotals } from "@/lib/funds/usePoolTotals";
 import type { Fund } from "@/lib/funds/types";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
@@ -129,6 +130,7 @@ function SortIndicator({
 
 function FundListPanelInner({ funds }: Props) {
   const { isConnected } = useWalletSession();
+  const { totals: poolTotals } = usePoolTotals();
   const [query, setQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -267,6 +269,7 @@ function FundListPanelInner({ funds }: Props) {
             <FundFeedCard
               key={fund.slug}
               fund={fund}
+              deposited={poolTotals[fund.slug] ?? 0}
               lead={index === 0}
               searchFocused={searchFocused}
             />

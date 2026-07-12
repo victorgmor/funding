@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Fund, VirtualPool } from "@/lib/funds/types";
 import type { FundSettlement } from "@/lib/funds/settlement";
+import PoolCapBar from "@/components/funds/PoolCapBar";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 type Props = { fund: Fund };
@@ -70,6 +71,12 @@ export default function FundPoolOverview({ fund }: Props) {
 
   return (
     <div className="space-y-6">
+      <PoolCapBar
+        deposited={pool.totalNotional}
+        capUsdc={fund.capUsdc}
+        className="max-w-md"
+      />
+
       <p className="text-primary/50 text-sm">
         Manager profit share:{" "}
         <span className="text-primary font-mono tabular-nums">{profitShare}%</span>

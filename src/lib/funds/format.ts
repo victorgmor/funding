@@ -47,10 +47,13 @@ export function formatPoolCapLabel(capUsdc?: number | null): string {
   return "∞ cap";
 }
 
-export function capLabel(deposited: number, cap: number | null): string {
-  if (cap === null) return "∞ cap";
-  const pct = Math.round((deposited / cap) * 100);
-  return `${pct}% of cap`;
+export function formatCapFillLabel(
+  deposited: number,
+  cap: number | null | undefined,
+): string {
+  if (cap == null || cap <= 0) return "Uncapped";
+  const pct = capProgress(deposited, cap);
+  return `${pct}% full`;
 }
 
 export function capProgress(deposited: number, cap: number | null): number {
