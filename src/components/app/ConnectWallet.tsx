@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { connect, disconnect, getConnectors } from "@wagmi/core";
 import { polygon } from "wagmi/chains";
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
+import CaretDown from "@/components/fundations/icons/CaretDown";
 import SignOut from "@/components/fundations/icons/SignOut";
 import { WAGMI_DISCONNECT_EVENT } from "@/lib/wagmi/events";
 import { wagmiConfig } from "@/lib/wagmi/config";
@@ -14,25 +15,6 @@ import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 type Props = {
   variant?: "nav" | "panel" | "create";
 };
-
-function ChevronDownIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      aria-hidden
-      className="text-primary/50"
-    >
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
 
 function WalletNavMenu({
   address,
@@ -82,7 +64,7 @@ function WalletNavMenu({
       >
         <CreatorAvatar address={address} name={label} size="xs" />
         <span className="text-primary max-w-32 truncate text-sm">{label}</span>
-        <ChevronDownIcon />
+        <CaretDown size="sm" className="text-primary/50" />
       </button>
 
       {open && (

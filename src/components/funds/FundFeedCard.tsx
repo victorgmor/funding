@@ -1,3 +1,4 @@
+import ArrowRight from "@/components/fundations/icons/ArrowRight";
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
 import PoolCapBar from "@/components/funds/PoolCapBar";
 import SealCheck from "@/components/fundations/icons/SealCheck";

@@ -4,6 +4,7 @@ export const prerender = false;
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Text from "@/components/fundations/elements/Text.astro";
 import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+import ArrowLeft from "@/components/fundations/icons/ArrowLeft.astro";
 import SealCheck from "@/components/fundations/icons/SealCheck.astro";
 import CreatorFundList from "@/components/funds/CreatorFundList";
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
@@ -56,7 +57,10 @@ const performanceBySlug = Object.fromEntries(performanceEntries);
 <BaseLayout>
   <section>
     <Wrapper variant="standard" class="py-24">
-      <a href="/" class="text-primary/60 hover:text-primary text-sm">← All funds</a>
+      <a href="/" class="text-primary/60 hover:text-primary inline-flex items-center gap-1.5 text-sm">
+        <ArrowLeft size="sm" />
+        All funds
+      </a>
 
       <div class="mt-6 flex flex-wrap items-center justify-between gap-4">
         <div class="flex min-w-0 items-center gap-4">
