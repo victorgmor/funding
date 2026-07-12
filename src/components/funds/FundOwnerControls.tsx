@@ -238,7 +238,7 @@ export function FundOwnerControlsInner({ fund }: Props) {
 
               <div>
                 <label className="text-primary mb-1 block text-sm" htmlFor="edit-thesis">
-                  Strategy
+                  Thesis
                 </label>
                 <textarea
                   id="edit-thesis"

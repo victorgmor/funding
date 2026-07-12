@@ -204,7 +204,7 @@ function validateCreateInput(input: CreateFundInput): string | null {
   const thesis = input.thesis?.trim() ?? "";
 
   if (name.length < 2) return "Fund name is required";
-  if (thesis.length < 10) return "Strategy must be at least 10 characters";
+  if (thesis.length < 10) return "Thesis must be at least 10 characters";
 
   if (input.capUsdc != null) {
     const cap = Number(input.capUsdc);

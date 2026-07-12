@@ -67,7 +67,7 @@ export default function UnlockPriceField({ id, value, onChange }: Props) {
             <span className="text-primary/40 pr-2 text-xs">pUSD</span>
           </div>
           <p className="text-primary/50 mt-1 text-xs">
-            One-time unlock fee. Minimum $1. Strategy details stay hidden until
+            One-time unlock fee. Minimum $1. Thesis details stay hidden until
             paid.
           </p>
         </>

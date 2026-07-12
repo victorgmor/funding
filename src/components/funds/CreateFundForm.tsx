@@ -116,14 +116,14 @@ function CreateFundFormInner() {
 
       <div>
         <label className="text-primary mb-1 block text-sm" htmlFor="thesis">
-          Strategy
+          Thesis
         </label>
         <textarea
           id="thesis"
           rows={3}
           value={thesis}
           onChange={(e) => setThesis(e.target.value)}
-          placeholder="Discretionary macro strategy for the next quarter. Investors commit capital; you trade with proportional fan-out."
+          placeholder="Discretionary macro thesis for the next quarter. Investors commit capital; you trade with proportional fan-out."
           className={inputClass}
         />
       </div>

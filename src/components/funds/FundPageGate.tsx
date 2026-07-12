@@ -144,7 +144,7 @@ export default function FundPageGate({
       <div className="border-primary/10 bg-primary/5 mt-8 max-w-lg rounded-lg border p-6">
         <p className="text-primary text-lg font-medium">Paid fund</p>
         <p className="text-primary/60 mt-2 text-sm">
-          Unlock access to view the strategy and commit to this fund.
+          Unlock access to view the thesis and commit to this fund.
         </p>
         <p className="text-primary mt-4 font-mono text-3xl font-semibold tabular-nums">
           ${priceUsdc?.toFixed(2) ?? "—"}
