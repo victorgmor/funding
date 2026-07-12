@@ -11,6 +11,7 @@ ECR_REPOSITORY="${ECR_REPOSITORY:-carriera}"
 FUNDS_TABLE="${FUNDS_TABLE:-carriera-funds}"
 CHALLENGES_TABLE="${CHALLENGES_TABLE:-carriera-challenges}"
 ENTITLEMENTS_TABLE="${ENTITLEMENTS_TABLE:-carriera-entitlements}"
+MANDATES_TABLE="${MANDATES_TABLE:-carriera-mandates}"
 ROLE_NAME="github-actions-ecs-role"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TMP_DIR="$(mktemp -d)"
@@ -253,6 +254,24 @@ else
     --attribute-definitions AttributeName=id,AttributeType=S \
     --key-schema AttributeName=id,KeyType=HASH
   aws dynamodb wait table-exists --table-name "$ENTITLEMENTS_TABLE" --region "$AWS_REGION"
+fi
+
+# DynamoDB mandate ledger table
+if aws dynamodb describe-table --table-name "$MANDATES_TABLE" --region "$AWS_REGION" >/dev/null 2>&1; then
+  echo "DynamoDB table $MANDATES_TABLE already exists."
+else
+  echo "Creating DynamoDB table ${MANDATES_TABLE}..."
+  aws dynamodb create-table \
+    --table-name "$MANDATES_TABLE" \
+    --region "$AWS_REGION" \
+    --billing-mode PAY_PER_REQUEST \
+    --attribute-definitions \
+      AttributeName=fundSlug,AttributeType=S \
+      AttributeName=sk,AttributeType=S \
+    --key-schema \
+      AttributeName=fundSlug,KeyType=HASH \
+      AttributeName=sk,KeyType=RANGE
+  aws dynamodb wait table-exists --table-name "$MANDATES_TABLE" --region "$AWS_REGION"
 fi
 
 "$SCRIPT_DIR/sync-dynamodb-iam.sh"

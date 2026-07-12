@@ -31,7 +31,6 @@ export function redactFund(fund: Fund): Fund {
   return {
     ...fund,
     thesis: "",
-    description: fund.description ? "Paid bundle — unlock to view." : "",
-    markets: [],
+    description: fund.description ? "Paid fund — unlock to view." : "",
   };
 }

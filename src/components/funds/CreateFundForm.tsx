@@ -1,46 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
-import type { MarketSide } from "@/lib/funds/types";
-import type { SearchMarket } from "@/lib/polymarket/gamma";
+import { useState } from "react";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
 import ConnectWallet from "@/components/app/ConnectWallet";
 import UnlockPriceField from "@/components/funds/UnlockPriceField";
+import { defaultLifecycleDate } from "@/lib/funds/lifecycle";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
-
-type SelectedMarket = SearchMarket & {
-  side: MarketSide;
-  weight: number;
-};
-
-function equalWeights(count: number): number[] {
-  if (count === 0) return [];
-  const base = Math.floor(100 / count);
-  const remainder = 100 - base * count;
-  return Array.from({ length: count }, (_, i) => base + (i < remainder ? 1 : 0));
-}
-
-function redistribute(items: SelectedMarket[]): SelectedMarket[] {
-  const weights = equalWeights(items.length);
-  return items.map((item, i) => ({ ...item, weight: weights[i]! }));
-}
-
-function RemoveIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      aria-hidden
-    >
-      <path d="M18 6 6 18M6 6l12 12" />
-    </svg>
-  );
-}
 
 export default function CreateFundForm() {
   return <CreateFundFormInner />;
@@ -52,91 +16,22 @@ function CreateFundFormInner() {
   const [name, setName] = useState("");
   const [thesis, setThesis] = useState("");
   const [unlockPrice, setUnlockPrice] = useState("");
-  const [query, setQuery] = useState("");
-  const [searching, setSearching] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
-  const [results, setResults] = useState<SearchMarket[]>([]);
-  const [selected, setSelected] = useState<SelectedMarket[]>([]);
+  const [capUsdc, setCapUsdc] = useState("");
+  const [raiseEndsAt, setRaiseEndsAt] = useState(() => defaultLifecycleDate(30));
+  const [tradingEndsAt, setTradingEndsAt] = useState(() =>
+    defaultLifecycleDate(90),
+  );
   const { name: managerName } = usePolymarketProfile(address);
 
-  const totalWeight = useMemo(
-    () => selected.reduce((sum, m) => sum + m.weight, 0),
-    [selected],
-  );
-
-  const weightsValid = selected.length > 0 && totalWeight === 100;
   const canPublish =
     isConnected &&
     address &&
     name.trim() &&
     thesis.trim() &&
-    weightsValid;
+    raiseEndsAt &&
+    tradingEndsAt;
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const q = query.trim();
-    if (q.length < 2) {
-      setResults([]);
-      setSearchError(null);
-      return;
-    }
-
-    let cancelled = false;
-    const id = setTimeout(async () => {
-      setSearching(true);
-      setSearchError(null);
-      try {
-        const res = await fetch(
-          `/api/polymarket/search?q=${encodeURIComponent(q)}`,
-        );
-        const data = await res.json();
-        if (cancelled) return;
-        if (!res.ok) throw new Error(data.error ?? "Search failed");
-        setResults(data.markets ?? []);
-      } catch (e) {
-        if (cancelled) return;
-        setResults([]);
-        setSearchError(e instanceof Error ? e.message : "Search failed");
-      } finally {
-        if (!cancelled) setSearching(false);
-      }
-    }, 300);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(id);
-    };
-  }, [query]);
-
-  function addMarket(market: SearchMarket) {
-    if (selected.some((m) => m.gammaMarketId === market.gammaMarketId)) return;
-    setSelected((prev) =>
-      redistribute([...prev, { ...market, side: "no", weight: 0 }]),
-    );
-    setQuery("");
-    setResults([]);
-  }
-
-  function removeMarket(id: string) {
-    setSelected((prev) => redistribute(prev.filter((m) => m.gammaMarketId !== id)));
-  }
-
-  function setSide(id: string, side: MarketSide) {
-    setSelected((prev) =>
-      prev.map((m) => (m.gammaMarketId === id ? { ...m, side } : m)),
-    );
-  }
-
-  function setWeight(id: string, weight: number) {
-    setSelected((prev) =>
-      prev.map((m) =>
-        m.gammaMarketId === id
-          ? { ...m, weight: Math.max(0, Math.min(100, weight)) }
-          : m,
-      ),
-    );
-  }
 
   async function publish() {
     if (!canPublish || publishing || !address) return;
@@ -171,18 +66,10 @@ function CreateFundFormInner() {
           managerAddress: address,
           message: challenge.message,
           signature,
-          unlockPriceUsdc: unlockPrice.trim()
-            ? Number(unlockPrice)
-            : null,
-          markets: selected.map((market) => ({
-            gammaMarketId: market.gammaMarketId,
-            conditionId: market.conditionId,
-            clobTokenIds: market.clobTokenIds,
-            outcomes: market.outcomes,
-            question: market.question,
-            side: market.side,
-            weight: market.weight,
-          })),
+          unlockPriceUsdc: unlockPrice.trim() ? Number(unlockPrice) : null,
+          capUsdc: capUsdc.trim() ? Number(capUsdc) : null,
+          raiseEndsAt,
+          tradingEndsAt,
         }),
       });
 
@@ -220,21 +107,21 @@ function CreateFundFormInner() {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Nothing Ever Happens"
+          placeholder="US Politics Active Fund"
           className={inputClass}
         />
       </div>
 
       <div>
         <label className="text-primary mb-1 block text-sm" htmlFor="thesis">
-          Thesis
+          Strategy
         </label>
         <textarea
           id="thesis"
           rows={3}
           value={thesis}
           onChange={(e) => setThesis(e.target.value)}
-          placeholder="Nothing ever happens in crypto. All positions are NO on hype markets."
+          placeholder="Discretionary macro strategy for the next quarter. Investors commit capital; you trade with proportional fan-out."
           className={inputClass}
         />
       </div>
@@ -245,115 +132,65 @@ function CreateFundFormInner() {
         onChange={setUnlockPrice}
       />
 
-      <div>
-        <label className="text-primary mb-1 block text-sm" htmlFor="market-search">
-          Markets
-        </label>
-
-        <input
-          id="market-search"
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search Polymarket…"
-          className={inputClass}
-          autoComplete="off"
-        />
-
-        {searching && (
-          <p className="text-primary/50 mt-2 text-xs">Searching…</p>
-        )}
-        {searchError && (
-          <p className="text-red-400 mt-2 text-xs">{searchError}</p>
-        )}
-
-        {results.length > 0 && (
-          <ul className="border-primary/10 bg-primary/5 mt-2 max-h-48 overflow-y-auto rounded border">
-            {results.map((market) => (
-              <li key={market.gammaMarketId} className="border-primary/10 border-b last:border-0">
-                <button
-                  type="button"
-                  onClick={() => addMarket(market)}
-                  disabled={selected.some(
-                    (m) => m.gammaMarketId === market.gammaMarketId,
-                  )}
-                  className="text-primary hover:bg-primary/10 disabled:text-primary/30 w-full px-3 py-2.5 text-left text-sm transition-colors disabled:cursor-not-allowed"
-                >
-                  {market.question}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {selected.length > 0 ? (
-          <ul className="border-primary/10 bg-primary/5 mt-4 divide-y divide-primary/10 overflow-hidden rounded border">
-            {selected.map((market) => (
-              <li key={market.gammaMarketId} className="px-3 py-3">
-                <p className="text-primary line-clamp-2 text-sm leading-snug">
-                  {market.question}
-                </p>
-
-                <div className="mt-2.5 flex items-center justify-end gap-2">
-                  <div className="border-primary/10 flex shrink-0 overflow-hidden rounded border">
-                    {(["yes", "no"] as const).map((side) => (
-                      <button
-                        key={side}
-                        type="button"
-                        onClick={() => setSide(market.gammaMarketId, side)}
-                        className={
-                          market.side === side
-                            ? side === "yes"
-                              ? "bg-emerald-500/20 px-2 py-1 text-[0.65rem] font-medium uppercase text-emerald-300"
-                              : "bg-red-500/20 px-2 py-1 text-[0.65rem] font-medium uppercase text-red-300"
-                            : "text-primary/40 hover:text-primary/70 px-2 py-1 text-[0.65rem] font-medium uppercase"
-                        }
-                      >
-                        {side}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="border-primary/10 flex shrink-0 items-center rounded border">
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={market.weight}
-                      onChange={(e) =>
-                        setWeight(
-                          market.gammaMarketId,
-                          Number.parseInt(e.target.value, 10) || 0,
-                        )
-                      }
-                      aria-label="Weight percent"
-                      className="text-primary [appearance:textfield] w-10 border-0 bg-transparent py-1 text-center font-mono text-xs focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    />
-                    <span className="text-primary/40 pr-1.5 text-[0.65rem]">%</span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => removeMarket(market.gammaMarketId)}
-                    className="text-primary/40 hover:text-red-400 hover:bg-red-500/10 flex size-7 shrink-0 items-center justify-center rounded transition-colors"
-                    aria-label="Remove market"
-                  >
-                    <RemoveIcon />
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-primary/50 mt-3 text-xs">
-            Search and add at least one Polymarket market.
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="text-primary mb-1 block text-sm" htmlFor="raise-ends">
+            Deposit stage ends
+          </label>
+          <input
+            id="raise-ends"
+            type="date"
+            value={raiseEndsAt}
+            onChange={(e) => setRaiseEndsAt(e.target.value)}
+            className={inputClass}
+            required
+          />
+          <p className="text-primary/50 mt-2 text-xs">
+            Last day investors can commit capital.
           </p>
-        )}
+        </div>
+        <div>
+          <label
+            className="text-primary mb-1 block text-sm"
+            htmlFor="trading-ends"
+          >
+            Trading stage ends
+          </label>
+          <input
+            id="trading-ends"
+            type="date"
+            value={tradingEndsAt}
+            min={raiseEndsAt || undefined}
+            onChange={(e) => setTradingEndsAt(e.target.value)}
+            className={inputClass}
+            required
+          />
+          <p className="text-primary/50 mt-2 text-xs">
+            Last day the manager may open new risk.
+          </p>
+        </div>
       </div>
 
-      {publishError && (
-        <p className="text-red-400 text-sm">{publishError}</p>
-      )}
+      <div>
+        <label className="text-primary mb-1 block text-sm" htmlFor="cap-usdc">
+          Pool cap (optional)
+        </label>
+        <input
+          id="cap-usdc"
+          type="number"
+          min={0}
+          value={capUsdc}
+          onChange={(e) => setCapUsdc(e.target.value)}
+          placeholder="e.g. 10000"
+          className={inputClass}
+        />
+        <p className="text-primary/50 mt-2 text-xs">
+          Managed pool — investors commit capital from their deposit wallets.
+          Manager trades fan out proportionally.
+        </p>
+      </div>
+
+      {publishError && <p className="text-red-400 text-sm">{publishError}</p>}
 
       <button
         type="button"

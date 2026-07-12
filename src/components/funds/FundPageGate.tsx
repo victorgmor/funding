@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { getWalletClient } from "@wagmi/core";
 import ConnectWallet from "@/components/app/ConnectWallet";
 import FundPerformanceCell from "@/components/funds/FundPerformanceCell";
+import FundPoolOverview from "@/components/funds/FundPoolOverview";
 import FundSidebar from "@/components/funds/FundSidebar";
-import MarketBasket from "@/components/funds/MarketBasket";
 import type { Fund } from "@/lib/funds/types";
 import {
   formatUnlockPaymentError,
@@ -142,9 +142,9 @@ export default function FundPageGate({
   if (!access) {
     return (
       <div className="border-primary/10 bg-primary/5 mt-8 max-w-lg rounded-lg border p-6">
-        <p className="text-primary text-lg font-medium">Paid bundle</p>
+        <p className="text-primary text-lg font-medium">Paid fund</p>
         <p className="text-primary/60 mt-2 text-sm">
-          Unlock access to view markets, thesis details, and trade this bundle.
+          Unlock access to view the strategy and commit to this fund.
         </p>
         <p className="text-primary mt-4 font-mono text-3xl font-semibold tabular-nums">
           ${priceUsdc?.toFixed(2) ?? "—"}
@@ -178,7 +178,7 @@ export default function FundPageGate({
   }
 
   if (!fullFund) {
-    return <p className="text-primary/50 mt-8 text-sm">Loading bundle…</p>;
+    return <p className="text-primary/50 mt-8 text-sm">Loading fund…</p>;
   }
 
   return (
@@ -187,7 +187,7 @@ export default function FundPageGate({
 
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <MarketBasket fund={fullFund} />
+          <FundPoolOverview fund={fullFund} />
         </div>
         <div>
           <FundSidebar fund={fullFund} />

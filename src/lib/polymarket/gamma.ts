@@ -1,6 +1,4 @@
-import type { Fund, MarketPosition } from "@/lib/funds/types";
 import { fetchErrorMessage } from "@/lib/fetch-error";
-import { fetchTokenPriceAt } from "@/lib/polymarket/prices";
 
 /** Parse gamma `clobTokenIds` + outcomes to get YES/NO token ids */
 export function tokenIdForSide(
@@ -13,27 +11,6 @@ export function tokenIdForSide(
   const idx = labels.findIndex((o) => o.toLowerCase() === side);
   if (idx === -1) throw new Error(`Side ${side} not in outcomes`);
   return tokens[idx]!;
-}
-
-export function marketFromGamma(
-  gamma: {
-    id: string;
-    question: string;
-    conditionId: string;
-    clobTokenIds: string;
-    outcomes: string;
-  },
-  side: "yes" | "no",
-  weight: number,
-): MarketPosition {
-  return {
-    gammaMarketId: gamma.id,
-    conditionId: gamma.conditionId,
-    tokenId: tokenIdForSide(gamma.clobTokenIds, gamma.outcomes, side),
-    question: gamma.question,
-    side,
-    weight,
-  };
 }
 
 export type SearchMarket = {
@@ -124,17 +101,6 @@ export async function fetchGammaMarket(id: string): Promise<GammaMarket> {
   }
 }
 
-export async function enrichFundMarkets(fund: Fund): Promise<Fund> {
-  const markets = await Promise.all(
-    fund.markets.map(async (m) => {
-      if (m.tokenId) return m;
-      const gamma = await fetchGammaMarket(m.gammaMarketId);
-      return marketFromGamma(gamma, m.side, m.weight);
-    }),
-  );
-  return { ...fund, markets };
-}
-
 export function midPrice(gamma: GammaMarket, side: "yes" | "no"): number {
   const prices = JSON.parse(gamma.outcomePrices) as string[];
   const outcomes = JSON.parse(gamma.outcomes) as string[];
@@ -148,64 +114,4 @@ export function midPrice(gamma: GammaMarket, side: "yes" | "no"): number {
   }
 
   return fromGamma || 0.5;
-}
-
-export type LiveMarket = {
-  gammaMarketId: string;
-  question: string;
-  side: "yes" | "no";
-  weight: number;
-  price: number;
-  bestBid?: number;
-  bestAsk?: number;
-  acceptingOrders?: boolean;
-};
-
-export async function fetchLiveMarkets(
-  markets: MarketPosition[],
-): Promise<LiveMarket[]> {
-  return Promise.all(
-    markets.map(async (market) => {
-      const gamma = await fetchGammaMarket(market.gammaMarketId);
-      return {
-        gammaMarketId: market.gammaMarketId,
-        question: gamma.question || market.question,
-        side: market.side,
-        weight: market.weight,
-        price: midPrice(gamma, market.side),
-        bestBid: gamma.bestBid,
-        bestAsk: gamma.bestAsk,
-        acceptingOrders: gamma.acceptingOrders,
-      };
-    }),
-  );
-}
-
-export async function captureCreationPrices(
-  markets: MarketPosition[],
-  createdAt: Date,
-): Promise<MarketPosition[]> {
-  return Promise.all(
-    markets.map(async (market) => {
-      if (market.entryPrice != null && market.entryPrice > 0) return market;
-
-      const historical = await fetchTokenPriceAt(market.tokenId, createdAt);
-      if (historical != null && historical > 0) {
-        return { ...market, entryPrice: historical };
-      }
-
-      const gamma = await fetchGammaMarket(market.gammaMarketId);
-      return {
-        ...market,
-        entryPrice: midPrice(gamma, market.side),
-      };
-    }),
-  );
-}
-
-/** @deprecated use captureCreationPrices */
-export async function captureEntryPrices(
-  markets: MarketPosition[],
-): Promise<MarketPosition[]> {
-  return captureCreationPrices(markets, new Date());
 }

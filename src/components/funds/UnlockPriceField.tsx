@@ -21,7 +21,7 @@ export default function UnlockPriceField({ id, value, onChange }: Props) {
 
   return (
     <div>
-      <p className="text-primary mb-2 text-sm">Bundle access</p>
+      <p className="text-primary mb-2 text-sm">Fund access</p>
       <div className="border-primary/10 flex w-fit overflow-hidden rounded border">
         <button
           type="button"
@@ -67,8 +67,8 @@ export default function UnlockPriceField({ id, value, onChange }: Props) {
             <span className="text-primary/40 pr-2 text-xs">pUSD</span>
           </div>
           <p className="text-primary/50 mt-1 text-xs">
-            One-time unlock fee. Minimum $1. Markets and thesis stay hidden
-            until paid.
+            One-time unlock fee. Minimum $1. Strategy details stay hidden until
+            paid.
           </p>
         </>
       )}

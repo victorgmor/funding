@@ -26,7 +26,7 @@ function CreatorItem({ creator }: { creator: TopCreator }) {
         </span>
       )}
       <span className="text-primary/40 text-xs">
-        {creator.bundleCount} call{creator.bundleCount === 1 ? "" : "s"}
+        {creator.fundCount} fund{creator.fundCount === 1 ? "" : "s"}
       </span>
     </a>
   );

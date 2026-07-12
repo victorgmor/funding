@@ -2,7 +2,6 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { seedFunds } from "@/data/funds";
-import { tokenIdForSide, captureCreationPrices } from "@/lib/polymarket/gamma";
 import {
   fetchPolymarketProfile,
   polymarketDisplayName,
@@ -14,10 +13,13 @@ import {
   dbPutFund,
   dbSlugExists,
   dbUpdateFund,
-  dbUpdateFundMarkets,
   fundsTable,
 } from "@/lib/funds/dynamodb";
-import type { Fund, FundManager, MarketPosition, MarketSide } from "@/lib/funds/types";
+import type { Fund, FundManager } from "@/lib/funds/types";
+import {
+  parseFundDateInput,
+  validateLifecycleDates,
+} from "@/lib/funds/lifecycle";
 import { isCreatorWallet } from "@/lib/funds/creator";
 import { isUserFund } from "@/lib/funds/editable";
 
@@ -26,20 +28,9 @@ export { isUserFund } from "@/lib/funds/editable";
 const DATA_DIR = join(process.cwd(), "data");
 const USER_FUNDS_FILE = join(DATA_DIR, "user-funds.json");
 
-export type CreateFundMarketInput = {
-  gammaMarketId: string;
-  conditionId: string;
-  clobTokenIds: string;
-  outcomes: string;
-  question: string;
-  side: MarketSide;
-  weight: number;
-};
-
 export type UpdateFundInput = {
   name: string;
   thesis: string;
-  markets: CreateFundMarketInput[];
   managerAddress: string;
   message: string;
   signature: `0x${string}`;
@@ -52,7 +43,11 @@ export type CloseFundInput = {
   signature: `0x${string}`;
 };
 
-export type CreateFundInput = UpdateFundInput;
+export type CreateFundInput = UpdateFundInput & {
+  tradingEndsAt?: string | null;
+  raiseEndsAt?: string | null;
+  capUsdc?: number | null;
+};
 
 function useDynamo() {
   return Boolean(fundsTable());
@@ -84,7 +79,7 @@ async function replaceUserFund(fund: Fund): Promise<void> {
   }
   const funds = readUserFundsFile();
   const index = funds.findIndex((row) => row.slug === fund.slug);
-  if (index === -1) throw new Error("Bundle not found");
+  if (index === -1) throw new Error("Fund not found");
   funds[index] = fund;
   writeUserFundsFile(funds);
 }
@@ -95,46 +90,12 @@ async function getEditableUserFund(
 ): Promise<Fund> {
   const fund = await getFund(slug);
   if (!fund || !isUserFund(fund)) {
-    throw new Error("Bundle not found");
+    throw new Error("Fund not found");
   }
   if (fund.manager.id.toLowerCase() !== managerAddress.toLowerCase()) {
-    throw new Error("Only the creator can manage this bundle");
+    throw new Error("Only the creator can manage this fund");
   }
   return fund;
-}
-
-async function mergeMarketsOnUpdate(
-  existing: MarketPosition[],
-  input: CreateFundMarketInput[],
-): Promise<MarketPosition[]> {
-  const existingByGamma = new Map(existing.map((m) => [m.gammaMarketId, m]));
-  const positions = input.map((market) => {
-    const base = toMarketPosition(market);
-    const prev = existingByGamma.get(market.gammaMarketId);
-    if (
-      prev &&
-      prev.tokenId === base.tokenId &&
-      prev.entryPrice != null &&
-      prev.entryPrice > 0
-    ) {
-      return { ...base, entryPrice: prev.entryPrice };
-    }
-    return base;
-  });
-
-  const needPrices = positions.filter(
-    (m) => m.entryPrice == null || !Number.isFinite(m.entryPrice) || m.entryPrice <= 0,
-  );
-  if (needPrices.length === 0) return positions;
-
-  const priced = await captureCreationPrices(needPrices, new Date());
-  const pricedByGamma = new Map(priced.map((m) => [m.gammaMarketId, m.entryPrice]));
-
-  return positions.map((m) => {
-    if (m.entryPrice != null && m.entryPrice > 0) return m;
-    const entryPrice = pricedByGamma.get(m.gammaMarketId);
-    return entryPrice != null ? { ...m, entryPrice } : m;
-  });
 }
 
 export async function updateFund(
@@ -149,17 +110,14 @@ export async function updateFund(
 
   const fund = await getEditableUserFund(slug, input.managerAddress);
   if (fund.status === "closed") {
-    throw new Error("Closed bundles cannot be edited");
+    throw new Error("Closed funds cannot be edited");
   }
-
-  const markets = await mergeMarketsOnUpdate(fund.markets, input.markets);
 
   const updated: Fund = {
     ...fund,
     name: input.name.trim(),
     description: input.thesis.trim().slice(0, 120),
     thesis: input.thesis.trim(),
-    markets,
     unlockPriceUsdc: parseUnlockPrice(input.unlockPriceUsdc),
   };
 
@@ -177,10 +135,14 @@ export async function closeFund(
 
   const fund = await getEditableUserFund(slug, input.managerAddress);
   if (fund.status === "closed") {
-    throw new Error("Bundle is already closed");
+    throw new Error("Fund is already closed");
   }
 
-  const updated: Fund = { ...fund, status: "closed" };
+  const updated: Fund = {
+    ...fund,
+    status: "closed",
+    closedAt: new Date().toISOString(),
+  };
   await replaceUserFund(updated);
   return updated;
 }
@@ -192,21 +154,6 @@ async function writeUserFund(fund: Fund): Promise<void> {
   }
   const funds = readUserFundsFile();
   funds.push(fund);
-  writeUserFundsFile(funds);
-}
-
-async function updateUserFundMarkets(
-  slug: string,
-  markets: Fund["markets"],
-): Promise<void> {
-  if (useDynamo()) {
-    await dbUpdateFundMarkets(slug, markets);
-    return;
-  }
-  const funds = readUserFundsFile();
-  const index = funds.findIndex((row) => row.slug === slug);
-  if (index === -1) return;
-  funds[index] = { ...funds[index]!, markets };
   writeUserFundsFile(funds);
 }
 
@@ -236,32 +183,6 @@ export async function getFundsByCreator(creatorId: string): Promise<Fund[]> {
   return [...fromSeed, ...fromFile];
 }
 
-/** Backfill creation-time prices for user funds missing baselines */
-export async function ensureFundBaseline(fund: Fund): Promise<Fund> {
-  const hasBaseline =
-    fund.markets.length > 0 &&
-    fund.markets.every(
-      (m) => m.entryPrice != null && Number.isFinite(m.entryPrice) && m.entryPrice > 0,
-    );
-  if (hasBaseline) return fund;
-
-  const isSeed = seedFunds.some((row) => row.id === fund.id);
-  if (isSeed) return fund;
-
-  if (!fund.createdAt) return fund;
-
-  const markets = await captureCreationPrices(
-    fund.markets,
-    new Date(fund.createdAt),
-  );
-  if (!markets.every((m) => m.entryPrice != null && m.entryPrice > 0)) {
-    return fund;
-  }
-
-  await updateUserFundMarkets(fund.slug, markets);
-  return { ...fund, markets };
-}
-
 function slugify(name: string): string {
   const base = name
     .toLowerCase()
@@ -287,17 +208,6 @@ async function slugTaken(slug: string): Promise<boolean> {
   return readUserFundsFile().some((fund) => fund.slug === slug);
 }
 
-function toMarketPosition(market: CreateFundMarketInput): MarketPosition {
-  return {
-    gammaMarketId: market.gammaMarketId,
-    conditionId: market.conditionId,
-    tokenId: tokenIdForSide(market.clobTokenIds, market.outcomes, market.side),
-    question: market.question,
-    side: market.side,
-    weight: market.weight,
-  };
-}
-
 function parseUnlockPrice(value: unknown): number | null {
   if (value == null || value === "") return null;
   const price = Number(value);
@@ -306,36 +216,38 @@ function parseUnlockPrice(value: unknown): number | null {
   return Math.round(price * 100) / 100;
 }
 
+function parseOptionalIso(value: unknown): string | null {
+  if (value == null || value === "") return null;
+  const text = String(value).trim();
+  if (!text) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return parseFundDateInput(text);
+  }
+  const ms = Date.parse(text);
+  if (!Number.isFinite(ms)) throw new Error("Invalid date");
+  return new Date(ms).toISOString();
+}
+
+function parseCapUsdc(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const cap = Number(value);
+  if (!Number.isFinite(cap) || cap <= 0) return null;
+  return Math.round(cap * 100) / 100;
+}
+
 function validateCreateInput(input: CreateFundInput): string | null {
   const name = input.name?.trim() ?? "";
   const thesis = input.thesis?.trim() ?? "";
 
   if (name.length < 2) return "Fund name is required";
-  if (thesis.length < 10) return "Thesis must be at least 10 characters";
-  if (!input.markets?.length) return "Add at least one market";
+  if (thesis.length < 10) return "Strategy must be at least 10 characters";
 
-  const ids = new Set<string>();
-  let totalWeight = 0;
-
-  for (const market of input.markets) {
-    if (!market.gammaMarketId || !market.conditionId || !market.clobTokenIds) {
-      return "Invalid market data";
+  if (input.capUsdc != null) {
+    const cap = Number(input.capUsdc);
+    if (!Number.isFinite(cap) || cap <= 0) {
+      return "Pool cap must be positive when set";
     }
-    if (ids.has(market.gammaMarketId)) return "Duplicate markets are not allowed";
-    ids.add(market.gammaMarketId);
-
-    if (market.side !== "yes" && market.side !== "no") {
-      return "Each market needs a YES or NO side";
-    }
-
-    const weight = Number(market.weight);
-    if (!Number.isFinite(weight) || weight <= 0) {
-      return "Each market weight must be greater than 0";
-    }
-    totalWeight += weight;
   }
-
-  if (totalWeight !== 100) return "Market weights must total 100%";
 
   try {
     if (input.unlockPriceUsdc != null) {
@@ -380,15 +292,13 @@ export async function createFund(input: CreateFundInput): Promise<Fund> {
   if (error) throw new Error(error);
 
   const slug = await uniqueSlug(slugify(input.name.trim()));
-
   const createdAt = new Date().toISOString();
-  const [markets, manager] = await Promise.all([
-    captureCreationPrices(
-      input.markets.map(toMarketPosition),
-      new Date(createdAt),
-    ),
-    resolveManager(input.managerAddress),
-  ]);
+  const manager = await resolveManager(input.managerAddress);
+
+  const raiseEndsAt = parseOptionalIso(input.raiseEndsAt);
+  const tradingEndsAt = parseOptionalIso(input.tradingEndsAt);
+  const lifecycleError = validateLifecycleDates(raiseEndsAt, tradingEndsAt);
+  if (lifecycleError) throw new Error(lifecycleError);
 
   const fund: Fund = {
     id: randomUUID(),
@@ -398,9 +308,11 @@ export async function createFund(input: CreateFundInput): Promise<Fund> {
     thesis: input.thesis.trim(),
     status: "trading",
     manager,
-    markets,
     createdAt,
     unlockPriceUsdc: parseUnlockPrice(input.unlockPriceUsdc),
+    tradingEndsAt,
+    raiseEndsAt,
+    capUsdc: parseCapUsdc(input.capUsdc),
   };
 
   await writeUserFund(fund);

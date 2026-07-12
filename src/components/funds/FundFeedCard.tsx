@@ -25,8 +25,10 @@ export default function FundFeedCard({
   const paid = isPaidFund(fund);
   const snippet = feedSnippet(fund);
   const published = formatPublishedAgo(fund.createdAt);
-  const marketCount = fund.markets.length;
-  const marketLabel = `${marketCount} market${marketCount === 1 ? "" : "s"}`;
+  const capLabel =
+    fund.capUsdc != null && fund.capUsdc > 0
+      ? `$${fund.capUsdc.toFixed(0)} cap`
+      : "Managed pool";
   const showAvatar = isCreatorWallet(fund.manager.id);
 
   return (
@@ -89,10 +91,10 @@ export default function FundFeedCard({
       </a>
 
       <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-        <span className="text-primary/45">{marketLabel}</span>
+        <span className="text-primary/45">{capLabel}</span>
         {paid ? (
           <span className="text-primary/55">
-            {marketCount} locked · ${fund.unlockPriceUsdc!.toFixed(2)} to unlock
+            ${fund.unlockPriceUsdc!.toFixed(2)} to unlock
           </span>
         ) : (
           <span className="text-primary/45">Free to read</span>
@@ -101,7 +103,7 @@ export default function FundFeedCard({
           href={`/funds/${fund.slug}`}
           className="text-primary/50 hover:text-primary ml-auto transition-colors"
         >
-          Read call →
+          Read fund →
         </a>
       </div>
     </article>

@@ -4,7 +4,7 @@ export type TopCreator = {
   id: string;
   name: string;
   verified: boolean;
-  bundleCount: number;
+  fundCount: number;
 };
 
 export function getTopCreators(funds: Fund[], limit = 12): TopCreator[] {
@@ -18,17 +18,17 @@ export function getTopCreators(funds: Fund[], limit = 12): TopCreator[] {
         id: fund.manager.id,
         name: fund.manager.name,
         verified: fund.manager.verified,
-        bundleCount: 1,
+        fundCount: 1,
       });
       continue;
     }
 
-    existing.bundleCount += 1;
+    existing.fundCount += 1;
   }
 
   return [...byId.values()]
     .sort((a, b) => {
-      if (b.bundleCount !== a.bundleCount) return b.bundleCount - a.bundleCount;
+      if (b.fundCount !== a.fundCount) return b.fundCount - a.fundCount;
       return a.name.localeCompare(b.name);
     })
     .slice(0, limit);

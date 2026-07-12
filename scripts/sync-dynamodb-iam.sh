@@ -7,6 +7,7 @@ AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID:-$(aws sts get-caller-identity --query Account 
 FUNDS_TABLE="${FUNDS_TABLE:-carriera-funds}"
 CHALLENGES_TABLE="${CHALLENGES_TABLE:-carriera-challenges}"
 ENTITLEMENTS_TABLE="${ENTITLEMENTS_TABLE:-carriera-entitlements}"
+MANDATES_TABLE="${MANDATES_TABLE:-carriera-mandates}"
 TASK_ROLE="${TASK_ROLE:-ecsTaskExecutionRole}"
 POLICY_NAME="CarrieraFundsDynamoDBPolicy"
 
@@ -31,7 +32,8 @@ cat >"$TMP_DIR/dynamodb-policy.json" <<EOF
         "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${FUNDS_TABLE}",
         "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${FUNDS_TABLE}/index/*",
         "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${CHALLENGES_TABLE}",
-        "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${ENTITLEMENTS_TABLE}"
+        "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${ENTITLEMENTS_TABLE}",
+        "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${MANDATES_TABLE}"
       ]
     }
   ]

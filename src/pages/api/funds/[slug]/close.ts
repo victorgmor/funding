@@ -37,7 +37,7 @@ export const POST: APIRoute = async ({ params, request }) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Could not close bundle";
+    const message = e instanceof Error ? e.message : "Could not close fund";
     const status = message.includes("not found") ? 404 : 400;
     return new Response(JSON.stringify({ error: message }), {
       status,

@@ -3,14 +3,17 @@ import {
   ClobClient,
   OrderType,
   Side,
+  type ApiKeyCreds,
 } from "@polymarket/clob-client-v2";
 import type { WalletClient } from "viem";
-import type { BasketQuote, ExitQuote } from "@/lib/funds/types";
+import type { BasketQuote, LegResult, MandateTrade } from "@/lib/funds/types";
 import {
   getApiCredentials,
   resolveTradingWallet,
+  type TradingWallet,
 } from "@/lib/polymarket/wallet";
 import { getClobBuilderConfig } from "@/lib/polymarket/builder";
+import type { StoredClobCreds } from "@/lib/funds/trading-sessions";
 
 const HOST = "https://clob.polymarket.com";
 const CHAIN = 137;
@@ -24,6 +27,7 @@ function orderError(resp: unknown): string | undefined {
 export async function createTradingClient(
   walletClient: WalletClient,
   onStatus?: (message: string) => void,
+  storedCreds?: StoredClobCreds,
 ) {
   const eoa = walletClient.account?.address;
   if (!eoa) throw new Error("Wallet account unavailable");
@@ -31,18 +35,21 @@ export async function createTradingClient(
   onStatus?.("Setting up Polymarket wallet…");
   const trading = await resolveTradingWallet(walletClient, onStatus);
 
-  const authClient = new ClobClient({
-    host: HOST,
-    chain: CHAIN,
-    signer: walletClient,
-  });
-  const creds = await getApiCredentials(authClient);
+  const creds =
+    storedCreds ??
+    (await getApiCredentials(
+      new ClobClient({
+        host: HOST,
+        chain: CHAIN,
+        signer: walletClient,
+      }),
+    ));
 
   const client = new ClobClient({
     host: HOST,
     chain: CHAIN,
     signer: walletClient,
-    creds,
+    creds: creds as ApiKeyCreds,
     signatureType: trading.signatureType,
     funderAddress: trading.funderAddress,
     throwOnError: true,
@@ -52,81 +59,80 @@ export async function createTradingClient(
   onStatus?.("Syncing balance with Polymarket…");
   await client.updateBalanceAllowance({ asset_type: AssetType.COLLATERAL });
 
-  return { client, trading };
+  return { client, trading, creds: creds as StoredClobCreds };
 }
-
-export type LegResult = {
-  question: string;
-  status: "filled" | "failed";
-  detail?: string;
-};
 
 export async function executeBuyQuote(
   walletClient: WalletClient,
   quote: BasketQuote,
   onStatus?: (message: string) => void,
+  storedCreds?: StoredClobCreds,
 ): Promise<LegResult[]> {
-  const { client, trading } = await createTradingClient(walletClient, onStatus);
+  const { client, trading } = await createTradingClient(
+    walletClient,
+    onStatus,
+    storedCreds,
+  );
   const results: LegResult[] = [];
 
   for (const leg of quote.legs) {
-    try {
-      const resp = await client.createAndPostMarketOrder(
-        {
-          tokenID: leg.tokenId,
-          amount: leg.usdcAmount,
-          side: Side.BUY,
-        },
-        {},
-        OrderType.FOK,
-      );
-      const err = orderError(resp);
-      if (err) throw new Error(err);
-      results.push({ question: leg.question, status: "filled" });
-    } catch (e) {
-      results.push({
-        question: leg.question,
-        status: "failed",
-        detail: formatTradeError(e, trading),
-      });
-    }
+    results.push(await executeLeg(client, leg, trading));
   }
 
   return results;
 }
 
-export async function executeExitQuote(
+export async function executeMandateTrade(
   walletClient: WalletClient,
-  quote: ExitQuote,
+  trade: MandateTrade,
   onStatus?: (message: string) => void,
-): Promise<LegResult[]> {
-  const { client, trading } = await createTradingClient(walletClient, onStatus);
-  const results: LegResult[] = [];
+  storedCreds?: StoredClobCreds,
+): Promise<LegResult> {
+  const { client, trading } = await createTradingClient(
+    walletClient,
+    onStatus,
+    storedCreds,
+  );
 
-  for (const leg of quote.legs) {
-    try {
-      const resp = await client.createAndPostMarketOrder(
-        {
-          tokenID: leg.tokenId,
-          amount: leg.shares,
-          side: Side.SELL,
-        },
-        {},
-        OrderType.FOK,
-      );
-      const err = orderError(resp);
-      if (err) throw new Error(err);
-      results.push({ question: leg.question, status: "filled" });
-    } catch (e) {
-      results.push({
-        question: leg.question,
-        status: "failed",
-        detail: formatTradeError(e, trading),
-      });
-    }
+  return executeLeg(
+    client,
+    {
+      tokenId: trade.tokenId,
+      question: trade.question,
+      side: trade.side,
+      usdcAmount: trade.usdcAmount,
+      price: trade.price,
+      shares: trade.shares,
+    },
+    trading,
+  );
+}
+
+async function executeLeg(
+  client: ClobClient,
+  leg: BasketQuote["legs"][number],
+  trading: TradingWallet,
+): Promise<LegResult> {
+  try {
+    const resp = await client.createAndPostMarketOrder(
+      {
+        tokenID: leg.tokenId,
+        amount: leg.usdcAmount,
+        side: Side.BUY,
+      },
+      {},
+      OrderType.FOK,
+    );
+    const err = orderError(resp);
+    if (err) throw new Error(err);
+    return { question: leg.question, status: "filled" };
+  } catch (e) {
+    return {
+      question: leg.question,
+      status: "failed",
+      detail: formatTradeError(e, trading),
+    };
   }
-
-  return results;
 }
 
 function formatTradeError(
@@ -175,3 +181,5 @@ function formatTradeError(
 
   return msg;
 }
+
+export type { LegResult };

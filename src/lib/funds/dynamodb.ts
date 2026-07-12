@@ -86,7 +86,7 @@ export async function dbPutFund(fund: Fund): Promise<void> {
     );
   } catch (e) {
     if (e instanceof ConditionalCheckFailedException) {
-      throw new Error("A bundle with this slug already exists");
+      throw new Error("A fund with this slug already exists");
     }
     throw e;
   }

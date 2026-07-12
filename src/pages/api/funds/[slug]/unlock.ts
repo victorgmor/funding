@@ -23,7 +23,7 @@ export const POST: APIRoute = async ({ params, request }) => {
 
   const price = fundUnlockPrice(fund);
   if (!isPaidFund(fund) || price == null) {
-    return new Response(JSON.stringify({ error: "This bundle is free" }), {
+    return new Response(JSON.stringify({ error: "This fund is free" }), {
       status: 400,
     });
   }

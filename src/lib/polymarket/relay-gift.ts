@@ -364,7 +364,7 @@ async function sendGiftFromSafe(
       refundReceiver: zeroAddress,
     },
     type: "SAFE",
-    metadata: "Bundle unlock",
+    metadata: "Fund unlock",
   });
 }
 
@@ -415,7 +415,7 @@ async function sendGiftFromProxy(
       relay: relay.address,
     },
     type: "PROXY",
-    metadata: "Bundle unlock",
+    metadata: "Fund unlock",
   });
 }
 

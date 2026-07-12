@@ -73,16 +73,18 @@ export default function FundRow({ fund, performance }: Props) {
 
       <div className="min-w-0">
         <p className="text-primary/50 mb-1 text-[0.65rem] font-medium uppercase lg:hidden">
-          Markets
+          Pool
         </p>
         <p className="text-primary text-sm font-medium">
-          {fund.markets.length} markets
+          {fund.capUsdc != null && fund.capUsdc > 0
+            ? `$${fund.capUsdc.toFixed(0)} cap`
+            : "Managed"}
         </p>
       </div>
 
       <div className="min-w-0 lg:text-right">
         <p className="text-primary/50 mb-1 text-[0.65rem] font-medium uppercase lg:hidden">
-          Thesis ROI
+          Performance
         </p>
         <FundPerformanceCell
           roi={performance?.roi ?? null}

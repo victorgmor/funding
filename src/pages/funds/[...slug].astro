@@ -4,7 +4,8 @@ export const prerender = false;
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Text from "@/components/fundations/elements/Text.astro";
 import Wrapper from "@/components/fundations/containers/Wrapper.astro";
-import MarketBasket from "@/components/funds/MarketBasket";
+import FundLifecycleStepper from "@/components/funds/FundLifecycleStepper";
+import FundPoolOverview from "@/components/funds/FundPoolOverview";
 import FundPerformanceCell from "@/components/funds/FundPerformanceCell";
 import FundSidebar from "@/components/funds/FundSidebar";
 import FundPageGate from "@/components/funds/FundPageGate";
@@ -46,7 +47,7 @@ const fundMeta = {
 <BaseLayout>
   <section>
     <Wrapper variant="standard" class="py-24">
-      <a href="/" class="text-primary/60 hover:text-primary text-sm">← All bundles</a>
+      <a href="/" class="text-primary/60 hover:text-primary text-sm">← All funds</a>
 
       <div class="mt-6 flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -104,6 +105,8 @@ const fundMeta = {
         }
       </div>
 
+      <FundLifecycleStepper client:load fund={fund} />
+
       {
         paid ? (
           <FundPageGate
@@ -115,7 +118,7 @@ const fundMeta = {
         ) : (
           <div class="mt-8 grid gap-8 lg:grid-cols-3">
             <div class="lg:col-span-2 space-y-6">
-              <MarketBasket client:load fund={fund} />
+              <FundPoolOverview client:load fund={fund} />
             </div>
             <div>
               <FundSidebar client:load fund={fund} />

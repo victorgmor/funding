@@ -10,7 +10,7 @@ type Props = {
   funds: Fund[];
 };
 
-type SortField = "published" | "creator" | "price" | "markets";
+type SortField = "published" | "creator" | "price" | "cap";
 type SortDirection = "asc" | "desc";
 
 const PAGE_SIZE = 7;
@@ -19,7 +19,7 @@ const SORT_OPTIONS: { field: SortField; label: string }[] = [
   { field: "published", label: "Latest" },
   { field: "creator", label: "Creators" },
   { field: "price", label: "Price" },
-  { field: "markets", label: "Markets" },
+  { field: "cap", label: "Pool cap" },
 ];
 
 function filterFunds(funds: Fund[], query: string): Fund[] {
@@ -53,8 +53,8 @@ function sortFunds(
         return factor * a.manager.name.localeCompare(b.manager.name);
       case "price":
         return factor * (price(a) - price(b));
-      case "markets":
-        return factor * (a.markets.length - b.markets.length);
+      case "cap":
+        return factor * ((a.capUsdc ?? 0) - (b.capUsdc ?? 0));
       default:
         return 0;
     }
@@ -81,10 +81,12 @@ function useParticipatingSlugs(funds: Fund[], enabled: boolean) {
         const results = await Promise.all(
           funds.map(async (fund) => {
             const res = await fetch(
-              `/api/funds/${fund.slug}/invested?address=${address}`,
+              `/api/funds/${fund.slug}/mandates?address=${address}`,
             );
-            const data = (await res.json()) as { invested?: boolean };
-            if (!res.ok || !data.invested) return null;
+            const data = (await res.json()) as {
+              mandate?: { notionalUsdc?: number } | null;
+            };
+            if (!res.ok || !(data.mandate?.notionalUsdc ?? 0)) return null;
             return fund.slug;
           }),
         );
@@ -183,11 +185,11 @@ function FundListPanelInner({ funds }: Props) {
 
   const emptyMessage = onlyParticipating
     ? !isConnected
-      ? "Connect your wallet to filter bundles you're in"
+      ? "Connect your wallet to filter funds you're in"
       : participatingLoading
-        ? "Checking your positions…"
-        : "You're not in any bundles yet"
-    : "No calls match your search";
+        ? "Checking your mandates…"
+        : "You're not in any funds yet"
+    : "No funds match your search";
 
   return (
     <div className="max-w-2xl">
@@ -200,8 +202,8 @@ function FundListPanelInner({ funds }: Props) {
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
-            placeholder="Search calls"
-            aria-label="Search calls"
+            placeholder="Search funds"
+            aria-label="Search funds"
             className="text-primary placeholder:text-primary/35 w-full appearance-none border-0 bg-transparent py-1 text-base shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 [&::-webkit-search-cancel-button]:appearance-none"
             autoComplete="off"
           />
@@ -233,7 +235,7 @@ function FundListPanelInner({ funds }: Props) {
                     onChange={(e) => setOnlyParticipating(e.target.checked)}
                     className="border-primary/20 text-accent ring-0 size-3.5 shrink-0 rounded"
                   />
-                  Only bundles I&apos;m in
+                  Only funds I&apos;m in
                 </label>
                 {onlyParticipating && !isConnected && (
                   <p className="text-primary/50 mt-2 text-xs">

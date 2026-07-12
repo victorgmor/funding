@@ -38,7 +38,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Could not update bundle";
+    const message = e instanceof Error ? e.message : "Could not update fund";
     const status = message.includes("not found") ? 404 : 400;
     return new Response(JSON.stringify({ error: message }), {
       status,

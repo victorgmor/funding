@@ -56,7 +56,7 @@ const performanceBySlug = Object.fromEntries(performanceEntries);
 <BaseLayout>
   <section>
     <Wrapper variant="standard" class="py-24">
-      <a href="/" class="text-primary/60 hover:text-primary text-sm">← All bundles</a>
+      <a href="/" class="text-primary/60 hover:text-primary text-sm">← All funds</a>
 
       <div class="mt-6 flex flex-wrap items-center justify-between gap-4">
         <div class="flex min-w-0 items-center gap-4">
@@ -93,7 +93,7 @@ const performanceBySlug = Object.fromEntries(performanceEntries);
               {verified && <SealCheck size="base" class="text-[#32BCFF]" />}
             </div>
             <p class="text-primary/60 mt-2 text-sm">
-              {funds.length} bundle{funds.length === 1 ? "" : "s"}
+              {funds.length} fund{funds.length === 1 ? "" : "s"}
             </p>
           </div>
         </div>
@@ -108,7 +108,7 @@ const performanceBySlug = Object.fromEntries(performanceEntries);
               performanceBySlug={performanceBySlug}
             />
           ) : (
-            <p class="text-primary/50 text-sm">No bundles yet.</p>
+            <p class="text-primary/50 text-sm">No funds yet.</p>
           )
         }
       </div>

@@ -9,12 +9,21 @@ import {
 const CHALLENGE_TTL_MS = 10 * 60 * 1000;
 const NONCE_BYTES = 16;
 
-export type BundleAuthAction = "publish" | "manage" | "close";
+export type BundleAuthAction =
+  | "publish"
+  | "manage"
+  | "close"
+  | "commit"
+  | "instruct"
+  | "authorize";
 
 const ACTION_TEXT: Record<BundleAuthAction, string> = {
-  publish: "publish a bundle",
-  manage: "update a bundle",
-  close: "close a bundle",
+  publish: "publish a fund",
+  manage: "update a fund",
+  close: "close a fund",
+  commit: "commit capital to a fund",
+  instruct: "publish a fund trade instruction",
+  authorize: "authorize automated fund trading",
 };
 
 function randomNonce(): string {
@@ -37,9 +46,16 @@ export async function createBundleChallenge(
     throw new Error("Invalid wallet address");
   }
 
-  const bundleSlug = normalizeSlug(slug);
-  if ((action === "manage" || action === "close") && !bundleSlug) {
-    throw new Error("Bundle slug required");
+  const fundSlug = normalizeSlug(slug);
+  if (
+    (action === "manage" ||
+      action === "close" ||
+      action === "commit" ||
+      action === "instruct" ||
+      action === "authorize") &&
+    !fundSlug
+  ) {
+    throw new Error("Fund slug required");
   }
 
   const nonce = randomNonce();
@@ -49,7 +65,7 @@ export async function createBundleChallenge(
   const stored: StoredChallenge = {
     address: normalized,
     action,
-    slug: bundleSlug,
+    slug: fundSlug,
     expiresAt,
   };
 
@@ -62,7 +78,7 @@ export async function createBundleChallenge(
     `Action: ${action}`,
   ];
 
-  if (bundleSlug) lines.push(`Bundle: ${bundleSlug}`);
+  if (fundSlug) lines.push(`Fund: ${fundSlug}`);
   lines.push(
     `Chain ID: ${polygon.id}`,
     `Nonce: ${nonce}`,
@@ -89,7 +105,8 @@ export async function verifyBundleSignature(input: {
 }): Promise<string | null> {
   const address = parseField(input.message, "Address");
   const action = parseField(input.message, "Action") as BundleAuthAction | null;
-  const bundle = parseField(input.message, "Bundle");
+  const fundSlug =
+    parseField(input.message, "Fund") ?? parseField(input.message, "Bundle");
   const chainId = parseField(input.message, "Chain ID");
   const nonce = parseField(input.message, "Nonce");
   const issuedAt = parseField(input.message, "Issued At");
@@ -103,11 +120,17 @@ export async function verifyBundleSignature(input: {
   }
 
   const requestSlug = normalizeSlug(input.slug);
-  const messageSlug = normalizeSlug(bundle ?? undefined);
+  const messageSlug = normalizeSlug(fundSlug ?? undefined);
 
-  if (input.action === "manage" || input.action === "close") {
+  if (
+    input.action === "manage" ||
+    input.action === "close" ||
+    input.action === "commit" ||
+    input.action === "instruct" ||
+    input.action === "authorize"
+  ) {
     if (!messageSlug || !requestSlug || messageSlug !== requestSlug) {
-      return "Signature bundle does not match request";
+      return "Signature fund does not match request";
     }
   }
 

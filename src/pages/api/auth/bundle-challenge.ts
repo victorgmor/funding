@@ -6,7 +6,14 @@ import {
 
 export const prerender = false;
 
-const ACTIONS = new Set<BundleAuthAction>(["publish", "manage", "close"]);
+const ACTIONS = new Set<BundleAuthAction>([
+  "publish",
+  "manage",
+  "close",
+  "commit",
+  "instruct",
+  "authorize",
+]);
 
 export const GET: APIRoute = async ({ request, url }) => {
   const address = url.searchParams.get("address");

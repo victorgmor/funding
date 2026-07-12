@@ -1,5 +1,5 @@
-import { useFundInvestment } from "@/components/funds/InvestedBadge";
 import { formatPercent, formatSinceDate, formatUsd } from "@/lib/funds/format";
+import { useMandate } from "@/lib/funds/useMandate";
 
 type Props = {
   fundSlug?: string;
@@ -58,15 +58,8 @@ function FundPerformanceHeader({
   roi: number | null;
   since?: string;
 }) {
-  const { invested, investment } = useFundInvestment(fundSlug);
-  const position =
-    invested && investment && investment.totalCurrent > 0
-      ? investment.totalCurrent
-      : null;
-  const personalRoi =
-    position != null && investment && investment.totalInvested > 0
-      ? ((investment.totalCurrent / investment.totalInvested) - 1) * 100
-      : null;
+  const { mandate, committed } = useMandate(fundSlug);
+  const position = committed && mandate ? mandate.notionalUsdc : null;
 
   if (roi == null && position == null) return null;
 
@@ -75,19 +68,10 @@ function FundPerformanceHeader({
       {roi != null && <ThesisRoi roi={roi} since={since} size="header" />}
       {position != null && (
         <p className="text-primary/60 mt-2 text-sm">
-          Your position{" "}
+          Your mandate{" "}
           <span className="text-primary font-mono tabular-nums">
             {formatUsd(position)}
           </span>
-          {personalRoi != null && (
-            <span
-              className={`ml-1 font-mono tabular-nums ${
-                personalRoi >= 0 ? "text-emerald-400/80" : "text-red-400/80"
-              }`}
-            >
-              ({formatPercent(personalRoi)})
-            </span>
-          )}
         </p>
       )}
     </div>

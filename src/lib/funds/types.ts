@@ -1,16 +1,13 @@
 export type FundStatus = "trading" | "closed";
+export type MandateStatus = "active" | "redeeming" | "closed";
+export type InstructionStatus =
+  | "pending"
+  | "executing"
+  | "executed"
+  | "failed"
+  | "cancelled";
+export type MandateTradeStatus = "pending" | "filled" | "failed" | "skipped";
 export type MarketSide = "yes" | "no";
-
-export type MarketPosition = {
-  gammaMarketId: string;
-  conditionId: string;
-  tokenId: string;
-  question: string;
-  side: MarketSide;
-  weight: number;
-  /** Outcome price (0–1) for this side when the fund was published */
-  entryPrice?: number;
-};
 
 export type FundManager = {
   id: string;
@@ -26,11 +23,18 @@ export type Fund = {
   thesis: string;
   status: FundStatus;
   manager: FundManager;
-  markets: MarketPosition[];
   createdAt?: string;
-  /** USDC price to unlock bundle access. Omit or 0 for free. */
+  /** USDC price to unlock fund access. Omit or 0 for free. */
   unlockPriceUsdc?: number | null;
-  /** @deprecated computed live from entry prices — do not set manually */
+  /** ISO — last day manager may open new risk */
+  tradingEndsAt?: string | null;
+  /** ISO — last day new mandates accepted */
+  raiseEndsAt?: string | null;
+  /** ISO — when the fund was closed (manual or effective) */
+  closedAt?: string | null;
+  /** Max virtual pool size in USDC */
+  capUsdc?: number | null;
+  /** @deprecated legacy field — ignored */
   fundValue?: number;
   deposited?: number;
   cap?: number | null;
@@ -46,7 +50,7 @@ export type OrderLeg = {
   usdcAmount: number;
   price: number;
   shares: number;
-  weight: number;
+  weight?: number;
 };
 
 export type BasketQuote = {
@@ -55,32 +59,96 @@ export type BasketQuote = {
   legs: OrderLeg[];
 };
 
-export type ExitLeg = {
+export type Mandate = {
+  id: string;
+  fundSlug: string;
+  investorWallet: string;
+  notionalUsdc: number;
+  cashUsdc: number;
+  status: MandateStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ManagerInstruction = {
+  id: string;
+  fundSlug: string;
+  tokenId: string;
+  question: string;
+  side: MarketSide;
+  totalUsdc: number;
+  price: number;
+  shares: number;
+  status: InstructionStatus;
+  createdAt: string;
+  executedAt?: string;
+  managerWallet: string;
+};
+
+export type MandateTrade = {
+  id: string;
+  mandateId: string;
+  instructionId: string;
+  fundSlug: string;
+  investorWallet: string;
+  tokenId: string;
+  question: string;
+  side: MarketSide;
+  usdcAmount: number;
+  price: number;
+  shares: number;
+  status: MandateTradeStatus;
+  createdAt: string;
+  filledAt?: string;
+  detail?: string;
+};
+
+export type FanoutSlice = {
+  mandateId: string;
+  investorWallet: string;
+  usdcAmount: number;
+  price: number;
+  shares: number;
+  poolShare: number;
+};
+
+export type MandatePosition = {
+  id: string;
+  mandateId: string;
+  fundSlug: string;
+  investorWallet: string;
   tokenId: string;
   question: string;
   side: MarketSide;
   shares: number;
-  estUsdc: number;
+  avgPrice: number;
+  costUsdc: number;
+  updatedAt: string;
 };
 
-export type ExitQuote = {
+export type TradingSession = {
   fundSlug: string;
-  legs: ExitLeg[];
-  totalEstUsdc: number;
+  investorWallet: string;
+  depositAddress: string;
+  signatureType: number;
+  authorized: boolean;
+  createdAt: string;
+  updatedAt: string;
 };
 
-export type InvestmentLeg = {
-  tokenId: string;
+export type VirtualPool = {
+  fundSlug: string;
+  totalNotional: number;
+  totalCash: number;
+  mandateCount: number;
+  mandates: Mandate[];
+  recentInstructions: ManagerInstruction[];
+  recentTrades: MandateTrade[];
+  positions?: MandatePosition[];
+};
+
+export type LegResult = {
   question: string;
-  side: MarketSide;
-  shares: number;
-  investedUsdc: number;
-  currentUsdc: number;
-};
-
-export type FundInvestment = {
-  fundSlug: string;
-  totalInvested: number;
-  totalCurrent: number;
-  legs: InvestmentLeg[];
+  status: "filled" | "failed";
+  detail?: string;
 };
