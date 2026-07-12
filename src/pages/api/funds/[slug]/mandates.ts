@@ -9,6 +9,7 @@ import {
 } from "@/lib/funds/pool";
 import { getFund } from "@/lib/funds/store";
 import { readDepositWalletBalanceUsdc } from "@/lib/polymarket/deposit-balance";
+import { getMandateSettlement } from "@/lib/funds/settlement";
 import { listPositionsByWallet } from "@/lib/funds/mandate-positions";
 import { getTradingSession } from "@/lib/funds/trading-sessions";
 
@@ -42,9 +43,12 @@ export const GET: APIRoute = async ({ params, url }) => {
       depositBalanceUsdc = null;
     }
 
-    const [positions, session] = await Promise.all([
+    const [positions, session, mandateSettlement] = await Promise.all([
       listPositionsByWallet(fund.slug, address),
       getTradingSession(fund.slug, address),
+      fund.status === "closed"
+        ? getMandateSettlement(fund.slug, address)
+        : Promise.resolve(undefined),
     ]);
 
     return new Response(
@@ -57,6 +61,7 @@ export const GET: APIRoute = async ({ params, url }) => {
         depositBalanceUsdc,
         positions,
         session: session ?? null,
+        mandateSettlement: mandateSettlement ?? null,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

@@ -20,6 +20,7 @@ import {
   parseFundDateInput,
   validateLifecycleDates,
 } from "@/lib/funds/lifecycle";
+import { settleFund, type FundSettlement } from "@/lib/funds/settlement";
 import { isCreatorWallet } from "@/lib/funds/creator";
 import { isUserFund } from "@/lib/funds/editable";
 
@@ -47,6 +48,12 @@ export type CreateFundInput = UpdateFundInput & {
   tradingEndsAt?: string | null;
   raiseEndsAt?: string | null;
   capUsdc?: number | null;
+  managerProfitSharePct?: number;
+};
+
+export type CloseFundResult = {
+  fund: Fund;
+  settlement: FundSettlement;
 };
 
 function useDynamo() {
@@ -128,7 +135,7 @@ export async function updateFund(
 export async function closeFund(
   slug: string,
   input: CloseFundInput,
-): Promise<Fund> {
+): Promise<CloseFundResult> {
   const error =
     validateAddress(input.managerAddress) ?? validatePublishAuth(input);
   if (error) throw new Error(error);
@@ -144,7 +151,10 @@ export async function closeFund(
     closedAt: new Date().toISOString(),
   };
   await replaceUserFund(updated);
-  return updated;
+
+  const settlement = await settleFund(updated);
+
+  return { fund: updated, settlement };
 }
 
 async function writeUserFund(fund: Fund): Promise<void> {
@@ -235,6 +245,15 @@ function parseCapUsdc(value: unknown): number | null {
   return Math.round(cap * 100) / 100;
 }
 
+function parseProfitSharePct(value: unknown): number {
+  if (value == null || value === "") return 0;
+  const pct = Number(value);
+  if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+    throw new Error("Profit share must be between 0 and 100");
+  }
+  return Math.round(pct * 100) / 100;
+}
+
 function validateCreateInput(input: CreateFundInput): string | null {
   const name = input.name?.trim() ?? "";
   const thesis = input.thesis?.trim() ?? "";
@@ -253,8 +272,11 @@ function validateCreateInput(input: CreateFundInput): string | null {
     if (input.unlockPriceUsdc != null) {
       parseUnlockPrice(input.unlockPriceUsdc);
     }
+    if (input.managerProfitSharePct != null) {
+      parseProfitSharePct(input.managerProfitSharePct);
+    }
   } catch (e) {
-    return e instanceof Error ? e.message : "Invalid unlock price";
+    return e instanceof Error ? e.message : "Invalid fund input";
   }
 
   return null;
@@ -313,6 +335,7 @@ export async function createFund(input: CreateFundInput): Promise<Fund> {
     tradingEndsAt,
     raiseEndsAt,
     capUsdc: parseCapUsdc(input.capUsdc),
+    managerProfitSharePct: parseProfitSharePct(input.managerProfitSharePct),
   };
 
   await writeUserFund(fund);

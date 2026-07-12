@@ -17,6 +17,7 @@ function CreateFundFormInner() {
   const [thesis, setThesis] = useState("");
   const [unlockPrice, setUnlockPrice] = useState("");
   const [capUsdc, setCapUsdc] = useState("");
+  const [profitSharePct, setProfitSharePct] = useState("10");
   const [raiseEndsAt, setRaiseEndsAt] = useState(() => defaultLifecycleDate(30));
   const [tradingEndsAt, setTradingEndsAt] = useState(() =>
     defaultLifecycleDate(90),
@@ -68,6 +69,7 @@ function CreateFundFormInner() {
           signature,
           unlockPriceUsdc: unlockPrice.trim() ? Number(unlockPrice) : null,
           capUsdc: capUsdc.trim() ? Number(capUsdc) : null,
+          managerProfitSharePct: Number(profitSharePct),
           raiseEndsAt,
           tradingEndsAt,
         }),
@@ -169,6 +171,29 @@ function CreateFundFormInner() {
             Last day the manager may open new risk.
           </p>
         </div>
+      </div>
+
+      <div>
+        <label className="text-primary mb-1 block text-sm" htmlFor="profit-share">
+          Manager profit share
+        </label>
+        <div className="border-primary/10 flex items-center gap-2 rounded border px-3 py-2">
+          <input
+            id="profit-share"
+            type="number"
+            min={0}
+            max={100}
+            step={0.5}
+            value={profitSharePct}
+            onChange={(e) => setProfitSharePct(e.target.value)}
+            className="text-primary w-full border-0 bg-transparent text-sm focus:outline-none"
+            required
+          />
+          <span className="text-primary/50 text-sm">%</span>
+        </div>
+        <p className="text-primary/50 mt-2 text-xs">
+          Your cut of each investor&apos;s profit when the fund closes profitably.
+        </p>
       </div>
 
       <div>

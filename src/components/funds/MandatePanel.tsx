@@ -11,6 +11,7 @@ import type {
   LegResult,
   TradingSession,
 } from "@/lib/funds/types";
+import type { MandateSettlement } from "@/lib/funds/settlement";
 import {
   createTradingClient,
   executeMandateTrade,
@@ -35,6 +36,7 @@ type MandateSummary = {
   depositBalanceUsdc: number | null;
   positions: MandatePosition[];
   session: TradingSession | null;
+  mandateSettlement: MandateSettlement | null;
 };
 
 const headerClass =
@@ -382,6 +384,29 @@ export default function MandatePanel({ fund }: Props) {
 
           {closed && !hasMandate && (
             <p className="text-primary/60 text-sm">This pool is closed.</p>
+          )}
+
+          {closed && summary?.mandateSettlement && (
+            <div className="border-primary/10 mt-5 rounded-lg border px-3 py-3 text-xs">
+              <p className={headerClass}>Your close settlement</p>
+              <p className="text-primary mt-2 font-mono tabular-nums">
+                Final value ${summary.mandateSettlement.finalValueUsdc.toFixed(2)}
+              </p>
+              <p className="text-primary/60 mt-1">
+                Profit{" "}
+                <span className="text-primary font-mono tabular-nums">
+                  ${summary.mandateSettlement.profitUsdc.toFixed(2)}
+                </span>
+                {" · "}
+                Manager share{" "}
+                <span className="text-primary font-mono tabular-nums">
+                  ${summary.mandateSettlement.managerShareUsdc.toFixed(2)}
+                </span>
+              </p>
+              <p className="text-emerald-400 mt-1 font-mono tabular-nums">
+                Your profit ${summary.mandateSettlement.investorProfitUsdc.toFixed(2)}
+              </p>
+            </div>
           )}
 
           {(summary?.positions?.length ?? 0) > 0 && (

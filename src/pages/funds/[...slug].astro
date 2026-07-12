@@ -63,6 +63,13 @@ const fundMeta = {
               )
             }
             {
+              fund.managerProfitSharePct != null && fund.managerProfitSharePct > 0 && (
+                <span class="border-primary/20 text-primary/60 rounded-full border px-2.5 py-0.5 text-[0.65rem] font-medium uppercase">
+                  {fund.managerProfitSharePct}% profit share
+                </span>
+              )
+            }
+            {
               paid && (
                 <span class="border-primary/20 text-primary/60 rounded-full border px-2.5 py-0.5 text-[0.65rem] font-medium uppercase">
                   ${fund.unlockPriceUsdc?.toFixed(2)}

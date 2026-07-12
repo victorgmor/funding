@@ -34,6 +34,8 @@ export type Fund = {
   closedAt?: string | null;
   /** Max virtual pool size in USDC */
   capUsdc?: number | null;
+  /** Manager share of mandate profits on close (0–100) */
+  managerProfitSharePct?: number;
   /** @deprecated legacy field — ignored */
   fundValue?: number;
   deposited?: number;

@@ -18,6 +18,7 @@ export const GET: APIRoute = async ({ params }) => {
       managerId: fund.manager.id,
       unlockPriceUsdc: fund.unlockPriceUsdc ?? null,
       capUsdc: fund.capUsdc ?? null,
+      managerProfitSharePct: fund.managerProfitSharePct ?? 0,
     }),
     { headers: { "Content-Type": "application/json" } },
   );

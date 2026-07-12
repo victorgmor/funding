@@ -32,8 +32,8 @@ export const POST: APIRoute = async ({ params, request }) => {
   }
 
   try {
-    const fund = await closeFund(slug, body);
-    return new Response(JSON.stringify(fund), {
+    const result = await closeFund(slug, body);
+    return new Response(JSON.stringify(result), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (e) {
