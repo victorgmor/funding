@@ -79,6 +79,7 @@ jobs:
               {"name": "FUNDS_TABLE", "value": "carriera-funds"},
               {"name": "CHALLENGES_TABLE", "value": "carriera-challenges"},
               {"name": "ENTITLEMENTS_TABLE", "value": "carriera-entitlements"},
+              {"name": "MANDATES_TABLE", "value": "carriera-mandates"},
               {"name": "AWS_REGION", "value": "${{ env.AWS_REGION }}"},
               {"name": "PLATFORM_FEE_WALLET", "value": "${{ secrets.PLATFORM_FEE_WALLET }}"}
             ]

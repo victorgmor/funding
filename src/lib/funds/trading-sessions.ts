@@ -5,7 +5,6 @@ import {
   mandateDocClient,
   mandateSk,
   mandatesTableName,
-  useMandateDynamo,
 } from "@/lib/funds/mandate-db";
 
 export type StoredClobCreds = {
@@ -15,12 +14,6 @@ export type StoredClobCreds = {
 };
 
 type StoredPayload = TradingSession & { creds: StoredClobCreds };
-
-const memory = new Map<string, string>();
-
-function sessionKey(fundSlug: string, wallet: string) {
-  return `${fundSlug}#${wallet.toLowerCase()}`;
-}
 
 export async function getTradingSession(
   fundSlug: string,
@@ -45,11 +38,6 @@ async function readPayload(
   wallet: string,
 ): Promise<StoredPayload | undefined> {
   const normalized = wallet.toLowerCase();
-
-  if (!useMandateDynamo()) {
-    const enc = memory.get(sessionKey(fundSlug, normalized));
-    return enc ? decryptJson<StoredPayload>(enc) : undefined;
-  }
 
   const row = await mandateDocClient().send(
     new GetCommand({
@@ -89,20 +77,16 @@ export async function saveTradingSession(input: {
   const enc = encryptJson(session);
   const normalized = session.investorWallet;
 
-  if (!useMandateDynamo()) {
-    memory.set(sessionKey(input.fundSlug, normalized), enc);
-  } else {
-    await mandateDocClient().send(
-      new PutCommand({
-        TableName: mandatesTableName(),
-        Item: {
-          fundSlug: input.fundSlug,
-          sk: mandateSk("session", normalized),
-          sessionEnc: enc,
-        },
-      }),
-    );
-  }
+  await mandateDocClient().send(
+    new PutCommand({
+      TableName: mandatesTableName(),
+      Item: {
+        fundSlug: input.fundSlug,
+        sk: mandateSk("session", normalized),
+        sessionEnc: enc,
+      },
+    }),
+  );
 
   const { creds: _creds, ...publicSession } = session;
   return publicSession;
@@ -113,11 +97,6 @@ export async function revokeTradingSession(
   wallet: string,
 ): Promise<void> {
   const normalized = wallet.toLowerCase();
-
-  if (!useMandateDynamo()) {
-    memory.delete(sessionKey(fundSlug, normalized));
-    return;
-  }
 
   await mandateDocClient().send(
     new DeleteCommand({

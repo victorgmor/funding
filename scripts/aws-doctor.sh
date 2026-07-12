@@ -7,6 +7,7 @@ AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID:-$(aws sts get-caller-identity --query Account 
 FUNDS_TABLE="${FUNDS_TABLE:-carriera-funds}"
 CHALLENGES_TABLE="${CHALLENGES_TABLE:-carriera-challenges}"
 ENTITLEMENTS_TABLE="${ENTITLEMENTS_TABLE:-carriera-entitlements}"
+MANDATES_TABLE="${MANDATES_TABLE:-carriera-mandates}"
 TASK_ROLE="${TASK_ROLE:-ecsTaskExecutionRole}"
 GITHUB_ROLE="${GITHUB_ROLE:-github-actions-ecs-role}"
 POLICY_NAME="CarrieraFundsDynamoDBPolicy"
@@ -41,7 +42,7 @@ aws sts get-caller-identity --output table
 echo ""
 
 echo "DynamoDB tables"
-for table in "$FUNDS_TABLE" "$CHALLENGES_TABLE" "$ENTITLEMENTS_TABLE"; do
+for table in "$FUNDS_TABLE" "$CHALLENGES_TABLE" "$ENTITLEMENTS_TABLE" "$MANDATES_TABLE"; do
   check "$table exists" aws dynamodb describe-table --table-name "$table" --region "$AWS_REGION" >/dev/null 2>&1
 done
 echo ""
@@ -60,7 +61,7 @@ echo "DynamoDB IAM policy ($POLICY_NAME)"
 if aws iam get-policy --policy-arn "$POLICY_ARN" >/dev/null 2>&1; then
   VERSION="$(aws iam get-policy --policy-arn "$POLICY_ARN" --query 'Policy.DefaultVersionId' --output text)"
   DOC="$(aws iam get-policy-version --policy-arn "$POLICY_ARN" --version-id "$VERSION" --query 'PolicyVersion.Document' --output json)"
-  for table in "$FUNDS_TABLE" "$CHALLENGES_TABLE" "$ENTITLEMENTS_TABLE"; do
+  for table in "$FUNDS_TABLE" "$CHALLENGES_TABLE" "$ENTITLEMENTS_TABLE" "$MANDATES_TABLE"; do
     if grep -q "$table" <<<"$DOC"; then
       echo "  OK   allows $table"
     else

@@ -7,17 +7,7 @@ import {
   GetCommand,
   PutCommand,
 } from "@aws-sdk/lib-dynamodb";
-
-const REGION = process.env.AWS_REGION?.trim() ?? "eu-west-1";
-
-function entitlementsTableName(): string | undefined {
-  const explicit = process.env.ENTITLEMENTS_TABLE?.trim();
-  if (explicit) return explicit;
-  if (process.env.FUNDS_TABLE?.trim()) return "carriera-entitlements";
-  return undefined;
-}
-
-const TABLE = entitlementsTableName();
+import { awsRegion, entitlementsTableName } from "@/lib/aws/dynamo-tables";
 
 type Entitlement = {
   wallet: string;
@@ -26,22 +16,19 @@ type Entitlement = {
   unlockedAt: string;
 };
 
-const memory = new Map<string, Entitlement>();
-
-function useDynamo() {
-  return Boolean(TABLE);
-}
-
 let client: DynamoDBDocumentClient | undefined;
 
 function docClient(): DynamoDBDocumentClient {
-  if (!TABLE) throw new Error("ENTITLEMENTS_TABLE is not configured");
   if (!client) {
-    client = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }), {
+    client = DynamoDBDocumentClient.from(new DynamoDBClient({ region: awsRegion() }), {
       marshallOptions: { removeUndefinedValues: true },
     });
   }
   return client;
+}
+
+function table(): string {
+  return entitlementsTableName();
 }
 
 function key(wallet: string, slug: string) {
@@ -54,13 +41,9 @@ export async function hasEntitlement(
 ): Promise<boolean> {
   const id = key(wallet, slug);
 
-  if (!useDynamo()) {
-    return memory.has(id);
-  }
-
   const row = await docClient().send(
     new GetCommand({
-      TableName: TABLE,
+      TableName: table(),
       Key: { id },
       ProjectionExpression: "id",
     }),
@@ -84,15 +67,10 @@ export async function grantEntitlement(
     unlockedAt: new Date().toISOString(),
   };
 
-  if (!useDynamo()) {
-    memory.set(id, row);
-    return;
-  }
-
   try {
     await docClient().send(
       new PutCommand({
-        TableName: TABLE,
+        TableName: table(),
         Item: row,
         ConditionExpression: "attribute_not_exists(id)",
       }),

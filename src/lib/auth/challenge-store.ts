@@ -8,17 +8,7 @@ import {
   PutCommand,
 } from "@aws-sdk/lib-dynamodb";
 import type { BundleAuthAction } from "@/lib/auth/bundle-auth";
-
-const REGION = process.env.AWS_REGION?.trim() ?? "eu-west-1";
-
-function challengesTableName(): string | undefined {
-  const explicit = process.env.CHALLENGES_TABLE?.trim();
-  if (explicit) return explicit;
-  if (process.env.FUNDS_TABLE?.trim()) return "carriera-challenges";
-  return undefined;
-}
-
-const TABLE = challengesTableName();
+import { awsRegion, challengesTableName } from "@/lib/aws/dynamo-tables";
 
 export type StoredChallenge = {
   address: string;
@@ -27,44 +17,28 @@ export type StoredChallenge = {
   expiresAt: number;
 };
 
-const memory = new Map<string, StoredChallenge>();
-
-function useDynamo() {
-  return Boolean(TABLE);
-}
-
 let client: DynamoDBDocumentClient | undefined;
 
 function docClient(): DynamoDBDocumentClient {
-  if (!TABLE) throw new Error("CHALLENGES_TABLE is not configured");
   if (!client) {
-    client = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }), {
+    client = DynamoDBDocumentClient.from(new DynamoDBClient({ region: awsRegion() }), {
       marshallOptions: { removeUndefinedValues: true },
     });
   }
   return client;
 }
 
-function pruneMemory() {
-  const now = Date.now();
-  for (const [nonce, row] of memory) {
-    if (row.expiresAt <= now) memory.delete(nonce);
-  }
+function table(): string {
+  return challengesTableName();
 }
 
 export async function saveChallenge(
   nonce: string,
   challenge: StoredChallenge,
 ): Promise<void> {
-  if (!useDynamo()) {
-    pruneMemory();
-    memory.set(nonce, challenge);
-    return;
-  }
-
   await docClient().send(
     new PutCommand({
-      TableName: TABLE,
+      TableName: table(),
       Item: {
         nonce,
         address: challenge.address,
@@ -81,26 +55,10 @@ export async function consumeChallenge(
   nonce: string,
   expected: StoredChallenge,
 ): Promise<boolean> {
-  if (!useDynamo()) {
-    pruneMemory();
-    const row = memory.get(nonce);
-    if (
-      !row ||
-      row.address !== expected.address ||
-      row.action !== expected.action ||
-      row.slug !== expected.slug ||
-      row.expiresAt <= Date.now()
-    ) {
-      return false;
-    }
-    memory.delete(nonce);
-    return true;
-  }
-
   try {
     await docClient().send(
       new DeleteCommand({
-        TableName: TABLE,
+        TableName: table(),
         Key: { nonce },
         ConditionExpression:
           "address = :address AND #action = :action AND slug = :slug AND expiresAt > :now",

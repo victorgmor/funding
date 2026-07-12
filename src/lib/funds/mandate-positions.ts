@@ -4,10 +4,7 @@ import {
   mandateDocClient,
   mandateSk,
   mandatesTableName,
-  useMandateDynamo,
 } from "@/lib/funds/mandate-db";
-
-const memory = new Map<string, MandatePosition>();
 
 function positionKey(mandateId: string, tokenId: string) {
   return `${mandateId}#${tokenId}`;
@@ -16,12 +13,6 @@ function positionKey(mandateId: string, tokenId: string) {
 export async function listPositionsByFund(
   fundSlug: string,
 ): Promise<MandatePosition[]> {
-  if (!useMandateDynamo()) {
-    return [...memory.values()]
-      .filter((row) => row.fundSlug === fundSlug)
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  }
-
   const rows = await mandateDocClient().send(
     new QueryCommand({
       TableName: mandatesTableName(),
@@ -104,11 +95,6 @@ function mergePosition(
 }
 
 async function savePosition(position: MandatePosition): Promise<void> {
-  if (!useMandateDynamo()) {
-    memory.set(position.id, position);
-    return;
-  }
-
   await mandateDocClient().send(
     new PutCommand({
       TableName: mandatesTableName(),

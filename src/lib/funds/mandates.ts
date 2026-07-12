@@ -5,14 +5,7 @@ import {
   mandateDocClient,
   mandateSk,
   mandatesTableName,
-  useMandateDynamo,
 } from "@/lib/funds/mandate-db";
-
-const memory = new Map<string, Mandate>();
-
-function mandateKey(fundSlug: string, wallet: string) {
-  return `${fundSlug}#${wallet.toLowerCase()}`;
-}
 
 function normalizeWallet(wallet: string) {
   return wallet.toLowerCase();
@@ -22,12 +15,6 @@ export async function getMandate(
   fundSlug: string,
   wallet: string,
 ): Promise<Mandate | undefined> {
-  const id = mandateKey(fundSlug, wallet);
-
-  if (!useMandateDynamo()) {
-    return memory.get(id);
-  }
-
   const row = await mandateDocClient().send(
     new GetCommand({
       TableName: mandatesTableName(),
@@ -39,10 +26,6 @@ export async function getMandate(
 }
 
 export async function listMandatesByFund(fundSlug: string): Promise<Mandate[]> {
-  if (!useMandateDynamo()) {
-    return [...memory.values()].filter((m) => m.fundSlug === fundSlug);
-  }
-
   const rows = await mandateDocClient().send(
     new QueryCommand({
       TableName: mandatesTableName(),
@@ -117,13 +100,6 @@ export async function adjustMandateCash(
 }
 
 async function saveMandate(mandate: Mandate): Promise<void> {
-  const id = mandateKey(mandate.fundSlug, mandate.investorWallet);
-
-  if (!useMandateDynamo()) {
-    memory.set(id, mandate);
-    return;
-  }
-
   await mandateDocClient().send(
     new PutCommand({
       TableName: mandatesTableName(),

@@ -5,20 +5,11 @@ import {
   mandateDocClient,
   mandateSk,
   mandatesTableName,
-  useMandateDynamo,
 } from "@/lib/funds/mandate-db";
-
-const memory = new Map<string, ManagerInstruction>();
 
 export async function listInstructionsByFund(
   fundSlug: string,
 ): Promise<ManagerInstruction[]> {
-  if (!useMandateDynamo()) {
-    return [...memory.values()]
-      .filter((row) => row.fundSlug === fundSlug)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }
-
   const rows = await mandateDocClient().send(
     new QueryCommand({
       TableName: mandatesTableName(),
@@ -92,11 +83,6 @@ export async function markInstructionStatus(
 }
 
 async function saveInstruction(instruction: ManagerInstruction): Promise<void> {
-  if (!useMandateDynamo()) {
-    memory.set(instruction.id, instruction);
-    return;
-  }
-
   await mandateDocClient().send(
     new PutCommand({
       TableName: mandatesTableName(),

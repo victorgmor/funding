@@ -5,18 +5,9 @@ import {
   mandateDocClient,
   mandateSk,
   mandatesTableName,
-  useMandateDynamo,
 } from "@/lib/funds/mandate-db";
 
-const memory = new Map<string, MandateTrade>();
-
 export async function listTradesByFund(fundSlug: string): Promise<MandateTrade[]> {
-  if (!useMandateDynamo()) {
-    return [...memory.values()]
-      .filter((row) => row.fundSlug === fundSlug)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }
-
   const rows = await mandateDocClient().send(
     new QueryCommand({
       TableName: mandatesTableName(),
@@ -99,11 +90,6 @@ export async function markTradeStatus(
 }
 
 async function saveTrade(trade: MandateTrade): Promise<void> {
-  if (!useMandateDynamo()) {
-    memory.set(trade.id, trade);
-    return;
-  }
-
   await mandateDocClient().send(
     new PutCommand({
       TableName: mandatesTableName(),

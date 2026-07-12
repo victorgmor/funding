@@ -6,7 +6,6 @@ import {
   mandateDocClient,
   mandateSk,
   mandatesTableName,
-  useMandateDynamo,
 } from "@/lib/funds/mandate-db";
 import { fetchTokenMidPrices } from "@/lib/polymarket/clob-prices";
 
@@ -31,8 +30,6 @@ export type FundSettlement = {
   totalManagerShareUsdc: number;
   settledAt: string;
 };
-
-const memory = new Map<string, FundSettlement>();
 
 function round(n: number, d: number) {
   const f = 10 ** d;
@@ -125,10 +122,6 @@ export async function settleFund(fund: Fund): Promise<FundSettlement> {
 export async function getFundSettlement(
   fundSlug: string,
 ): Promise<FundSettlement | undefined> {
-  if (!useMandateDynamo()) {
-    return memory.get(fundSlug);
-  }
-
   const row = await mandateDocClient().send(
     new GetCommand({
       TableName: mandatesTableName(),
@@ -143,11 +136,6 @@ export async function getFundSettlement(
 }
 
 async function saveFundSettlement(settlement: FundSettlement): Promise<void> {
-  if (!useMandateDynamo()) {
-    memory.set(settlement.fundSlug, settlement);
-    return;
-  }
-
   await mandateDocClient().send(
     new PutCommand({
       TableName: mandatesTableName(),
