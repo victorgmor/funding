@@ -4,6 +4,7 @@ import CurrencyDollarSimple from "@/components/fundations/icons/CurrencyDollarSi
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { creatorPath } from "@/lib/funds/creator";
 import { isPaidFund } from "@/lib/funds/access";
+import { formatPoolCapLabel } from "@/lib/funds/format";
 import type { FundPerformance } from "@/lib/funds/performance";
 import type { Fund } from "@/lib/funds/types";
 
@@ -76,9 +77,7 @@ export default function FundRow({ fund, performance }: Props) {
           Pool
         </p>
         <p className="text-primary text-sm font-medium">
-          {fund.capUsdc != null && fund.capUsdc > 0
-            ? `$${fund.capUsdc.toFixed(0)} cap`
-            : "Managed"}
+          {formatPoolCapLabel(fund.capUsdc)}
         </p>
       </div>
 

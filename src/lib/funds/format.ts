@@ -42,8 +42,13 @@ export function formatPublishedAgo(iso?: string): string | null {
   return formatSinceDate(iso);
 }
 
+export function formatPoolCapLabel(capUsdc?: number | null): string {
+  if (capUsdc != null && capUsdc > 0) return `$${capUsdc.toFixed(0)} cap`;
+  return "∞ cap";
+}
+
 export function capLabel(deposited: number, cap: number | null): string {
-  if (cap === null) return "Unlimited";
+  if (cap === null) return "∞ cap";
   const pct = Math.round((deposited / cap) * 100);
   return `${pct}% of cap`;
 }

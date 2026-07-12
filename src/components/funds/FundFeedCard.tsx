@@ -2,7 +2,7 @@ import CreatorAvatar from "@/components/creators/CreatorAvatar";
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { creatorPath, isCreatorWallet } from "@/lib/funds/creator";
 import { isPaidFund } from "@/lib/funds/access";
-import { formatPublishedAgo } from "@/lib/funds/format";
+import { formatPoolCapLabel, formatPublishedAgo } from "@/lib/funds/format";
 import type { Fund } from "@/lib/funds/types";
 
 type Props = {
@@ -25,10 +25,7 @@ export default function FundFeedCard({
   const paid = isPaidFund(fund);
   const snippet = feedSnippet(fund);
   const published = formatPublishedAgo(fund.createdAt);
-  const capLabel =
-    fund.capUsdc != null && fund.capUsdc > 0
-      ? `$${fund.capUsdc.toFixed(0)} cap`
-      : "Managed pool";
+  const capLabel = formatPoolCapLabel(fund.capUsdc);
   const showAvatar = isCreatorWallet(fund.manager.id);
 
   return (
@@ -103,7 +100,7 @@ export default function FundFeedCard({
           href={`/funds/${fund.slug}`}
           className="text-primary/50 hover:text-primary ml-auto transition-colors"
         >
-          Read fund →
+          View fund →
         </a>
       </div>
     </article>
