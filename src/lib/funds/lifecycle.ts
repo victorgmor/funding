@@ -176,3 +176,34 @@ export function defaultLifecycleDate(daysFromNow: number): string {
   d.setUTCDate(d.getUTCDate() + daysFromNow);
   return d.toISOString().slice(0, 10);
 }
+
+/** Shift dates/status so resolveLifecycleStage returns the requested stage (testing only). */
+export function fundPatchForTestStage(
+  stage: LifecycleStage,
+  now = Date.now(),
+): Pick<Fund, "status" | "closedAt" | "raiseEndsAt" | "tradingEndsAt"> {
+  if (stage === "deposit") {
+    return {
+      status: "trading",
+      closedAt: null,
+      raiseEndsAt: new Date(now + 30 * DAY_MS).toISOString(),
+      tradingEndsAt: new Date(now + 60 * DAY_MS).toISOString(),
+    };
+  }
+
+  if (stage === "trading") {
+    return {
+      status: "trading",
+      closedAt: null,
+      raiseEndsAt: new Date(now - DAY_MS).toISOString(),
+      tradingEndsAt: new Date(now + 30 * DAY_MS).toISOString(),
+    };
+  }
+
+  return {
+    status: "closed",
+    closedAt: new Date(now).toISOString(),
+    raiseEndsAt: new Date(now - 60 * DAY_MS).toISOString(),
+    tradingEndsAt: new Date(now - DAY_MS).toISOString(),
+  };
+}

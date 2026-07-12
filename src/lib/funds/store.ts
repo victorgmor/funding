@@ -16,6 +16,8 @@ import type { Fund, FundManager } from "@/lib/funds/types";
 import {
   parseFundDateInput,
   validateLifecycleDates,
+  type LifecycleStage,
+  fundPatchForTestStage,
 } from "@/lib/funds/lifecycle";
 import { settleFund, type FundSettlement } from "@/lib/funds/settlement";
 import { isCreatorWallet } from "@/lib/funds/creator";
@@ -48,6 +50,13 @@ export type CreateFundInput = UpdateFundInput & {
 export type CloseFundResult = {
   fund: Fund;
   settlement: FundSettlement;
+};
+
+export type SetLifecycleStageInput = {
+  stage: LifecycleStage;
+  managerAddress: string;
+  message: string;
+  signature: `0x${string}`;
 };
 
 async function replaceUserFund(fund: Fund): Promise<void> {
@@ -285,4 +294,33 @@ export async function createFund(input: CreateFundInput): Promise<Fund> {
 
   await dbPutFund(fund);
   return fund;
+}
+
+export async function setFundTestLifecycleStage(
+  slug: string,
+  input: SetLifecycleStageInput,
+): Promise<Fund> {
+  const error = validateAddress(input.managerAddress);
+  if (error) throw new Error(error);
+
+  const fund = await getFund(slug);
+  if (!fund || !isUserFund(fund)) {
+    throw new Error("Fund not found");
+  }
+  if (fund.manager.id.toLowerCase() !== input.managerAddress.toLowerCase()) {
+    throw new Error("Only the creator can manage this fund");
+  }
+
+  const validStages: LifecycleStage[] = ["deposit", "trading", "closed"];
+  if (!validStages.includes(input.stage)) {
+    throw new Error("Invalid lifecycle stage");
+  }
+
+  const updated: Fund = {
+    ...fund,
+    ...fundPatchForTestStage(input.stage),
+  };
+
+  await replaceUserFund(updated);
+  return updated;
 }

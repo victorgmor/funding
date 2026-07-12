@@ -6,6 +6,7 @@ import ArrowLeft from "@/components/fundations/icons/ArrowLeft.astro";
 import Text from "@/components/fundations/elements/Text.astro";
 import Wrapper from "@/components/fundations/containers/Wrapper.astro";
 import FundLifecycleStepper from "@/components/funds/FundLifecycleStepper";
+import FundLifecycleTestPanel from "@/components/funds/FundLifecycleTestPanel";
 import FundPoolOverview from "@/components/funds/FundPoolOverview";
 import FundPerformanceCell from "@/components/funds/FundPerformanceCell";
 import FundSidebar from "@/components/funds/FundSidebar";
@@ -117,6 +118,7 @@ const fundMeta = {
       </div>
 
       <FundLifecycleStepper client:load fund={fund} />
+      <FundLifecycleTestPanel client:load fund={fund} />
 
       {
         paid ? (

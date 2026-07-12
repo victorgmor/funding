@@ -93,18 +93,17 @@ export default function FundFeedCard({
       <div className="mt-5 space-y-3">
         <PoolCapBar deposited={deposited} capUsdc={fund.capUsdc} />
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-          {paid ? (
+          {paid && (
             <span className="text-primary/55">
               ${fund.unlockPriceUsdc!.toFixed(2)} to unlock
             </span>
-          ) : (
-            <span className="text-primary/45">Free to read</span>
           )}
           <a
             href={`/funds/${fund.slug}`}
-            className="text-primary/50 hover:text-primary ml-auto transition-colors"
+            className="text-primary/50 hover:text-primary ml-auto inline-flex items-center gap-1 transition-colors"
           >
-            View fund →
+            View fund
+            <ArrowRight size="xs" />
           </a>
         </div>
       </div>
