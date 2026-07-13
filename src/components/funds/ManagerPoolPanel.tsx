@@ -254,7 +254,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search Polymarket…"
+                placeholder="Search or paste Polymarket URL…"
                 className={inputClass}
               />
               {searching && (

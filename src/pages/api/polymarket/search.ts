@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { searchPolymarketMarkets } from "@/lib/polymarket/gamma";
+import { resolvePolymarketSearch } from "@/lib/polymarket/gamma";
 
 export const prerender = false;
 
@@ -12,7 +12,7 @@ export const GET: APIRoute = async ({ url }) => {
   }
 
   try {
-    const markets = await searchPolymarketMarkets(q);
+    const markets = await resolvePolymarketSearch(q);
     return new Response(JSON.stringify({ markets }), {
       headers: { "Content-Type": "application/json" },
     });
