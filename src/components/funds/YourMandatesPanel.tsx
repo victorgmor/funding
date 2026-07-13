@@ -134,18 +134,9 @@ export default function YourMandatesPanel({ funds }: Props) {
           )}
         </div>
       ) : loading || entries === null ? (
-        <p className="border-primary/10 text-primary/50 border-t pt-4 text-sm">
-          Checking your mandates…
-        </p>
-      ) : entries.length === 0 ? (
-        <p className="border-primary/10 text-primary/55 border-t pt-4 text-sm leading-relaxed">
-          You&apos;re not in any funds yet. Pick a fund from the feed and commit
-          capital to join.
-        </p>
-      ) : visibleEntries.length === 0 ? (
-        <p className="border-primary/10 text-primary/55 border-t pt-4 text-sm leading-relaxed">
-          All your funds are closed and hidden by your settings.
-        </p>
+        <div className="border-primary/10 border-t">
+          <MandateAllocationChart entries={[]} />
+        </div>
       ) : (
         <div className="border-primary/10 border-t">
           <MandateAllocationChart entries={visibleEntries} />

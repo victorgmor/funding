@@ -87,8 +87,7 @@ export default function MandateAllocationChart({ entries }: Props) {
     () => (total > 0 ? buildSlices(entries, total) : []),
     [entries, total],
   );
-
-  if (total <= 0) return null;
+  const empty = slices.length === 0;
 
   const activeSlice = slices.find((slice) => slice.slug === activeSlug) ?? null;
 
@@ -99,9 +98,20 @@ export default function MandateAllocationChart({ entries }: Props) {
           viewBox={`0 0 ${SIZE} ${SIZE}`}
           className="size-full"
           role="img"
-          aria-label={`Mandate allocation across ${slices.length} funds`}
+          aria-label={
+            empty
+              ? "No mandate allocation yet"
+              : `Mandate allocation across ${slices.length} funds`
+          }
         >
-          {slices.map((slice) => {
+          {empty ? (
+            <path
+              d={arcPath(CX, CY, OUTER_R, INNER_R, 0, 359.99)}
+              className="fill-primary/10"
+              aria-hidden
+            />
+          ) : (
+            slices.map((slice) => {
             const isActive = activeSlug === slice.slug;
             const outerR = isActive ? OUTER_R + 5 : OUTER_R;
             const path = arcPath(CX, CY, outerR, INNER_R, slice.startDeg, slice.endDeg);
@@ -135,7 +145,8 @@ export default function MandateAllocationChart({ entries }: Props) {
                 </g>
               </a>
             );
-          })}
+          })
+          )}
         </svg>
 
         <div className="pointer-events-none absolute inset-[26%] flex flex-col items-center justify-center rounded-full px-3 text-center">
@@ -148,6 +159,11 @@ export default function MandateAllocationChart({ entries }: Props) {
         </div>
       </div>
 
+      {empty ? (
+        <p className="text-primary/45 mt-5 text-center text-sm">
+          No mandates yet
+        </p>
+      ) : (
       <ul className="mt-5 space-y-2">
         {slices.map((slice) => {
           const isActive = activeSlug === slice.slug;
@@ -184,6 +200,7 @@ export default function MandateAllocationChart({ entries }: Props) {
           );
         })}
       </ul>
+      )}
     </div>
   );
 }
