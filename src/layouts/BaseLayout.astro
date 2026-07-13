@@ -5,7 +5,7 @@ import BaseHead from "@/components/fundations/head/BaseHead.astro";
 // Components
 import Footer from "@/components/global/Footer.astro";
 import Navigation from "@/components/global/Navigation.astro";
-import WagmiRoot from "@/components/app/WagmiRoot";
+import AppProviders from "@/components/app/AppProviders";
 ---
 <html
   lang="en"
@@ -21,7 +21,7 @@ import WagmiRoot from "@/components/app/WagmiRoot";
     </script>
   </head>
   <body class="flex flex-col bg-secondary  min-h-svh">
-    <WagmiRoot client:load />
+    <AppProviders client:load />
     <Navigation />
     <main class="grow">
       <slot />

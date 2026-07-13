@@ -46,6 +46,8 @@ export const POST: APIRoute = async ({ params, request }) => {
     depositAddress?: string;
     signatureType?: number;
     creds?: { key?: string; secret?: string; passphrase?: string };
+    privyWalletId?: string;
+    serverSigner?: boolean;
   };
 
   try {
@@ -83,6 +85,8 @@ export const POST: APIRoute = async ({ params, request }) => {
         secret: body.creds.secret,
         passphrase: body.creds.passphrase,
       },
+      privyWalletId: body.privyWalletId?.trim(),
+      serverSigner: body.serverSigner === true,
     });
 
     return new Response(JSON.stringify({ session }), {

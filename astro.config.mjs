@@ -35,6 +35,26 @@ export default defineConfig({
         access: "public",
         optional: true,
       }),
+      PUBLIC_PRIVY_APP_ID: envField.string({
+        context: "client",
+        access: "public",
+        optional: true,
+      }),
+      PUBLIC_PRIVY_SIGNER_QUORUM_ID: envField.string({
+        context: "client",
+        access: "public",
+        optional: true,
+      }),
+      PRIVY_APP_SECRET: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
+      PRIVY_AUTHORIZATION_PRIVATE_KEY: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
       SITE_URL: envField.string({
         context: "server",
         access: "public",

@@ -60,6 +60,8 @@ jobs:
           tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
           build-args: |
             PUBLIC_POLY_BUILDER_CODE=${{ secrets.PUBLIC_POLY_BUILDER_CODE }}
+            PUBLIC_PRIVY_APP_ID=${{ secrets.PUBLIC_PRIVY_APP_ID }}
+            PUBLIC_PRIVY_SIGNER_QUORUM_ID=${{ secrets.PUBLIC_PRIVY_SIGNER_QUORUM_ID }}
 
       - name: Deploy to ECS Express Mode
         uses: aws-actions/amazon-ecs-deploy-express-service@v1
@@ -76,6 +78,9 @@ jobs:
               {"name": "POLY_BUILDER_API_KEY", "value": "${{ secrets.POLY_BUILDER_API_KEY }}"},
               {"name": "POLY_BUILDER_API_SECRET", "value": "${{ secrets.POLY_BUILDER_API_SECRET }}"},
               {"name": "POLY_BUILDER_PASSPHRASE", "value": "${{ secrets.POLY_BUILDER_PASSPHRASE }}"},
+              {"name": "PRIVY_APP_SECRET", "value": "${{ secrets.PRIVY_APP_SECRET }}"},
+              {"name": "PRIVY_AUTHORIZATION_PRIVATE_KEY", "value": "${{ secrets.PRIVY_AUTHORIZATION_PRIVATE_KEY }}"},
+              {"name": "PUBLIC_PRIVY_APP_ID", "value": "${{ secrets.PUBLIC_PRIVY_APP_ID }}"},
               {"name": "FUNDS_TABLE", "value": "carriera-funds"},
               {"name": "CHALLENGES_TABLE", "value": "carriera-challenges"},
               {"name": "MANDATES_TABLE", "value": "carriera-mandates"},

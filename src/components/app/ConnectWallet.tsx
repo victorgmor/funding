@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { connect, disconnect, getConnectors } from "@wagmi/core";
-import { polygon } from "wagmi/chains";
+import { usePrivy } from "@privy-io/react-auth";
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
 import CaretDown from "@/components/fundations/icons/CaretDown";
 import SignOut from "@/components/fundations/icons/SignOut";
+import { privyAppId } from "@/lib/privy/config";
 import { WAGMI_DISCONNECT_EVENT } from "@/lib/wagmi/events";
-import { wagmiConfig } from "@/lib/wagmi/config";
 import { creatorPath } from "@/lib/funds/creator";
 import { addressDisplayFallback } from "@/lib/polymarket/profile";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
@@ -19,9 +18,11 @@ type Props = {
 function WalletNavMenu({
   address,
   label,
+  onLogout,
 }: {
   address: `0x${string}`;
   label: string;
+  onLogout: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -47,12 +48,6 @@ function WalletNavMenu({
     };
   }, [open]);
 
-  function disconnectWallet() {
-    setOpen(false);
-    disconnect(wagmiConfig);
-    window.dispatchEvent(new Event(WAGMI_DISCONNECT_EVENT));
-  }
-
   return (
     <div className="relative" ref={rootRef}>
       <button
@@ -75,11 +70,14 @@ function WalletNavMenu({
           <button
             type="button"
             role="menuitem"
-            onClick={disconnectWallet}
+            onClick={() => {
+              setOpen(false);
+              onLogout();
+            }}
             className="text-primary hover:bg-primary/5 flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors"
           >
             <SignOut size="sm" aria-hidden />
-            Disconnect
+            Log out
           </button>
         </div>
       )}
@@ -87,29 +85,18 @@ function WalletNavMenu({
   );
 }
 
-export default function ConnectWallet({ variant = "panel" }: Props) {
+function ConnectWalletInner({ variant = "panel" }: Props) {
+  const { login, logout, ready } = usePrivy();
   const { address, displayAddress, isConnected, restoring } = useWalletSession();
-  const [connecting, setConnecting] = useState(false);
   const { switching } = useEnsurePolygon();
   const { name: displayName } = usePolymarketProfile(address ?? displayAddress);
 
-  async function connectWallet() {
-    const [connector] = getConnectors(wagmiConfig);
-    if (!connector) return;
-    setConnecting(true);
-    try {
-      await connect(wagmiConfig, { connector, chainId: polygon.id });
-    } finally {
-      setConnecting(false);
-    }
-  }
-
   function disconnectWallet() {
-    disconnect(wagmiConfig);
+    void logout();
     window.dispatchEvent(new Event(WAGMI_DISCONNECT_EVENT));
   }
 
-  if (restoring) {
+  if (!ready || restoring) {
     if (variant === "panel" || variant === "create") {
       return <span className="text-primary/40 block min-h-9 text-sm" aria-hidden />;
     }
@@ -140,7 +127,13 @@ export default function ConnectWallet({ variant = "panel" }: Props) {
     const label = displayName ?? addressDisplayFallback(address);
 
     if (variant === "nav") {
-      return <WalletNavMenu address={address} label={label} />;
+      return (
+        <WalletNavMenu
+          address={address}
+          label={label}
+          onLogout={disconnectWallet}
+        />
+      );
     }
 
     return (
@@ -157,7 +150,7 @@ export default function ConnectWallet({ variant = "panel" }: Props) {
           className="text-primary hover:text-primary/80 inline-flex items-center gap-2 text-sm"
         >
           <SignOut size="sm" aria-hidden />
-          Disconnect
+          Log out
         </button>
       </div>
     );
@@ -166,15 +159,26 @@ export default function ConnectWallet({ variant = "panel" }: Props) {
   return (
     <button
       type="button"
-      disabled={connecting}
-      onClick={() => void connectWallet()}
+      onClick={() => login()}
       className={
         variant === "nav"
-          ? "text-primary hover:text-primary/80 text-sm disabled:opacity-50"
-          : "bg-accent text-secondary hover:opacity-90 w-full rounded px-3 py-2 text-sm font-medium disabled:opacity-50"
+          ? "text-primary hover:text-primary/80 text-sm"
+          : "bg-accent text-secondary hover:opacity-90 w-full rounded px-3 py-2 text-sm font-medium"
       }
     >
-      {connecting ? "Connecting…" : "Connect wallet"}
+      Log in
     </button>
   );
+}
+
+export default function ConnectWallet(props: Props) {
+  if (!privyAppId) {
+    return (
+      <span className="text-primary/50 text-sm">
+        Set PUBLIC_PRIVY_APP_ID to enable login.
+      </span>
+    );
+  }
+
+  return <ConnectWalletInner {...props} />;
 }

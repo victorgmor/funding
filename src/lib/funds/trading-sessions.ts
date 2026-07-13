@@ -15,7 +15,10 @@ export type StoredClobCreds = {
   passphrase: string;
 };
 
-type StoredPayload = TradingSession & { creds: StoredClobCreds };
+type StoredPayload = TradingSession & {
+  creds: StoredClobCreds;
+  privyWalletId?: string;
+};
 
 function sessionKey(fundSlug: string, wallet: string) {
   return `${fundSlug}#${wallet.toLowerCase()}`;
@@ -65,12 +68,21 @@ async function readPayload(
   return decryptJson<StoredPayload>(row.Item.sessionEnc as string);
 }
 
+export async function readSessionPayload(
+  fundSlug: string,
+  wallet: string,
+): Promise<StoredPayload | undefined> {
+  return readPayload(fundSlug, wallet);
+}
+
 export async function saveTradingSession(input: {
   fundSlug: string;
   investorWallet: string;
   depositAddress: string;
   signatureType: number;
   creds: StoredClobCreds;
+  privyWalletId?: string;
+  serverSigner?: boolean;
 }): Promise<TradingSession> {
   const now = new Date().toISOString();
   const existing = await getTradingSession(input.fundSlug, input.investorWallet);
@@ -81,9 +93,11 @@ export async function saveTradingSession(input: {
     depositAddress: input.depositAddress,
     signatureType: input.signatureType,
     authorized: true,
+    serverSigner: input.serverSigner ?? false,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
     creds: input.creds,
+    privyWalletId: input.privyWalletId,
   };
 
   const enc = encryptJson(session);

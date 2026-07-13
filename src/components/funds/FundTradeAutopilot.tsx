@@ -1,10 +1,4 @@
 import { useEffect, useRef } from "react";
-import { getWalletClient } from "@wagmi/core";
-import { polygon } from "wagmi/chains";
-import type { MandateTrade } from "@/lib/funds/types";
-import { readLocalTradingCreds } from "@/lib/funds/trading-session-client";
-import { executeMandateTrade } from "@/lib/polymarket/trade";
-import { wagmiConfig } from "@/lib/wagmi/config";
 
 type Props = {
   fundSlug: string;
@@ -15,7 +9,7 @@ type Props = {
 
 const POLL_MS = 5000;
 
-/** Runs pending fan-out slices automatically when a trading session is authorized. */
+/** Triggers server-side fan-out execution via Privy session signers. */
 export default function FundTradeAutopilot({
   fundSlug,
   address,
@@ -34,45 +28,16 @@ export default function FundTradeAutopilot({
       running.current = true;
 
       try {
-        const res = await fetch(
-          `/api/funds/${fundSlug}/trades?address=${encodeURIComponent(address)}&pending=1`,
-        );
-        const data = await res.json();
+        const res = await fetch(`/api/funds/${fundSlug}/trades/execute`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ address }),
+        });
         if (!res.ok || cancelled) return;
 
-        const trades = (data.trades ?? []) as MandateTrade[];
-        if (trades.length === 0) return;
-
-        const walletClient = await getWalletClient(wagmiConfig, {
-          chainId: polygon.id,
-          account: address,
-        });
-        if (!walletClient || cancelled) return;
-
-        const creds = readLocalTradingCreds(fundSlug, address);
-
-        for (const trade of trades) {
-          if (cancelled) break;
-
-          const result = await executeMandateTrade(
-            walletClient,
-            trade,
-            undefined,
-            creds,
-          );
-
-          const filled = result.status === "filled";
-          await fetch(`/api/funds/${fundSlug}/trades`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              address,
-              tradeId: trade.id,
-              status: filled ? "filled" : "failed",
-              detail: result.detail,
-            }),
-          });
-
+        const data = await res.json();
+        const results = (data.results ?? []) as Array<{ status: string }>;
+        if (results.some((r) => r.status === "filled" || r.status === "failed")) {
           onTradeSettled?.();
         }
       } catch {

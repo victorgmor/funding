@@ -9,6 +9,7 @@ import {
 import { adjustMandateCash, listMandatesByFund } from "@/lib/funds/mandates";
 import { recordFanoutTrades } from "@/lib/funds/mandate-trades";
 import { beginInstructionExecution } from "@/lib/funds/execute-trades";
+import { runPendingTradesForFund } from "@/lib/funds/run-pending-trades";
 import { poolTradingOpen } from "@/lib/funds/pool";
 import type { MarketSide } from "@/lib/funds/types";
 import { fetchGammaMarket, midPrice, parseOutcomes, outcomeIndex, tokenIdForSide } from "@/lib/polymarket/gamma";
@@ -147,9 +148,16 @@ export const POST: APIRoute = async ({ params, request }) => {
     }
 
     const summary = await beginInstructionExecution(fund.slug, instruction.id);
+    const serverRuns = await runPendingTradesForFund(fund.slug).catch(() => []);
 
     return new Response(
-      JSON.stringify({ instruction: { ...instruction, status: "executing" }, trades, slices, summary }),
+      JSON.stringify({
+        instruction: { ...instruction, status: "executing" },
+        trades,
+        slices,
+        summary,
+        serverRuns,
+      }),
       { status: 201, headers: { "Content-Type": "application/json" } },
     );
   } catch (e) {

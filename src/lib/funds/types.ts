@@ -132,6 +132,8 @@ export type TradingSession = {
   depositAddress: string;
   signatureType: number;
   authorized: boolean;
+  /** Privy session signer registered for server-side order signing */
+  serverSigner?: boolean;
   createdAt: string;
   updatedAt: string;
 };
