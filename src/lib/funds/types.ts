@@ -7,7 +7,7 @@ export type InstructionStatus =
   | "failed"
   | "cancelled";
 export type MandateTradeStatus = "pending" | "filled" | "failed" | "skipped";
-export type MarketSide = "yes" | "no";
+export type MarketSide = string;
 
 export type FundManager = {
   id: string;

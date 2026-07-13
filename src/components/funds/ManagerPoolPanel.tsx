@@ -4,7 +4,7 @@ import { isFundOwner } from "@/lib/funds/editable";
 import { formatUsdExact } from "@/lib/funds/format";
 import type { Fund, FanoutSlice, VirtualPool } from "@/lib/funds/types";
 import type { MarketSide } from "@/lib/funds/types";
-import type { SearchMarket } from "@/lib/polymarket/gamma";
+import { parseOutcomes, type SearchMarket } from "@/lib/polymarket/gamma";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
@@ -266,9 +266,13 @@ export default function ManagerPoolPanel({ fund }: Props) {
                     <li key={market.gammaMarketId} className="border-primary/10 border-b">
                       <button
                         type="button"
-                        onClick={() =>
-                          setSelected({ ...market, side: "yes" as MarketSide })
-                        }
+                        onClick={() => {
+                          const outcomes = parseOutcomes(market.outcomes);
+                          setSelected({
+                            ...market,
+                            side: outcomes[0] ?? "",
+                          });
+                        }}
                         className="text-primary hover:bg-primary/10 w-full px-3 py-2 text-left text-sm"
                       >
                         {market.question}
@@ -283,19 +287,19 @@ export default function ManagerPoolPanel({ fund }: Props) {
                   <p className="text-primary/80 line-clamp-2 text-sm">
                     {selected.question}
                   </p>
-                  <div className="flex gap-2">
-                    {(["yes", "no"] as const).map((side) => (
+                  <div className="flex flex-wrap gap-2">
+                    {parseOutcomes(selected.outcomes).map((outcome) => (
                       <button
-                        key={side}
+                        key={outcome}
                         type="button"
-                        onClick={() => setSelected({ ...selected, side })}
+                        onClick={() => setSelected({ ...selected, side: outcome })}
                         className={
-                          selected.side === side
+                          selected.side === outcome
                             ? "rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs uppercase"
                             : "text-primary/50 px-3 py-1 text-xs uppercase"
                         }
                       >
-                        {side}
+                        {outcome}
                       </button>
                     ))}
                   </div>

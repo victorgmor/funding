@@ -1,14 +1,23 @@
 import { fetchErrorMessage } from "@/lib/fetch-error";
 
-/** Parse gamma `clobTokenIds` + outcomes to get YES/NO token ids */
+/** Parse gamma `outcomes` JSON to outcome labels (e.g. Yes/No, Up/Down). */
+export function parseOutcomes(outcomes: string): string[] {
+  return JSON.parse(outcomes) as string[];
+}
+
+export function outcomeIndex(outcomes: string[], label: string): number {
+  return outcomes.findIndex((o) => o.toLowerCase() === label.toLowerCase());
+}
+
+/** Resolve CLOB token id for an outcome label. */
 export function tokenIdForSide(
   clobTokenIds: string,
   outcomes: string,
-  side: "yes" | "no",
+  side: string,
 ): string {
   const tokens = JSON.parse(clobTokenIds) as string[];
-  const labels = JSON.parse(outcomes) as string[];
-  const idx = labels.findIndex((o) => o.toLowerCase() === side);
+  const labels = parseOutcomes(outcomes);
+  const idx = outcomeIndex(labels, side);
   if (idx === -1) throw new Error(`Side ${side} not in outcomes`);
   return tokens[idx]!;
 }
@@ -202,15 +211,18 @@ export async function fetchGammaMarket(id: string): Promise<GammaMarket> {
   }
 }
 
-export function midPrice(gamma: GammaMarket, side: "yes" | "no"): number {
+export function midPrice(gamma: GammaMarket, side: string): number {
   const prices = JSON.parse(gamma.outcomePrices) as string[];
-  const outcomes = JSON.parse(gamma.outcomes) as string[];
-  const idx = outcomes.findIndex((o) => o.toLowerCase() === side);
-  const fromGamma = parseFloat(prices[idx] ?? "0.5");
+  const outcomes = parseOutcomes(gamma.outcomes);
+  const idx = outcomeIndex(outcomes, side);
+  if (idx === -1) throw new Error(`Side ${side} not in outcomes`);
 
-  if (gamma.bestBid != null && gamma.bestAsk != null) {
+  const fromGamma = parseFloat(prices[idx] ?? "0.5");
+  if (fromGamma > 0 && fromGamma < 1) return fromGamma;
+
+  if (gamma.bestBid != null && gamma.bestAsk != null && outcomes.length === 2) {
     const mid = (gamma.bestBid + gamma.bestAsk) / 2;
-    if (side === "yes") return mid;
+    if (idx === 0) return mid;
     return Math.max(0.01, Math.min(0.99, 1 - mid));
   }
 

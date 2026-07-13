@@ -11,7 +11,7 @@ import { recordFanoutTrades } from "@/lib/funds/mandate-trades";
 import { beginInstructionExecution } from "@/lib/funds/execute-trades";
 import { poolTradingOpen } from "@/lib/funds/pool";
 import type { MarketSide } from "@/lib/funds/types";
-import { fetchGammaMarket, midPrice, tokenIdForSide } from "@/lib/polymarket/gamma";
+import { fetchGammaMarket, midPrice, parseOutcomes, outcomeIndex, tokenIdForSide } from "@/lib/polymarket/gamma";
 import { getFund } from "@/lib/funds/store";
 
 export const prerender = false;
@@ -88,15 +88,21 @@ export const POST: APIRoute = async ({ params, request }) => {
       });
     }
 
-    if (body.side !== "yes" && body.side !== "no") {
-      return new Response(JSON.stringify({ error: "Side must be yes or no" }), {
-        status: 400,
-      });
+    const gamma = await fetchGammaMarket(body.gammaMarketId);
+    const outcomes = parseOutcomes(gamma.outcomes);
+    const side = body.side?.trim() ?? "";
+    if (!side || outcomeIndex(outcomes, side) === -1) {
+      return new Response(
+        JSON.stringify({
+          error: `Outcome must be one of: ${outcomes.join(", ")}`,
+        }),
+        { status: 400 },
+      );
     }
 
-    const gamma = await fetchGammaMarket(body.gammaMarketId);
-    const price = Math.min(0.99, Math.max(0.01, midPrice(gamma, body.side)));
-    const tokenId = tokenIdForSide(gamma.clobTokenIds, gamma.outcomes, body.side);
+    const canonicalSide = outcomes[outcomeIndex(outcomes, side)]!;
+    const price = Math.min(0.99, Math.max(0.01, midPrice(gamma, canonicalSide)));
+    const tokenId = tokenIdForSide(gamma.clobTokenIds, gamma.outcomes, canonicalSide);
 
     const mandates = await listMandatesByFund(fund.slug);
     const slices = fanoutTrade(totalUsdc, price, mandates);
@@ -109,7 +115,7 @@ export const POST: APIRoute = async ({ params, request }) => {
           price,
           tokenId,
           question: gamma.question,
-          side: body.side,
+          side: canonicalSide,
           slices,
         }),
         { headers: { "Content-Type": "application/json" } },
@@ -121,7 +127,7 @@ export const POST: APIRoute = async ({ params, request }) => {
       managerWallet: managerAddress,
       tokenId,
       question: gamma.question,
-      side: body.side,
+      side: canonicalSide,
       totalUsdc,
       price,
     });
@@ -131,7 +137,7 @@ export const POST: APIRoute = async ({ params, request }) => {
       instructionId: instruction.id,
       tokenId,
       question: gamma.question,
-      side: body.side,
+      side: canonicalSide,
       price,
       slices,
     });
