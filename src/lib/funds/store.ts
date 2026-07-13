@@ -188,10 +188,24 @@ export async function deleteFund(
 
 export async function getAllFunds(): Promise<Fund[]> {
   const userFunds = await listUserFunds();
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    const seeds = seedFunds.map(
+      (fund) => demoMemory.funds.get(fund.slug) ?? fund,
+    );
+    const seedSlugs = new Set(seeds.map((fund) => fund.slug));
+    const extraUser = userFunds.filter((fund) => !seedSlugs.has(fund.slug));
+    return [...seeds, ...extraUser];
+  }
   return [...seedFunds, ...userFunds];
 }
 
 export async function getFund(slug: string): Promise<Fund | undefined> {
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    const override = demoMemory.funds.get(slug);
+    if (override) return override;
+  }
   const seed = seedFunds.find((fund) => fund.slug === slug);
   if (seed) return seed;
   return getUserFund(slug);
@@ -357,11 +371,18 @@ export async function setFundTestLifecycleStage(
   if (error) throw new Error(error);
 
   const fund = await getFund(slug);
-  if (!fund || !isUserFund(fund)) {
+  if (!fund) {
     throw new Error("Fund not found");
   }
-  if (fund.manager.id.toLowerCase() !== input.managerAddress.toLowerCase()) {
-    throw new Error("Only the creator can manage this fund");
+
+  const demo = useDemoStore();
+  if (!demo) {
+    if (!isUserFund(fund)) {
+      throw new Error("Fund not found");
+    }
+    if (fund.manager.id.toLowerCase() !== input.managerAddress.toLowerCase()) {
+      throw new Error("Only the creator can manage this fund");
+    }
   }
 
   const validStages: LifecycleStage[] = ["deposit", "trading", "closed"];

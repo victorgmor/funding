@@ -10,6 +10,10 @@ const INNER_R = 72;
 /** Uniform gap width (viewBox px) — stroke, not angular wedge. */
 const GAP_STROKE = 8;
 
+const PRIMARY_FILL = "var(--color-primary)";
+const IDLE_FILL = "color-mix(in oklch, var(--color-primary) 10%, transparent)";
+const PLACEHOLDER_FILL = "color-mix(in oklch, var(--color-primary) 20%, transparent)";
+
 type Entry = {
   fund: Fund;
   mandate: Mandate;
@@ -90,6 +94,12 @@ export default function MandateAllocationChart({ entries }: Props) {
   const empty = slices.length === 0;
 
   const activeSlice = slices.find((slice) => slice.slug === activeSlug) ?? null;
+  const singleSlice = slices.length === 1;
+
+  function sliceFill(isActive: boolean) {
+    if (isActive || singleSlice) return PRIMARY_FILL;
+    return IDLE_FILL;
+  }
 
   return (
     <div className="border-primary/10 border-b px-2 pb-6 pt-5">
@@ -107,7 +117,7 @@ export default function MandateAllocationChart({ entries }: Props) {
           {empty ? (
             <path
               d={arcPath(CX, CY, OUTER_R, INNER_R, 0, 359.99)}
-              className="fill-primary/10"
+              fill={PLACEHOLDER_FILL}
               aria-hidden
             />
           ) : (
@@ -135,12 +145,11 @@ export default function MandateAllocationChart({ entries }: Props) {
                 >
                   <path
                     d={path}
+                    fill={sliceFill(isActive)}
                     stroke="var(--color-secondary)"
                     strokeWidth={entries.length > 1 ? GAP_STROKE : 0}
                     strokeLinejoin="round"
-                    className={`transition-[fill] duration-200 ${
-                      isActive ? "fill-primary" : "fill-primary/10"
-                    }`}
+                    className="transition-[fill] duration-200"
                   />
                 </g>
               </a>
@@ -182,8 +191,12 @@ export default function MandateAllocationChart({ entries }: Props) {
                 <span className="flex min-w-0 items-center gap-2">
                   <span
                     className={`size-2.5 shrink-0 rounded-full transition-all duration-200 ${
-                      isActive ? "bg-primary scale-125" : "bg-primary/10"
+                      isActive ? "scale-125" : ""
                     }`}
+                    style={{
+                      backgroundColor:
+                        isActive || singleSlice ? PRIMARY_FILL : IDLE_FILL,
+                    }}
                     aria-hidden
                   />
                   <span className="truncate">{slice.name}</span>

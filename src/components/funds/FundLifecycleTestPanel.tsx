@@ -9,7 +9,7 @@ import type { Fund } from "@/lib/funds/types";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
-type Props = { fund: Fund };
+type Props = { fund: Fund; demoMode?: boolean };
 
 const STAGES: { id: LifecycleStage; label: string }[] = [
   { id: "deposit", label: "Open for orders" },
@@ -17,18 +17,19 @@ const STAGES: { id: LifecycleStage; label: string }[] = [
   { id: "closed", label: "Closed" },
 ];
 
-export default function FundLifecycleTestPanel({ fund }: Props) {
+export default function FundLifecycleTestPanel({ fund, demoMode = false }: Props) {
   const { address, isConnected, restoring } = useWalletSession();
   const [busy, setBusy] = useState(false);
   const [signing, setSigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isUserFund(fund)) return null;
+  if (!demoMode && !isUserFund(fund)) return null;
 
   const isOwner = isFundOwner(fund, address);
+  const canManage = demoMode ? isConnected && Boolean(address) : isOwner;
   const currentStage = resolveLifecycleStage(fund);
 
-  if (!isOwner) return null;
+  if (!demoMode && !isOwner) return null;
 
   async function setStage(stage: LifecycleStage) {
     if (!address || busy || stage === currentStage) return;
@@ -79,15 +80,31 @@ export default function FundLifecycleTestPanel({ fund }: Props) {
       <p className="text-primary/50 text-[0.65rem] font-medium uppercase">
         Test lifecycle
       </p>
-      {!isConnected || !address ? (
+      {!canManage ? (
         <div className="mt-2">
           <p className="text-primary/60 mb-2 text-xs">
-            Connect your creator wallet to switch stages.
+            {demoMode
+              ? "Connect a wallet to switch stages."
+              : "Connect your creator wallet to switch stages."}
           </p>
           {!restoring && <ConnectWallet variant="panel" />}
         </div>
       ) : (
         <>
+          {currentStage === "deposit" && (
+            <button
+              type="button"
+              disabled={busy || signing}
+              onClick={() => setStage("trading")}
+              className="bg-accent hover:bg-accent/80 disabled:bg-accent/40 mt-2 rounded-full px-4 py-2 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed"
+            >
+              {signing
+                ? "Sign in wallet…"
+                : busy
+                  ? "Starting trading…"
+                  : "Start trading"}
+            </button>
+          )}
           <div className="mt-2 flex flex-wrap gap-2">
             {STAGES.map((stage) => {
               const active = currentStage === stage.id;
