@@ -7,10 +7,19 @@ import Hero from "@/components/landing/Hero.astro";
 import TopCreatorsCarousel from "@/components/landing/TopCreatorsCarousel";
 import FundListPanel from "@/components/funds/FundListPanel";
 import { getTopCreators } from "@/lib/funds/creators";
+import { computeFundPoolPerformance } from "@/lib/funds/performance";
 import { getAllFunds } from "@/lib/funds/store";
 
 const funds = await getAllFunds();
-const topCreators = getTopCreators(funds);
+const profitByFundSlug = Object.fromEntries(
+  await Promise.all(
+    funds.map(async (fund) => {
+      const performance = await computeFundPoolPerformance(fund);
+      return [fund.slug, performance?.profitUsdc ?? 0] as const;
+    }),
+  ),
+);
+const topCreators = getTopCreators(funds, { profitByFundSlug });
 ---
 
 <BaseLayout>

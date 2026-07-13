@@ -1,3 +1,4 @@
+import PnlAmount from "@/components/funds/PnlAmount";
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { creatorPath } from "@/lib/funds/creator";
 import type { TopCreator } from "@/lib/funds/creators";
@@ -28,6 +29,7 @@ function CreatorItem({ creator }: { creator: TopCreator }) {
       <span className="text-primary/40 text-xs">
         {creator.fundCount} fund{creator.fundCount === 1 ? "" : "s"}
       </span>
+      <PnlAmount amount={creator.totalProfitUsdc} />
     </a>
   );
 }
@@ -39,8 +41,8 @@ export default function TopCreatorsCarousel({ creators }: Props) {
 
   return (
     <section aria-label="Creator spotlights" className="group">
-      <p className="text-primary/50 mb-3 text-[0.65rem] font-medium tracking-wide uppercase">
-        Creator spotlights
+      <p className="text-primary/50 mb-3 text-sm">
+        Spotlights
       </p>
       <div className="relative overflow-hidden">
         <div className="from-secondary pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r to-transparent" />

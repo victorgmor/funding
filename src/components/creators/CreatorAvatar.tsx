@@ -61,14 +61,14 @@ export default function CreatorAvatar({
         height={
           size === "2xs" ? 24 : size === "xs" ? 32 : size === "sm" ? 40 : 64
         }
-        className={`border-primary/10 shrink-0 rounded-full border object-cover ${sizeClass}`}
+        className={`shrink-0 rounded-full object-cover ${sizeClass}`}
       />
     );
   }
 
   return (
     <div
-      className={`bg-primary/10 text-primary border-primary/10 flex shrink-0 items-center justify-center rounded-full border font-semibold ${sizeClass}`}
+      className={`bg-primary/10 text-primary flex shrink-0 items-center justify-center rounded-full font-semibold ${sizeClass}`}
       aria-hidden="true"
     >
       {initial}

@@ -27,6 +27,9 @@ import { isUserFund } from "@/lib/funds/editable";
 
 export { isUserFund } from "@/lib/funds/editable";
 
+/** Max pool cap for new funds (USD). */
+export const MAX_POOL_CAP_USDC = 15_000;
+
 export type UpdateFundInput = {
   name: string;
   thesis: string;
@@ -234,6 +237,16 @@ function parseCapUsdc(value: unknown): number | null {
   return Math.round(cap * 100) / 100;
 }
 
+function validateCapUsdc(value: unknown): string | null {
+  if (value == null || value === "") return "Pool cap is required";
+  const cap = Number(value);
+  if (!Number.isFinite(cap) || cap <= 0) return "Pool cap must be positive";
+  if (cap > MAX_POOL_CAP_USDC) {
+    return `Pool cap cannot exceed $${MAX_POOL_CAP_USDC.toLocaleString("en-US")}`;
+  }
+  return null;
+}
+
 function parseProfitSharePct(value: unknown): number {
   if (value == null || value === "") return 0;
   const pct = Number(value);
@@ -250,12 +263,8 @@ function validateCreateInput(input: CreateFundInput): string | null {
   if (name.length < 2) return "Fund name is required";
   if (thesis.length < 10) return "Thesis must be at least 10 characters";
 
-  if (input.capUsdc != null) {
-    const cap = Number(input.capUsdc);
-    if (!Number.isFinite(cap) || cap <= 0) {
-      return "Pool cap must be positive when set";
-    }
-  }
+  const capError = validateCapUsdc(input.capUsdc);
+  if (capError) return capError;
 
   try {
     if (input.managerProfitSharePct != null) {

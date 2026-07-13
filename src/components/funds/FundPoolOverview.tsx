@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { Fund, VirtualPool } from "@/lib/funds/types";
 import type { FundPoolPerformance } from "@/lib/funds/performance";
 import type { FundSettlement } from "@/lib/funds/settlement";
-import PnlAmount from "@/components/funds/PnlAmount";
+import FundStageMetricsRow from "@/components/funds/FundStageMetricsRow";
 import PoolCapBar from "@/components/funds/PoolCapBar";
 import ProfitShareLabel from "@/components/funds/ProfitShareLabel";
 import { formatUsdExact } from "@/lib/funds/format";
@@ -24,7 +24,7 @@ export default function FundPoolOverview({ fund }: Props) {
   const closed = fund.status === "closed";
   const profitShare = fund.managerProfitSharePct ?? 0;
   const performance = pool?.performance ?? null;
-  const pnlAmount = performance?.profitUsdc ?? 0;
+  const pnlAmount = performance?.profitUsdc ?? null;
 
   useEffect(() => {
     const onUpdate = (event: Event) => {
@@ -92,12 +92,14 @@ export default function FundPoolOverview({ fund }: Props) {
 
   return (
     <div>
-      <PoolCapBar
-        deposited={pool.totalNotional}
-        capUsdc={fund.capUsdc}
-        primaryTrailing={<PnlAmount amount={pnlAmount} />}
-        secondaryTrailing={<ProfitShareLabel pct={profitShare} />}
-      />
+      <div className="space-y-2">
+        <FundStageMetricsRow fund={fund} profitUsdc={pnlAmount} />
+        <PoolCapBar
+          deposited={pool.totalNotional}
+          capUsdc={fund.capUsdc}
+          trailing={<ProfitShareLabel pct={profitShare} />}
+        />
+      </div>
 
       <p className="text-primary/45 mt-2.5 font-mono text-xs tabular-nums">
         <span className="text-primary/70 font-medium">

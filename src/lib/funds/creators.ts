@@ -5,12 +5,20 @@ export type TopCreator = {
   name: string;
   verified: boolean;
   fundCount: number;
+  totalProfitUsdc: number;
 };
 
-export function getTopCreators(funds: Fund[], limit = 12): TopCreator[] {
+type Options = {
+  limit?: number;
+  profitByFundSlug?: Record<string, number>;
+};
+
+export function getTopCreators(funds: Fund[], options: Options = {}): TopCreator[] {
+  const { limit = 12, profitByFundSlug = {} } = options;
   const byId = new Map<string, TopCreator>();
 
   for (const fund of funds) {
+    const profit = profitByFundSlug[fund.slug] ?? 0;
     const existing = byId.get(fund.manager.id);
 
     if (!existing) {
@@ -19,11 +27,13 @@ export function getTopCreators(funds: Fund[], limit = 12): TopCreator[] {
         name: fund.manager.name,
         verified: fund.manager.verified,
         fundCount: 1,
+        totalProfitUsdc: profit,
       });
       continue;
     }
 
     existing.fundCount += 1;
+    existing.totalProfitUsdc += profit;
   }
 
   return [...byId.values()]

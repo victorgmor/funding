@@ -1,0 +1,17 @@
+import PnlAmount from "@/components/funds/PnlAmount";
+import FundLifecycleTrack from "@/components/funds/FundLifecycleTrack";
+import type { Fund } from "@/lib/funds/types";
+
+type Props = {
+  fund: Fund;
+  profitUsdc: number | null;
+};
+
+export default function FundStageMetricsRow({ fund, profitUsdc }: Props) {
+  return (
+    <div className="flex items-baseline justify-between gap-6">
+      <FundLifecycleTrack fund={fund} />
+      {profitUsdc != null ? <PnlAmount amount={profitUsdc} /> : null}
+    </div>
+  );
+}

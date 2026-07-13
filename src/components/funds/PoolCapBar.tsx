@@ -6,8 +6,7 @@ type Props = {
   capUsdc?: number | null;
   variant?: "default" | "compact";
   className?: string;
-  primaryTrailing?: ReactNode;
-  secondaryTrailing?: ReactNode;
+  trailing?: ReactNode;
 };
 
 function ProgressTrack({
@@ -40,13 +39,11 @@ export default function PoolCapBar({
   capUsdc,
   variant = "default",
   className = "",
-  primaryTrailing,
-  secondaryTrailing,
+  trailing,
 }: Props) {
   const capped = capUsdc != null && capUsdc > 0;
   const pct = capped ? capProgress(deposited, capUsdc) : 0;
   const fillWidth = capped ? Math.max(pct, deposited > 0 ? 6 : 0) : 0;
-  const hasTrailing = primaryTrailing || secondaryTrailing;
 
   if (variant === "compact") {
     return (
@@ -69,43 +66,25 @@ export default function PoolCapBar({
     );
   }
 
-  const statsRow = (
-    <div className="flex items-baseline justify-between gap-3 text-sm">
-      <span className="font-mono tabular-nums">
-        <span className="text-primary/80 font-medium">
-          {formatUsdExact(deposited)}
-        </span>
-        <span className="text-primary/45"> deposited</span>
+  const statsLine = (
+    <p className="min-w-0 text-sm font-mono tabular-nums">
+      <span className="text-primary/80 font-medium">
+        {formatUsdExact(deposited)}
       </span>
       <span className="text-primary/45">
-        {formatCapFillLabel(deposited, capped ? capUsdc : null)}
+        {" "}
+        deposited · {formatCapFillLabel(deposited, capped ? capUsdc : null)}
       </span>
-    </div>
+    </p>
   );
-
-  if (!hasTrailing) {
-    return (
-      <div className={`min-w-0 ${className}`}>
-        <ProgressTrack capped={capped} fillWidth={fillWidth} deposited={deposited} />
-        <div className="mt-1.5">{statsRow}</div>
-      </div>
-    );
-  }
 
   return (
     <div className={`min-w-0 ${className}`}>
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-1">
-        <div className="flex min-h-5 items-center">
-          <ProgressTrack capped={capped} fillWidth={fillWidth} deposited={deposited} />
-        </div>
-        <div className="flex min-h-5 items-center justify-end">
-          {primaryTrailing}
-        </div>
-        <div className="min-h-5">{statsRow}</div>
-        <div className="flex min-h-5 items-center justify-end">
-          {secondaryTrailing}
-        </div>
+      <div className="mb-2 flex items-baseline justify-between gap-6">
+        {statsLine}
+        {trailing && <div className="shrink-0">{trailing}</div>}
       </div>
+      <ProgressTrack capped={capped} fillWidth={fillWidth} deposited={deposited} />
     </div>
   );
 }

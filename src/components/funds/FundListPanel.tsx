@@ -128,7 +128,6 @@ function FundListPanelInner({ funds }: Props) {
   const { isConnected } = useWalletSession();
   const { totals: poolTotals } = usePoolTotals();
   const [query, setQuery] = useState("");
-  const [searchFocused, setSearchFocused] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [onlyParticipating, setOnlyParticipating] = useState(false);
   const [sortField, setSortField] = useState<SortField>("published");
@@ -199,8 +198,6 @@ function FundListPanelInner({ funds }: Props) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
             placeholder="Search funds"
             aria-label="Search funds"
             className="text-primary placeholder:text-primary/35 w-full appearance-none border-0 bg-transparent py-1 text-base shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 [&::-webkit-search-cancel-button]:appearance-none"
@@ -262,14 +259,12 @@ function FundListPanelInner({ funds }: Props) {
 
       {visible.length > 0 ? (
         <div>
-          {pagedFunds.map((fund, index) => (
+          {pagedFunds.map((fund) => (
             <FundFeedCard
               key={fund.slug}
               fund={fund}
               deposited={poolTotals[fund.slug]?.deposited ?? 0}
               profitUsdc={poolTotals[fund.slug]?.profitUsdc ?? null}
-              lead={index === 0}
-              searchFocused={searchFocused}
             />
           ))}
         </div>

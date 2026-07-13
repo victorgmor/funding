@@ -2,6 +2,7 @@ import { useState } from "react";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
 import ConnectWallet from "@/components/app/ConnectWallet";
 import { defaultLifecycleDate } from "@/lib/funds/lifecycle";
+import { MAX_POOL_CAP_USDC } from "@/lib/funds/store";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
@@ -22,13 +23,21 @@ function CreateFundFormInner() {
   );
   const { name: managerName } = usePolymarketProfile(address);
 
+  const capValue = Number(capUsdc);
+  const capValid =
+    capUsdc.trim() !== "" &&
+    Number.isFinite(capValue) &&
+    capValue > 0 &&
+    capValue <= MAX_POOL_CAP_USDC;
+
   const canPublish =
     isConnected &&
     address &&
     name.trim() &&
     thesis.trim() &&
     raiseEndsAt &&
-    tradingEndsAt;
+    tradingEndsAt &&
+    capValid;
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
 
@@ -65,7 +74,7 @@ function CreateFundFormInner() {
           managerAddress: address,
           message: challenge.message,
           signature,
-          capUsdc: capUsdc.trim() ? Number(capUsdc) : null,
+          capUsdc: capValue,
           managerProfitSharePct: Number(profitSharePct),
           raiseEndsAt,
           tradingEndsAt,
@@ -190,20 +199,24 @@ function CreateFundFormInner() {
 
       <div>
         <label className="text-primary mb-1 block text-sm" htmlFor="cap-usdc">
-          Pool cap (optional)
+          Pool cap
         </label>
         <input
           id="cap-usdc"
           type="number"
-          min={0}
+          min={1}
+          max={MAX_POOL_CAP_USDC}
+          step={1}
           value={capUsdc}
           onChange={(e) => setCapUsdc(e.target.value)}
           placeholder="e.g. 10000"
           className={inputClass}
+          required
         />
         <p className="text-primary/50 mt-2 text-xs">
-          Managed pool — investors commit capital from their deposit wallets.
-          Manager trades fan out proportionally.
+          Required. Max ${MAX_POOL_CAP_USDC.toLocaleString("en-US")}. Investors
+          commit capital from their deposit wallets; manager trades fan out
+          proportionally.
         </p>
       </div>
 
