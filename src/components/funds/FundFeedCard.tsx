@@ -3,7 +3,7 @@ import FundStageMetricsRow from "@/components/funds/FundStageMetricsRow";
 import PoolCapBar from "@/components/funds/PoolCapBar";
 import ProfitShareLabel from "@/components/funds/ProfitShareLabel";
 import SealCheck from "@/components/fundations/icons/SealCheck";
-import { creatorPath, isCreatorWallet } from "@/lib/funds/creator";
+import { creatorPath } from "@/lib/funds/creator";
 import { formatPublishedAgo } from "@/lib/funds/format";
 import type { Fund } from "@/lib/funds/types";
 
@@ -26,11 +26,10 @@ export default function FundFeedCard({
 }: Props) {
   const snippet = feedSnippet(fund);
   const published = formatPublishedAgo(fund.createdAt);
-  const showAvatar = isCreatorWallet(fund.manager.id);
   const profitShare = fund.managerProfitSharePct ?? 0;
 
   return (
-    <article className="border-primary/10 border-b py-5 last:border-b-0">
+    <article className="border-primary/10 border-b py-5 first:border-t last:border-b-0">
       <div className="flex items-center justify-between gap-4">
         <a
           href={`/funds/${fund.slug}`}
@@ -42,22 +41,13 @@ export default function FundFeedCard({
         </a>
 
         <div className="text-primary/45 flex shrink-0 items-center gap-1.5 text-sm">
-          {showAvatar ? (
-            <a href={creatorPath(fund.manager.id)} className="shrink-0">
-              <CreatorAvatar
-                address={fund.manager.id}
-                name={fund.manager.name}
-                size="2xs"
-              />
-            </a>
-          ) : (
-            <div
-              className="bg-primary/10 text-primary/70 flex size-5 shrink-0 items-center justify-center rounded-full text-[0.65rem] font-semibold"
-              aria-hidden
-            >
-              {fund.manager.name.trim().charAt(0).toUpperCase() || "?"}
-            </div>
-          )}
+          <a href={creatorPath(fund.manager.id)} className="shrink-0">
+            <CreatorAvatar
+              address={fund.manager.id}
+              name={fund.manager.name}
+              size="2xs"
+            />
+          </a>
 
           <a
             href={creatorPath(fund.manager.id)}
