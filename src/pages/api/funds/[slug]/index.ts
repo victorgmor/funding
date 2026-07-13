@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { verifyBundleSignature } from "@/lib/auth/bundle-auth";
-import { getFund, updateFund, type UpdateFundInput } from "@/lib/funds/store";
+import { getFund, updateFund, PUBLISHED_FUND_CANNOT_DELETE, type UpdateFundInput } from "@/lib/funds/store";
 
 export const prerender = false;
 
@@ -53,6 +53,13 @@ export const GET: APIRoute = async ({ params }) => {
   }
 
   return new Response(JSON.stringify(fund), {
+    headers: { "Content-Type": "application/json" },
+  });
+};
+
+export const DELETE: APIRoute = async () => {
+  return new Response(JSON.stringify({ error: PUBLISHED_FUND_CANNOT_DELETE }), {
+    status: 403,
     headers: { "Content-Type": "application/json" },
   });
 };

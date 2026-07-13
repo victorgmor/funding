@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import ArrowRight from "@/components/fundations/icons/ArrowRight";
 import ConnectWallet from "@/components/app/ConnectWallet";
 import GearIcon from "@/components/fundations/icons/GearIcon";
-import { formatUsdExact } from "@/lib/funds/format";
+import MandateAllocationChart from "@/components/funds/MandateAllocationChart";
 import { resolveLifecycleStage } from "@/lib/funds/lifecycle";
 import type { Fund, Mandate } from "@/lib/funds/types";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
@@ -148,51 +147,8 @@ export default function YourMandatesPanel({ funds }: Props) {
           All your funds are closed and hidden by your settings.
         </p>
       ) : (
-        <div>
-          {visibleEntries.map(({ fund, mandate, profitUsdc }, index) => {
-            const deployed = Math.max(
-              0,
-              mandate.notionalUsdc - mandate.cashUsdc,
-            );
-            return (
-              <a
-                key={fund.slug}
-                href={`/funds/${fund.slug}`}
-                className={`border-primary/10 group block border-b py-4 last:border-b-0 ${
-                  index === 0 ? "border-t" : ""
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <p className="text-primary group-hover:text-primary/85 truncate text-lg font-semibold tracking-tight sm:text-xl">
-                      {fund.name}
-                    </p>
-                  </div>
-                  <span className="text-primary/50 group-hover:text-primary shrink-0 transition-colors">
-                    <ArrowRight size="sm" />
-                  </span>
-                </div>
-                <div className="mt-1.5 flex items-baseline gap-2">
-                  <p className="text-primary font-mono text-lg tabular-nums">
-                    {formatUsdExact(mandate.notionalUsdc)}
-                  </p>
-                  {profitUsdc != null && profitUsdc !== 0 && (
-                    <p
-                      className={`font-mono text-sm tabular-nums ${
-                        profitUsdc > 0 ? "text-emerald-400" : "text-red-400"
-                      }`}
-                    >
-                      {formatUsdExact(profitUsdc, true)}
-                    </p>
-                  )}
-                </div>
-                <p className="text-primary/45 mt-2.5 font-mono text-xs tabular-nums">
-                  {formatUsdExact(deployed)} deployed ·{" "}
-                  {formatUsdExact(mandate.cashUsdc)} cash
-                </p>
-              </a>
-            );
-          })}
+        <div className="border-primary/10 border-t">
+          <MandateAllocationChart entries={visibleEntries} />
         </div>
       )}
     </div>

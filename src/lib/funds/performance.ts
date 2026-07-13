@@ -72,6 +72,20 @@ export async function computeFundPoolPerformance(
   return { roi, profitUsdc, aumUsdc, depositedUsdc };
 }
 
+/** Pool P&L per fund slug — 0 during deposit or with no commitments; losses are negative. */
+export async function computeProfitByFundSlug(
+  funds: Fund[],
+): Promise<Record<string, number>> {
+  return Object.fromEntries(
+    await Promise.all(
+      funds.map(async (fund) => {
+        const performance = await computeFundPoolPerformance(fund);
+        return [fund.slug, performance?.profitUsdc ?? 0] as const;
+      }),
+    ),
+  );
+}
+
 /** @deprecated alias — use computeFundPoolPerformance */
 export async function computeFundPerformance(
   fund: Fund,

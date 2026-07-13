@@ -2,7 +2,7 @@
 export const prerender = false;
 
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import ArrowLeft from "@/components/fundations/icons/ArrowLeft.astro";
+import BackLink from "@/components/fundations/elements/BackLink.astro";
 import Wrapper from "@/components/fundations/containers/Wrapper.astro";
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
 import FundLifecycleStepper from "@/components/funds/FundLifecycleStepper";
@@ -34,10 +34,7 @@ const showAvatar = isCreatorWallet(fund.manager.id);
 <BaseLayout>
   <section>
     <Wrapper variant="standard" class="py-24">
-      <a href="/" class="text-primary/60 hover:text-primary inline-flex items-center gap-1.5 text-sm">
-        <ArrowLeft size="sm" />
-        All funds
-      </a>
+      <BackLink />
 
       <div class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,672px)_minmax(280px,1fr)]">
         <div class="min-w-0">

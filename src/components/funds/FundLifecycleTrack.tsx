@@ -13,6 +13,12 @@ const LABELS: Record<LifecycleStage, string> = {
   closed: "Closed stage",
 };
 
+const DOT_COLORS: Record<LifecycleStage, string> = {
+  deposit: "bg-primary",
+  trading: "bg-[#32BCFF]",
+  closed: "bg-red-400",
+};
+
 function stageTiming(fund: Fund, stage: LifecycleStage): string | null {
   if (stage === "deposit" && fund.raiseEndsAt) {
     const days = daysUntil(fund.raiseEndsAt);
@@ -49,7 +55,7 @@ export default function FundLifecycleTrack({ fund }: Props) {
       aria-label="Fund lifecycle"
     >
       <span
-        className="bg-[#32BCFF] size-2 shrink-0 rounded-full"
+        className={`${DOT_COLORS[stage]} size-2 shrink-0 rounded-full`}
         aria-hidden
       />
       <p className="text-primary min-w-0 text-sm font-medium">

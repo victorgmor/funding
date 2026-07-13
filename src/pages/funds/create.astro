@@ -2,7 +2,7 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Text from "@/components/fundations/elements/Text.astro";
 import Wrapper from "@/components/fundations/containers/Wrapper.astro";
-import ArrowLeft from "@/components/fundations/icons/ArrowLeft.astro";
+import BackLink from "@/components/fundations/elements/BackLink.astro";
 import CreateFundForm from "@/components/funds/CreateFundForm";
 ---
 
@@ -10,10 +10,7 @@ import CreateFundForm from "@/components/funds/CreateFundForm";
   <section>
     <Wrapper variant="standard" class="py-24">
       <Wrapper variant="narrow">
-        <a href="/" class="text-primary/60 hover:text-primary inline-flex items-center gap-1.5 text-sm">
-          <ArrowLeft size="sm" />
-          All funds
-        </a>
+        <BackLink />
         <Text tag="h1" variant="displaySM" class="text-primary mt-6 font-semibold">
           Create fund
         </Text>

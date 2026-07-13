@@ -30,6 +30,10 @@ export { isUserFund } from "@/lib/funds/editable";
 /** Max pool cap for new funds (USD). */
 export const MAX_POOL_CAP_USDC = 15_000;
 
+/** Published funds are permanent — creators may close but not delete. */
+export const PUBLISHED_FUND_CANNOT_DELETE =
+  "Published funds cannot be deleted";
+
 export type UpdateFundInput = {
   name: string;
   thesis: string;
@@ -171,6 +175,15 @@ export async function closeFund(
   const settlement = await settleFund(updated);
 
   return { fund: updated, settlement };
+}
+
+export async function deleteFund(
+  slug: string,
+  input: CloseFundInput,
+): Promise<never> {
+  void slug;
+  void input;
+  throw new Error(PUBLISHED_FUND_CANNOT_DELETE);
 }
 
 export async function getAllFunds(): Promise<Fund[]> {

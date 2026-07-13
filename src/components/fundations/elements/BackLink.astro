@@ -1,0 +1,21 @@
+---
+import ChevronLeft from "@/components/fundations/icons/ChevronLeft.astro";
+
+type Props = {
+  href?: string;
+  label?: string;
+};
+
+const { href = "/", label = "All funds" } = Astro.props;
+---
+
+<a
+  href={href}
+  class="group text-primary/70 hover:text-primary hover:bg-primary/10 -ml-2.5 inline-flex items-center gap-1 rounded-full py-1.5 pr-3.5 pl-2 text-sm font-medium transition-colors"
+>
+  <ChevronLeft
+    size="sm"
+    class="text-primary/45 group-hover:text-primary -translate-x-px transition-all duration-200 group-hover:-translate-x-0.5"
+  />
+  {label}
+</a>

@@ -5,6 +5,7 @@ export type TopCreator = {
   name: string;
   verified: boolean;
   fundCount: number;
+  /** Sum of pool P&L across all published funds (gains and losses). */
   totalProfitUsdc: number;
 };
 
@@ -12,6 +13,17 @@ type Options = {
   limit?: number;
   profitByFundSlug?: Record<string, number>;
 };
+
+export function sumCreatorProfit(
+  funds: Fund[],
+  creatorId: string,
+  profitByFundSlug: Record<string, number>,
+): number {
+  const id = creatorId.toLowerCase();
+  return funds
+    .filter((fund) => fund.manager.id.toLowerCase() === id)
+    .reduce((sum, fund) => sum + (profitByFundSlug[fund.slug] ?? 0), 0);
+}
 
 export function getTopCreators(funds: Fund[], options: Options = {}): TopCreator[] {
   const { limit = 12, profitByFundSlug = {} } = options;
@@ -38,6 +50,9 @@ export function getTopCreators(funds: Fund[], options: Options = {}): TopCreator
 
   return [...byId.values()]
     .sort((a, b) => {
+      if (b.totalProfitUsdc !== a.totalProfitUsdc) {
+        return b.totalProfitUsdc - a.totalProfitUsdc;
+      }
       if (b.fundCount !== a.fundCount) return b.fundCount - a.fundCount;
       return a.name.localeCompare(b.name);
     })

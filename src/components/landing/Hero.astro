@@ -1,5 +1,6 @@
 ---
 import Text from "@/components/fundations/elements/Text.astro";
+import Button from "@/components/fundations/elements/Button.astro";
 ---
 
 <div>
@@ -14,4 +15,15 @@ import Text from "@/components/fundations/elements/Text.astro";
     Creators run discretionary pools. Investors commit capital from their deposit
     wallets; managers trade with proportional fan-out. Non-custodial on Polygon.
   </p>
+  <div class="mt-6">
+    <Button
+      isLink
+      size="sm"
+      variant="accent"
+      href="/funds/create"
+      class="w-fit"
+    >
+      Create fund
+    </Button>
+  </div>
 </div>

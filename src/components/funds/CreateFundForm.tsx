@@ -173,51 +173,53 @@ function CreateFundFormInner() {
         </div>
       </div>
 
-      <div>
-        <label className="text-primary mb-1 block text-sm" htmlFor="profit-share">
-          Manager profit share
-        </label>
-        <div className="border-primary/10 flex items-center gap-2 rounded border px-3 py-2">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="min-w-0">
+          <label className="text-primary mb-1 block text-sm" htmlFor="profit-share">
+            Manager profit share
+          </label>
+          <div className={`${inputClass} flex items-center gap-2`}>
+            <input
+              id="profit-share"
+              type="number"
+              min={0}
+              max={50}
+              step={0.5}
+              value={profitSharePct}
+              onChange={(e) => setProfitSharePct(e.target.value)}
+              className="text-primary min-w-0 flex-1 border-0 bg-transparent p-0 text-sm focus:outline-none"
+              required
+            />
+            <span className="text-primary/50 shrink-0 text-sm">%</span>
+          </div>
+          <p className="text-primary/50 mt-2 text-xs">
+            Your cut of each investor&apos;s profit when the fund closes
+            profitably. Max 50%.
+          </p>
+        </div>
+
+        <div className="min-w-0">
+          <label className="text-primary mb-1 block text-sm" htmlFor="cap-usdc">
+            Pool cap
+          </label>
           <input
-            id="profit-share"
+            id="cap-usdc"
             type="number"
-            min={0}
-            max={50}
-            step={0.5}
-            value={profitSharePct}
-            onChange={(e) => setProfitSharePct(e.target.value)}
-            className="text-primary w-full border-0 bg-transparent text-sm focus:outline-none"
+            min={1}
+            max={MAX_POOL_CAP_USDC}
+            step={1}
+            value={capUsdc}
+            onChange={(e) => setCapUsdc(e.target.value)}
+            placeholder="e.g. 10000"
+            className={inputClass}
             required
           />
-          <span className="text-primary/50 text-sm">%</span>
+          <p className="text-primary/50 mt-2 text-xs">
+            Required. Max ${MAX_POOL_CAP_USDC.toLocaleString("en-US")}. Investors
+            commit capital from their deposit wallets; manager trades fan out
+            proportionally.
+          </p>
         </div>
-        <p className="text-primary/50 mt-2 text-xs">
-          Your cut of each investor&apos;s profit when the fund closes
-          profitably. Max 50%.
-        </p>
-      </div>
-
-      <div>
-        <label className="text-primary mb-1 block text-sm" htmlFor="cap-usdc">
-          Pool cap
-        </label>
-        <input
-          id="cap-usdc"
-          type="number"
-          min={1}
-          max={MAX_POOL_CAP_USDC}
-          step={1}
-          value={capUsdc}
-          onChange={(e) => setCapUsdc(e.target.value)}
-          placeholder="e.g. 10000"
-          className={inputClass}
-          required
-        />
-        <p className="text-primary/50 mt-2 text-xs">
-          Required. Max ${MAX_POOL_CAP_USDC.toLocaleString("en-US")}. Investors
-          commit capital from their deposit wallets; manager trades fan out
-          proportionally.
-        </p>
       </div>
 
       {publishError && <p className="text-red-400 text-sm">{publishError}</p>}

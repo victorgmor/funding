@@ -182,7 +182,8 @@ export function FundOwnerControlsInner({ fund }: Props) {
             </p>
           ) : (
             <p className="text-primary/60 mt-1 text-xs">
-              Edit fund details or close to new investors.
+              Published funds cannot be deleted. Edit details or close to new
+              investors.
             </p>
           )}
         </div>
