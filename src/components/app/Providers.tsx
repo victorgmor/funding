@@ -5,6 +5,7 @@ import { WagmiProvider } from "@privy-io/wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getAccount, watchAccount } from "@wagmi/core";
 import ConnectWallet from "@/components/app/ConnectWallet";
+import PolymarketDepositSetup from "@/components/app/PolymarketDepositSetup";
 import { privyAppId, privyConfig } from "@/lib/privy/config";
 import { wagmiConfig } from "@/lib/wagmi/config";
 import { WAGMI_DISCONNECT_EVENT } from "@/lib/wagmi/events";
@@ -83,6 +84,7 @@ export default function Providers({
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig}>
           {syncSession && <WalletSessionSync />}
+          {syncSession && <PolymarketDepositSetup />}
           {portalNavLogin && <NavLoginPortals />}
           {children}
         </WagmiProvider>
