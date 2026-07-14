@@ -59,7 +59,7 @@ function sortFunds(
   });
 }
 
-function useParticipatingSlugs(funds: Fund[], enabled: boolean) {
+function useParticipatingSlugs(enabled: boolean) {
   const { address, isConnected } = useWalletSession();
   const [slugs, setSlugs] = useState<Set<string> | null>(null);
   const [loading, setLoading] = useState(false);
@@ -76,20 +76,20 @@ function useParticipatingSlugs(funds: Fund[], enabled: boolean) {
     async function load() {
       setLoading(true);
       try {
-        const results = await Promise.all(
-          funds.map(async (fund) => {
-            const res = await fetch(
-              `/api/funds/${fund.slug}/mandates?address=${address}`,
-            );
-            const data = (await res.json()) as {
-              mandate?: { notionalUsdc?: number } | null;
-            };
-            if (!res.ok || !(data.mandate?.notionalUsdc ?? 0)) return null;
-            return fund.slug;
-          }),
+        const res = await fetch(
+          `/api/investor/mandates?address=${encodeURIComponent(address)}`,
         );
+        const data = (await res.json()) as {
+          mandates?: Array<{ fund: { slug: string } }>;
+        };
         if (!cancelled) {
-          setSlugs(new Set(results.filter(Boolean) as string[]));
+          if (!res.ok) {
+            setSlugs(new Set());
+            return;
+          }
+          setSlugs(
+            new Set((data.mandates ?? []).map((row) => row.fund.slug)),
+          );
         }
       } catch {
         if (!cancelled) setSlugs(new Set());
@@ -102,7 +102,7 @@ function useParticipatingSlugs(funds: Fund[], enabled: boolean) {
     return () => {
       cancelled = true;
     };
-  }, [funds, enabled, address, isConnected]);
+  }, [enabled, address, isConnected]);
 
   return { slugs, loading };
 }
@@ -136,7 +136,7 @@ function FundListPanelInner({ funds }: Props) {
   const [page, setPage] = useState(1);
 
   const { slugs: participatingSlugs, loading: participatingLoading } =
-    useParticipatingSlugs(funds, onlyParticipating);
+    useParticipatingSlugs(onlyParticipating);
 
   useEffect(() => {
     setPage(1);
@@ -301,7 +301,7 @@ function FundListPanelInner({ funds }: Props) {
       </div>
 
       <aside className="min-w-0">
-        <YourMandatesPanel funds={funds} />
+        <YourMandatesPanel />
       </aside>
     </div>
   );

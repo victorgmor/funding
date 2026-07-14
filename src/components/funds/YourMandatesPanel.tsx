@@ -6,17 +6,13 @@ import { resolveLifecycleStage } from "@/lib/funds/lifecycle";
 import type { Fund, Mandate } from "@/lib/funds/types";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
-type Props = {
-  funds: Fund[];
-};
-
 type Entry = {
   fund: Fund;
   mandate: Mandate;
   profitUsdc: number | null;
 };
 
-export default function YourMandatesPanel({ funds }: Props) {
+export default function YourMandatesPanel() {
   const { address, isConnected, restoring } = useWalletSession();
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,25 +31,29 @@ export default function YourMandatesPanel({ funds }: Props) {
     async function load() {
       setLoading(true);
       try {
-        const results = await Promise.all(
-          funds.map(async (fund) => {
-            const res = await fetch(
-              `/api/funds/${fund.slug}/mandates?address=${encodeURIComponent(address!)}`,
-            );
-            const data = (await res.json()) as {
-              mandate?: Mandate | null;
-              mandateProfitUsdc?: number | null;
-            };
-            if (!res.ok || !(data.mandate?.notionalUsdc ?? 0)) return null;
-            return {
-              fund,
-              mandate: data.mandate!,
-              profitUsdc: data.mandateProfitUsdc ?? null,
-            };
-          }),
+        const res = await fetch(
+          `/api/investor/mandates?address=${encodeURIComponent(address!)}`,
         );
+        const data = (await res.json()) as {
+          mandates?: Array<{
+            fund: Fund;
+            mandate: Mandate;
+            mandateProfitUsdc?: number | null;
+          }>;
+          error?: string;
+        };
         if (!cancelled) {
-          setEntries(results.filter(Boolean) as Entry[]);
+          if (!res.ok) {
+            setEntries([]);
+            return;
+          }
+          setEntries(
+            (data.mandates ?? []).map((row) => ({
+              fund: row.fund,
+              mandate: row.mandate,
+              profitUsdc: row.mandateProfitUsdc ?? null,
+            })),
+          );
         }
       } catch {
         if (!cancelled) setEntries([]);
@@ -66,7 +66,7 @@ export default function YourMandatesPanel({ funds }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [funds, address, isConnected]);
+  }, [address, isConnected]);
 
   const visibleEntries = (entries ?? []).filter(
     ({ fund }) => !hideClosed || resolveLifecycleStage(fund) !== "closed",

@@ -113,8 +113,12 @@ export async function reconcileMandateCash(
   const delta = round(expected - mandate.cashUsdc, 2);
   if (Math.abs(delta) < 0.01) return mandate;
 
-  const updated = await adjustMandateCash(mandate.id, fundSlug, delta);
-  return updated ?? mandate;
+  try {
+    const updated = await adjustMandateCash(mandate.id, fundSlug, delta);
+    return updated ?? mandate;
+  } catch {
+    return mandate;
+  }
 }
 
 /** Heal drifted cash and positions for every mandate in a fund. */

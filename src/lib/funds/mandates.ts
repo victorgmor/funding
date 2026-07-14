@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { GetCommand, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand, PutCommand, QueryCommand, ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import type { Mandate, MandateStatus } from "@/lib/funds/types";
 import {
   mandateDocClient,
@@ -40,6 +40,27 @@ export async function listMandatesByFund(fundSlug: string): Promise<Mandate[]> {
   return (rows.Items ?? [])
     .map((row) => row.mandate as Mandate)
     .filter(Boolean)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+/** All mandates for an investor wallet (table scan — fine at current scale). */
+export async function listMandatesForInvestor(wallet: string): Promise<Mandate[]> {
+  const normalized = normalizeWallet(wallet);
+  const rows = await mandateDocClient().send(
+    new ScanCommand({
+      TableName: mandatesTableName(),
+      FilterExpression:
+        "begins_with(sk, :prefix) AND mandate.investorWallet = :wallet",
+      ExpressionAttributeValues: {
+        ":prefix": "mandate#",
+        ":wallet": normalized,
+      },
+    }),
+  );
+
+  return (rows.Items ?? [])
+    .map((row) => row.mandate as Mandate)
+    .filter((mandate) => Boolean(mandate?.notionalUsdc))
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
