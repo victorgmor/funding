@@ -87,15 +87,6 @@ async function redeemSinglePosition(
   position: MandatePosition,
   builderConfig: NonNullable<ReturnType<typeof getRelayBuilderConfig>>,
 ): Promise<RedeemRun> {
-  const market = await fetchMarketByTokenId(position.tokenId);
-  if (!market?.resolved) {
-    return {
-      positionId: position.id,
-      status: "skipped",
-      detail: market ? "Market not resolved yet" : "Market data unavailable",
-    };
-  }
-
   const payload = await readSessionPayload(fundSlug, position.investorWallet);
 
   const depositAddress = await resolveDepositAddress(
@@ -107,6 +98,17 @@ async function redeemSinglePosition(
       positionId: position.id,
       status: "skipped",
       detail: "Polymarket deposit wallet not registered",
+    };
+  }
+
+  const market = await fetchMarketByTokenId(position.tokenId, {
+    depositAddress,
+  });
+  if (!market?.resolved) {
+    return {
+      positionId: position.id,
+      status: "skipped",
+      detail: market ? "Market not resolved yet" : "Market data unavailable",
     };
   }
 

@@ -3,10 +3,13 @@ import {
   deletePositionsForMandate,
   listAllPositionsByMandate,
   listPositionsByMandate,
+  listPositionsByWallet,
   savePositionRecord,
 } from "@/lib/funds/mandate-positions";
 import { listTradesByFund } from "@/lib/funds/mandate-trades";
 import type { Mandate, MandatePosition, MandateTrade } from "@/lib/funds/types";
+import { readDepositWalletBalanceUsdc } from "@/lib/polymarket/deposit-balance";
+import type { Address } from "viem";
 
 function round(n: number, d: number) {
   const f = 10 ** d;
@@ -102,6 +105,30 @@ export function expectedMandateCash(
     .filter((pos) => pos.mandateId === mandate.id)
     .reduce((sum, pos) => sum + pos.costUsdc, 0);
   return Math.max(0, round(mandate.notionalUsdc - deployed, 2));
+}
+
+/** Liquid deposit wallet + open position cost for mandate backing checks. */
+export async function investorMandateBacking(
+  fundSlug: string,
+  investorWallet: string,
+  mandateId?: string,
+): Promise<{ liquidUsdc: number; deployedUsdc: number; totalUsdc: number }> {
+  const liquidUsdc = await readDepositWalletBalanceUsdc(
+    investorWallet as Address,
+  );
+  let positions = await listPositionsByWallet(fundSlug, investorWallet);
+  if (mandateId) {
+    positions = positions.filter((pos) => pos.mandateId === mandateId);
+  }
+  const deployedUsdc = round(
+    positions.reduce((sum, pos) => sum + pos.costUsdc, 0),
+    2,
+  );
+  return {
+    liquidUsdc,
+    deployedUsdc,
+    totalUsdc: round(liquidUsdc + deployedUsdc, 2),
+  };
 }
 
 export async function reconcileMandateCash(

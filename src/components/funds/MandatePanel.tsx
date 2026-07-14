@@ -7,6 +7,7 @@ import FundTradeAutopilot from "@/components/funds/FundTradeAutopilot";
 import { privySignerQuorumId } from "@/lib/privy/config";
 import {
   delegatedPrivyWallet,
+  embeddedPrivyWallet,
   isEmbeddedPrivyAddress,
   privyWalletIdForAddress,
 } from "@/lib/privy/wallet";
@@ -178,10 +179,19 @@ export default function MandatePanel({ fund }: Props) {
         throw new Error("PUBLIC_PRIVY_SIGNER_QUORUM_ID is not configured");
       }
 
-      await addSigners({
-        address,
-        signers: [{ signerId: privySignerQuorumId, policyIds: [] }],
-      });
+      const alreadyDelegated =
+        embeddedPrivyWallet(user, address)?.delegated === true;
+      if (!alreadyDelegated) {
+        try {
+          await addSigners({
+            address,
+            signers: [{ signerId: privySignerQuorumId, policyIds: [] }],
+          });
+        } catch (e) {
+          const message = e instanceof Error ? e.message : String(e);
+          if (!/duplicate signer/i.test(message)) throw e;
+        }
+      }
 
       const privyWalletId = privyWalletIdForAddress(user, address);
       if (!privyWalletId) {

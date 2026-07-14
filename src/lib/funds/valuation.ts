@@ -10,16 +10,18 @@ function round(n: number, d: number) {
 /** Mark-to-market price per outcome token ($/share). */
 export async function fetchTokenValuations(
   positions: MandatePosition[],
+  depositAddress?: string,
 ): Promise<Map<string, number>> {
   const unique = [...new Set(positions.map((pos) => pos.tokenId))];
   const prices = new Map<string, number>();
   if (unique.length === 0) return prices;
 
   const mids = await fetchTokenMidPrices(unique);
+  const marketOpts = depositAddress ? { depositAddress } : undefined;
 
   await Promise.all(
     unique.map(async (tokenId) => {
-      const market = await fetchMarketByTokenId(tokenId);
+      const market = await fetchMarketByTokenId(tokenId, marketOpts);
       if (market?.resolved && market.settlementPrice != null) {
         prices.set(tokenId, market.settlementPrice);
         return;

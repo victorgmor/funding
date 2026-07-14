@@ -40,7 +40,27 @@ type GammaMarketRow = {
   active?: boolean;
   closed?: boolean;
   negRisk?: boolean;
+  umaResolutionStatus?: string;
   umaResolutionStatuses?: string;
+};
+
+type DataApiPosition = {
+  asset: string;
+  conditionId: string;
+  redeemable?: boolean;
+  curPrice?: number;
+  negativeRisk?: boolean;
+};
+
+type ClobMarket = {
+  condition_id: string;
+  neg_risk: boolean;
+  closed: boolean;
+  tokens?: Array<{
+    token_id: string;
+    price: number;
+    winner: boolean;
+  }>;
 };
 
 function toSearchMarket(market: GammaMarketRow): SearchMarket | null {
@@ -255,6 +275,8 @@ export function isMarketResolved(market: GammaMarketRow): boolean {
     /* ignore */
   }
 
+  if (/resolved/i.test(market.umaResolutionStatus ?? "")) return true;
+
   if (!market.closed) return false;
 
   try {
@@ -284,7 +306,7 @@ function settlementPriceForToken(
   }
 }
 
-export async function fetchMarketByTokenId(
+async function fetchGammaMarketByTokenId(
   tokenId: string,
 ): Promise<ResolvedMarketMeta | null> {
   try {
@@ -314,4 +336,97 @@ export async function fetchMarketByTokenId(
   } catch {
     return null;
   }
+}
+
+async function fetchDataApiPosition(
+  depositAddress: string,
+  tokenId: string,
+): Promise<DataApiPosition | null> {
+  try {
+    const res = await fetch(
+      `https://data-api.polymarket.com/positions?user=${depositAddress.toLowerCase()}`,
+    );
+    if (!res.ok) return null;
+    const rows = (await res.json()) as DataApiPosition[];
+    return rows.find((row) => row.asset === tokenId) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchClobMarket(conditionId: string): Promise<ClobMarket | null> {
+  try {
+    const id = conditionId.startsWith("0x") ? conditionId : `0x${conditionId}`;
+    const res = await fetch(`https://clob.polymarket.com/markets/${id}`);
+    if (!res.ok) return null;
+    return res.json() as Promise<ClobMarket>;
+  } catch {
+    return null;
+  }
+}
+
+function metaFromClobMarket(
+  market: ClobMarket,
+  tokenId: string,
+): ResolvedMarketMeta {
+  const conditionId = (
+    market.condition_id.startsWith("0x")
+      ? market.condition_id
+      : `0x${market.condition_id}`
+  ) as `0x${string}`;
+  const token = market.tokens?.find((row) => row.token_id === tokenId);
+  const settlementPrice =
+    token != null ? Math.max(0, Math.min(1, token.price)) : undefined;
+
+  const prices = market.tokens?.map((row) => row.price) ?? [];
+  const resolved =
+    token?.winner === true ||
+    (prices.length >= 2 &&
+      Math.max(...prices) >= 0.95 &&
+      Math.min(...prices) <= 0.05) ||
+    settlementPrice === 0 ||
+    settlementPrice === 1;
+
+  return {
+    conditionId,
+    negRisk: market.neg_risk === true,
+    resolved,
+    settlementPrice: resolved ? settlementPrice : undefined,
+  };
+}
+
+/** Resolve market metadata for redemption / valuation (gamma → data-api → CLOB). */
+export async function fetchMarketByTokenId(
+  tokenId: string,
+  opts?: { depositAddress?: string },
+): Promise<ResolvedMarketMeta | null> {
+  const gamma = await fetchGammaMarketByTokenId(tokenId);
+  if (gamma?.resolved) return gamma;
+
+  if (opts?.depositAddress) {
+    const dataPos = await fetchDataApiPosition(opts.depositAddress, tokenId);
+    if (dataPos?.conditionId) {
+      const clob = await fetchClobMarket(dataPos.conditionId);
+      if (clob) {
+        const meta = metaFromClobMarket(clob, tokenId);
+        if (meta.resolved) return meta;
+      }
+
+      if (dataPos.redeemable && dataPos.curPrice != null) {
+        const conditionId = (
+          dataPos.conditionId.startsWith("0x")
+            ? dataPos.conditionId
+            : `0x${dataPos.conditionId}`
+        ) as `0x${string}`;
+        return {
+          conditionId,
+          negRisk: dataPos.negativeRisk === true,
+          resolved: true,
+          settlementPrice: Math.max(0, Math.min(1, dataPos.curPrice)),
+        };
+      }
+    }
+  }
+
+  return gamma;
 }

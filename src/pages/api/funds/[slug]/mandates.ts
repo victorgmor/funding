@@ -9,7 +9,7 @@ import {
 import { getFund } from "@/lib/funds/store";
 import { readDepositWalletBalanceUsdc } from "@/lib/polymarket/deposit-balance";
 import { getMandateSettlement } from "@/lib/funds/settlement";
-import { reconcileMandatePositions } from "@/lib/funds/mandate-reconcile";
+import { reconcileMandatePositions, investorMandateBacking } from "@/lib/funds/mandate-reconcile";
 import {
   fetchTokenValuations,
   mandateMarkValue,
@@ -60,7 +60,10 @@ export const GET: APIRoute = async ({ params, url }) => {
     let mandateValueUsdc: number | null = null;
     let mandateProfitUsdc: number | null = null;
     if (mandate) {
-      const valuations = await fetchTokenValuations(positions);
+      const valuations = await fetchTokenValuations(
+        positions,
+        session?.depositAddress,
+      );
       mandateValueUsdc = mandateMarkValue(mandate, positions, valuations);
       mandateProfitUsdc =
         Math.round((mandateValueUsdc - mandate.notionalUsdc) * 100) / 100;
@@ -155,26 +158,29 @@ export const POST: APIRoute = async ({ params, request }) => {
     const existing = await getMandate(fund.slug, address);
     const existingNotional = existing?.notionalUsdc ?? 0;
     const nextNotional = existingNotional + amountUsdc;
-    // Top-ups only need the incremental amount in the deposit wallet.
-    const requiredDeposit = existingNotional > 0 ? amountUsdc : nextNotional;
 
-    let depositBalanceUsdc: number;
-    try {
-      depositBalanceUsdc = await readDepositWalletBalanceUsdc(
-        address as `0x${string}`,
+    const backing = await investorMandateBacking(
+      fund.slug,
+      address,
+      existing?.id,
+    );
+
+    if (backing.liquidUsdc < amountUsdc) {
+      return new Response(
+        JSON.stringify({
+          error: `Deposit wallet has $${backing.liquidUsdc.toFixed(2)} pUSD — need $${amountUsdc.toFixed(2)} to add`,
+        }),
+        { status: 400 },
       );
-    } catch (e) {
-      const message =
-        e instanceof Error ? e.message : "Could not read deposit wallet balance";
-      return new Response(JSON.stringify({ error: message }), { status: 502 });
     }
 
-    if (depositBalanceUsdc < requiredDeposit) {
-      const error =
-        existingNotional > 0
-          ? `Deposit wallet has $${depositBalanceUsdc.toFixed(2)} pUSD — need $${requiredDeposit.toFixed(2)} to add`
-          : `Deposit wallet has $${depositBalanceUsdc.toFixed(2)} pUSD — need $${requiredDeposit.toFixed(2)} to back this mandate`;
-      return new Response(JSON.stringify({ error }), { status: 400 });
+    if (backing.totalUsdc < nextNotional) {
+      const maxAdd = Math.max(0, round(backing.totalUsdc - existingNotional, 2));
+      const detail =
+        maxAdd >= 5
+          ? `You have $${backing.totalUsdc.toFixed(2)} backing this mandate ($${backing.liquidUsdc.toFixed(2)} liquid + $${backing.deployedUsdc.toFixed(2)} in positions) — maximum add right now is $${maxAdd.toFixed(2)}`
+          : `You have $${backing.totalUsdc.toFixed(2)} backing this mandate ($${backing.liquidUsdc.toFixed(2)} liquid + $${backing.deployedUsdc.toFixed(2)} in positions) — deposit more pUSD before increasing your $${existingNotional.toFixed(2)} commitment`;
+      return new Response(JSON.stringify({ error: detail }), { status: 400 });
     }
 
     const mandate = await upsertMandateCommitment(
@@ -192,3 +198,8 @@ export const POST: APIRoute = async ({ params, request }) => {
     return new Response(JSON.stringify({ error: message }), { status: 500 });
   }
 };
+
+function round(n: number, d: number) {
+  const f = 10 ** d;
+  return Math.round(n * f) / f;
+}
