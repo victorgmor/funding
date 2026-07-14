@@ -7,7 +7,7 @@ ENV PUBLIC_POLY_BUILDER_CODE=$PUBLIC_POLY_BUILDER_CODE
 ENV PUBLIC_PRIVY_APP_ID=$PUBLIC_PRIVY_APP_ID
 ENV PUBLIC_PRIVY_SIGNER_QUORUM_ID=$PUBLIC_PRIVY_SIGNER_QUORUM_ID
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install -g npm@11 && npm ci
 COPY . .
 RUN npm run build
 
@@ -18,7 +18,7 @@ ENV HOST=0.0.0.0
 ENV PORT=8080
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm install -g npm@11 && npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 RUN mkdir -p data
 
