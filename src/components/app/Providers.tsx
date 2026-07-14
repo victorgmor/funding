@@ -8,6 +8,7 @@ import ConnectWallet from "@/components/app/ConnectWallet";
 import InvestorTradeAutopilot from "@/components/app/InvestorTradeAutopilot";
 import PolymarketDepositSetup from "@/components/app/PolymarketDepositSetup";
 import { privyAppId, privyConfig } from "@/lib/privy/config";
+import { embeddedWalletForWagmi } from "@/lib/privy/wallet";
 import { wagmiConfig } from "@/lib/wagmi/config";
 import { WAGMI_DISCONNECT_EVENT } from "@/lib/wagmi/events";
 import {
@@ -83,7 +84,10 @@ export default function Providers({
   return (
     <PrivyProvider appId={privyAppId} config={privyConfig}>
       <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={wagmiConfig}>
+        <WagmiProvider
+          config={wagmiConfig}
+          setActiveWalletForWagmi={embeddedWalletForWagmi}
+        >
           <WalletSessionSync />
           {syncSession && <PolymarketDepositSetup />}
           {syncSession && <InvestorTradeAutopilot />}

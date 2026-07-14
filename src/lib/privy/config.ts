@@ -15,6 +15,8 @@ export const privyConfig: PrivyClientConfig = {
     theme: "dark",
     accentColor: "#676FFF",
     showWalletLoginFirst: false,
+    walletList: [],
+    walletChainType: "ethereum-only",
   },
   defaultChain: polygon,
   supportedChains: [polygon],
@@ -23,5 +25,8 @@ export const privyConfig: PrivyClientConfig = {
       createOnLogin: "all-users",
     },
     showWalletUIs: true,
+  },
+  externalWallets: {
+    disableAllExternalWallets: true,
   },
 };

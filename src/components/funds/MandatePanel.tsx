@@ -7,6 +7,7 @@ import FundTradeAutopilot from "@/components/funds/FundTradeAutopilot";
 import { privySignerQuorumId } from "@/lib/privy/config";
 import {
   delegatedPrivyWallet,
+  isEmbeddedPrivyAddress,
   privyWalletIdForAddress,
 } from "@/lib/privy/wallet";
 import type {
@@ -111,8 +112,17 @@ export default function MandatePanel({ fund }: Props) {
     refresh();
   }, [address, refresh]);
 
-  async function requestChallenge(action: "commit" | "authorize") {
+  function requirePrivyWallet() {
     if (!address) throw new Error("Connect wallet first");
+    if (!isEmbeddedPrivyAddress(user, address)) {
+      throw new Error(
+        "External wallets are disabled — log out and sign in with email or Google to use your Privy wallet",
+      );
+    }
+  }
+
+  async function requestChallenge(action: "commit" | "authorize") {
+    requirePrivyWallet();
     const params = new URLSearchParams({
       address,
       action,

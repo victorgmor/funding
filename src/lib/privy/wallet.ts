@@ -1,4 +1,8 @@
-import type { User, WalletWithMetadata } from "@privy-io/react-auth";
+import type {
+  ConnectedWallet,
+  User,
+  WalletWithMetadata,
+} from "@privy-io/react-auth";
 
 /** Privy server wallet id from linked embedded wallet accounts. */
 export function privyWalletIdForAddress(
@@ -31,6 +35,22 @@ export function embeddedPrivyWallet(user: User | null, address: string) {
     return wallet;
   }
   return undefined;
+}
+
+/** Only expose the Privy embedded wallet to wagmi (never Phantom / injected). */
+export function embeddedWalletForWagmi({
+  wallets,
+}: {
+  wallets: ConnectedWallet[];
+  user: User | null;
+}): ConnectedWallet | undefined {
+  return wallets.find(
+    (w) => w.walletClientType === "privy" || w.walletClientType === "privy-v2",
+  );
+}
+
+export function isEmbeddedPrivyAddress(user: User | null, address: string) {
+  return !!embeddedPrivyWallet(user, address);
 }
 
 /** Embedded Privy wallet with an active session signer (delegated). */
