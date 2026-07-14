@@ -45,8 +45,16 @@ export function fanoutTrade(
     throw new Error("No active mandates with capital");
   }
 
-  const cappedTotal = Math.min(totalUsdc, totalPoolCash(mandates));
-  if (cappedTotal <= 0) throw new Error("No deployable cash in pool");
+  const deployable = round(
+    eligible.reduce((sum, m) => sum + m.cashUsdc, 0),
+    2,
+  );
+  if (deployable <= 0) throw new Error("No deployable cash in pool");
+  if (totalUsdc > deployable) {
+    throw new Error(
+      `Pool has $${deployable.toFixed(2)} deployable — cannot trade $${totalUsdc.toFixed(2)}`,
+    );
+  }
 
   let allocated = 0;
   const slices: FanoutSlice[] = [];
@@ -56,8 +64,8 @@ export function fanoutTrade(
     const share = mandate.notionalUsdc / totalNotional;
     let usdcAmount =
       i === eligible.length - 1
-        ? round(cappedTotal - allocated, 2)
-        : round(cappedTotal * share, 2);
+        ? round(totalUsdc - allocated, 2)
+        : round(totalUsdc * share, 2);
 
     usdcAmount = Math.min(usdcAmount, mandate.cashUsdc);
     allocated = round(allocated + usdcAmount, 2);

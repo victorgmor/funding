@@ -1,6 +1,9 @@
 import { settleExecutingTrade, settleMandateTrade } from "@/lib/funds/execute-trades";
 import { listPendingTradesForFund } from "@/lib/funds/execute-trades";
-import { lockPendingTradeForExecution } from "@/lib/funds/mandate-trades";
+import {
+  lockPendingTradeForExecution,
+  releaseTradeExecution,
+} from "@/lib/funds/mandate-trades";
 import {
   getTradingSession,
   readSessionCredsForExecution,
@@ -8,10 +11,14 @@ import {
 } from "@/lib/funds/trading-sessions";
 import type { MandateTrade } from "@/lib/funds/types";
 import { executeMandateTradeServer } from "@/lib/polymarket/server-trade";
-import { runRedemptionsForFund } from "@/lib/funds/redeem-positions";
+import { runRedemptionsForFund, type RedeemRun } from "@/lib/funds/redeem-positions";
 import { getAllFunds } from "@/lib/funds/store";
 import { resolvePrivyWalletId } from "@/lib/privy/resolve-wallet";
 import { serverSigningEnabled } from "@/lib/privy/server";
+import {
+  isWalletBusyError,
+  WALLET_BUSY_MESSAGE,
+} from "@/lib/polymarket/wallet-busy";
 
 export type PendingTradeRun = {
   tradeId: string;
@@ -23,11 +30,16 @@ export type InvestorPendingTradeRun = PendingTradeRun & {
   fundSlug: string;
 };
 
+export type PendingTradeBatch = {
+  results: PendingTradeRun[];
+  redeems: RedeemRun[];
+};
+
 export async function runPendingTradesForFund(
   fundSlug: string,
   investorWallet?: string,
   instructionId?: string,
-): Promise<PendingTradeRun[]> {
+): Promise<PendingTradeBatch> {
   if (!serverSigningEnabled()) {
     throw new Error("Server signing not configured");
   }
@@ -43,14 +55,14 @@ export async function runPendingTradesForFund(
     results.push(await runSinglePendingTrade(fundSlug, trade));
   }
 
-  // Best-effort: redeem resolved positions whenever the server executes trades.
+  let redeems: RedeemRun[] = [];
   try {
-    await runRedemptionsForFund(fundSlug, investorWallet);
+    redeems = await runRedemptionsForFund(fundSlug, investorWallet);
   } catch {
     /* redemption is optional follow-up */
   }
 
-  return results;
+  return { results, redeems };
 }
 
 /** Run pending fan-out slices for an investor across every fund. */
@@ -66,8 +78,8 @@ export async function runPendingTradesForInvestor(
   const results: InvestorPendingTradeRun[] = [];
 
   for (const fund of funds) {
-    const runs = await runPendingTradesForFund(fund.slug, normalized);
-    for (const run of runs) {
+    const batch = await runPendingTradesForFund(fund.slug, normalized);
+    for (const run of batch.results) {
       results.push({ ...run, fundSlug: fund.slug });
     }
   }
@@ -141,12 +153,29 @@ async function runSinglePendingTrade(
       trade: locked,
     });
 
+    if (result.status === "failed" && isWalletBusyError(result.detail)) {
+      await releaseTradeExecution(fundSlug, trade.id);
+      return {
+        tradeId: trade.id,
+        status: "skipped",
+        detail: WALLET_BUSY_MESSAGE,
+      };
+    }
+
     const status = result.status === "filled" ? "filled" : "failed";
     await settleExecutingTrade(fundSlug, trade.id, status, result.detail);
 
     return { tradeId: trade.id, status, detail: result.detail };
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Server trade failed";
+    if (isWalletBusyError(error)) {
+      await releaseTradeExecution(fundSlug, trade.id);
+      return {
+        tradeId: trade.id,
+        status: "skipped",
+        detail: WALLET_BUSY_MESSAGE,
+      };
+    }
     await settleExecutingTrade(fundSlug, trade.id, "failed", detail);
     return { tradeId: trade.id, status: "failed", detail };
   }

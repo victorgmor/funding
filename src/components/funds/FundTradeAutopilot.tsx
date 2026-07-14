@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { isWalletBusyError } from "@/lib/polymarket/wallet-busy";
 
 type TradeRun = {
   tradeId: string;
@@ -63,9 +64,9 @@ export default function FundTradeAutopilot({
         const redeems = (data.redeems ?? []) as RedeemRun[];
         const failure = results.find((r) => r.status === "failed");
         const redeemFailure = redeems.find((r) => r.status === "failed");
-        if (failure?.detail) {
+        if (failure?.detail && !isWalletBusyError(failure.detail)) {
           onError?.(failure.detail);
-        } else if (redeemFailure?.detail) {
+        } else if (redeemFailure?.detail && !isWalletBusyError(redeemFailure.detail)) {
           onError?.(redeemFailure.detail);
         }
 

@@ -1,6 +1,5 @@
 import type { APIRoute } from "astro";
 import { runPendingTradesForFund } from "@/lib/funds/run-pending-trades";
-import { runRedemptionsForFund } from "@/lib/funds/redeem-positions";
 import { getFund } from "@/lib/funds/store";
 import { serverSigningEnabled } from "@/lib/privy/server";
 
@@ -25,10 +24,7 @@ export const POST: APIRoute = async ({ params, request }) => {
   const address = body.address?.trim()?.toLowerCase();
 
   try {
-    const [results, redeems] = await Promise.all([
-      runPendingTradesForFund(fund.slug, address),
-      runRedemptionsForFund(fund.slug, address),
-    ]);
+    const { results, redeems } = await runPendingTradesForFund(fund.slug, address);
     return new Response(JSON.stringify({ results, redeems }), {
       headers: { "Content-Type": "application/json" },
     });

@@ -6,10 +6,11 @@ import {
   createInstruction,
   listInstructionsByFund,
 } from "@/lib/funds/instructions";
-import { adjustMandateCash, listMandatesByFund } from "@/lib/funds/mandates";
+import { adjustMandateCash } from "@/lib/funds/mandates";
+import { reconcileFundMandates } from "@/lib/funds/mandate-reconcile";
 import { recordFanoutTrades } from "@/lib/funds/mandate-trades";
 import { beginInstructionExecution } from "@/lib/funds/execute-trades";
-import { runPendingTradesForFund } from "@/lib/funds/run-pending-trades";
+import { runPendingTradesForFund, type PendingTradeRun } from "@/lib/funds/run-pending-trades";
 import { poolTradingOpen } from "@/lib/funds/pool";
 import type { MarketSide } from "@/lib/funds/types";
 import { fetchGammaMarket, midPrice, parseOutcomes, outcomeIndex, tokenIdForSide } from "@/lib/polymarket/gamma";
@@ -106,7 +107,7 @@ export const POST: APIRoute = async ({ params, request }) => {
     const price = Math.min(0.99, Math.max(0.01, midPrice(gamma, canonicalSide)));
     const tokenId = tokenIdForSide(gamma.clobTokenIds, gamma.outcomes, canonicalSide);
 
-    const mandates = await listMandatesByFund(fund.slug);
+    const mandates = await reconcileFundMandates(fund.slug);
     const slices = fanoutTrade(totalUsdc, price, mandates);
 
     if (body.dryRun || !body.execute) {
@@ -149,16 +150,17 @@ export const POST: APIRoute = async ({ params, request }) => {
     }
 
     const summary = await beginInstructionExecution(fund.slug, instruction.id);
-    let serverRuns: Awaited<ReturnType<typeof runPendingTradesForFund>> = [];
+    let serverRuns: PendingTradeRun[] = [];
     let serverSigningError: string | undefined;
 
     if (serverSigningEnabled()) {
       try {
-        serverRuns = await runPendingTradesForFund(
+        const batch = await runPendingTradesForFund(
           fund.slug,
           undefined,
           instruction.id,
         );
+        serverRuns = batch.results;
       } catch (e) {
         serverSigningError =
           e instanceof Error ? e.message : "Server trade execution failed";

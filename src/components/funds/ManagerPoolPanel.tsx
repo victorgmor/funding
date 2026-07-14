@@ -40,6 +40,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
   const [notice, setNotice] = useState<string | null>(null);
 
   const totalNotional = pool?.totalNotional ?? 0;
+  const deployable = pool?.totalCash ?? 0;
 
   useEffect(() => {
     if (!isOwner || !address) return;
@@ -122,6 +123,16 @@ export default function ManagerPoolPanel({ fund }: Props) {
     setNotice(null);
 
     try {
+      const tradeAmount = Number(amount);
+      if (!Number.isFinite(tradeAmount) || tradeAmount < 1) {
+        throw new Error("Trade amount required");
+      }
+      if (tradeAmount > deployable) {
+        throw new Error(
+          `Pool has $${deployable.toFixed(2)} deployable — cannot trade $${tradeAmount.toFixed(2)}`,
+        );
+      }
+
       const message = await requestChallenge();
       setSigning(true);
       const signature = await signWalletMessage(message).finally(() =>
@@ -306,11 +317,17 @@ export default function ManagerPoolPanel({ fund }: Props) {
                   <input
                     type="number"
                     min={1}
+                    max={deployable > 0 ? deployable : undefined}
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     className={inputClass}
                     placeholder="Pool trade size ($)"
                   />
+                  {deployable > 0 && (
+                    <p className="text-primary/50 text-xs">
+                      Max trade size: {formatUsdExact(deployable)} deployable
+                    </p>
+                  )}
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"

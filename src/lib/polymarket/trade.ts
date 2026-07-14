@@ -9,6 +9,10 @@ import {
 import type { WalletClient } from "viem";
 import type { BasketQuote, LegResult, MandateTrade } from "@/lib/funds/types";
 import {
+  isWalletBusyError,
+  WALLET_BUSY_MESSAGE,
+} from "@/lib/polymarket/wallet-busy";
+import {
   getApiCredentials,
   resolveTradingWallet,
   type TradingWallet,
@@ -196,12 +200,20 @@ function formatTradeError(
     const parsed = JSON.parse(msg) as {
       error?: string;
       status?: number;
+      data?: { error?: string };
     };
+    if (isWalletBusyError(msg)) {
+      return WALLET_BUSY_MESSAGE;
+    }
     if (parsed.status === 0) {
       return "Could not reach Polymarket from your browser. Disable ad blockers, check your connection, and ensure POLY_BUILDER_* env vars are set on the server (needed for deposit wallet setup).";
     }
   } catch {
     /* not JSON */
+  }
+
+  if (lower.includes("wallet busy")) {
+    return WALLET_BUSY_MESSAGE;
   }
 
   if (lower.includes("builder not configured")) {

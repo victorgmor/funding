@@ -107,6 +107,14 @@ export async function completeTradeExecution(
   return transitionTradeStatus(fundSlug, tradeId, "executing", status, detail);
 }
 
+/** Return a locked trade to pending when the relay wallet is busy. */
+export async function releaseTradeExecution(
+  fundSlug: string,
+  tradeId: string,
+): Promise<MandateTrade | undefined> {
+  return transitionTradeStatus(fundSlug, tradeId, "executing", "pending");
+}
+
 /** Atomically settle a pending trade — no-op if already claimed. */
 export async function claimPendingTrade(
   fundSlug: string,

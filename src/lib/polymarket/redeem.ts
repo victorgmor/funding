@@ -21,6 +21,7 @@ import {
 } from "@/lib/polymarket/polygon-contracts";
 import { PUSD_ADDRESS } from "@/lib/polygon/usdc";
 import { readPusdBalanceWei } from "@/lib/polymarket/deposit-balance";
+import { executeDepositWalletBatch } from "@/lib/polymarket/relay-batch";
 
 const RELAYER_URL = "https://relayer-v2.polymarket.com";
 
@@ -166,15 +167,7 @@ export async function submitResolvedPositionRedemption(
   );
 
   const deadline = Math.floor(Date.now() / 1000 + 600).toString();
-  const response = await relayer.executeDepositWalletBatch(
-    calls,
-    depositAddress,
-    deadline,
-  );
-  const confirmed = await response.wait();
-  if (!confirmed) {
-    throw new Error("Position redemption failed — try again in a minute");
-  }
+  await executeDepositWalletBatch(relayer, calls, depositAddress, deadline);
 
   const balanceAfter = await readPusdBalanceWei(depositAddress);
   const proceedsWei = balanceAfter > balanceBefore ? balanceAfter - balanceBefore : 0n;

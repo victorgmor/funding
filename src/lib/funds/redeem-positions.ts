@@ -18,6 +18,10 @@ import { getAuthorizationContext, getPrivyServerClient } from "@/lib/privy/serve
 import { readOutcomeTokenBalance } from "@/lib/polymarket/redeem";
 import { isDepositWalletDeployed } from "@/lib/polymarket/depositWallet";
 import { deriveDepositWalletAddress } from "@/lib/polymarket/positions";
+import {
+  isWalletBusyError,
+  WALLET_BUSY_MESSAGE,
+} from "@/lib/polymarket/wallet-busy";
 
 function round(n: number, d: number) {
   const f = 10 ** d;
@@ -181,6 +185,13 @@ async function redeemSinglePosition(
       proceedsUsdc,
     };
   } catch (error) {
+    if (isWalletBusyError(error)) {
+      return {
+        positionId: position.id,
+        status: "skipped",
+        detail: WALLET_BUSY_MESSAGE,
+      };
+    }
     const detail =
       error instanceof Error ? error.message : "Position redemption failed";
     return { positionId: position.id, status: "failed", detail };

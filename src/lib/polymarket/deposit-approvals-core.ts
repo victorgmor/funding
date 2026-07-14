@@ -16,6 +16,7 @@ import {
   CONDITIONAL_TOKENS,
   PUSD_COLLATERAL_SPENDERS,
 } from "@/lib/polymarket/polygon-contracts";
+import { executeDepositWalletBatch } from "@/lib/polymarket/relay-batch";
 import { PUSD_ADDRESS } from "@/lib/polygon/usdc";
 
 const RELAYER_URL = "https://relayer-v2.polymarket.com";
@@ -160,13 +161,5 @@ export async function submitDepositWalletApprovals(
   );
 
   const deadline = Math.floor(Date.now() / 1000 + 600).toString();
-  const response = await relayer.executeDepositWalletBatch(
-    calls,
-    depositAddress,
-    deadline,
-  );
-  const confirmed = await response.wait();
-  if (!confirmed) {
-    throw new Error("Deposit wallet approval failed — try again in a minute");
-  }
+  await executeDepositWalletBatch(relayer, calls, depositAddress, deadline);
 }

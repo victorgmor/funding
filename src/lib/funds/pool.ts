@@ -2,20 +2,10 @@ import { listInstructionsByFund } from "@/lib/funds/instructions";
 import { reconcileFundMandates } from "@/lib/funds/mandate-reconcile";
 import { listPositionsByFund } from "@/lib/funds/mandate-positions";
 import { listTradesByFund } from "@/lib/funds/mandate-trades";
-import { runRedemptionsForFund } from "@/lib/funds/redeem-positions";
 import { totalPoolCash, totalPoolNotional } from "@/lib/funds/fanout";
 import type { Fund, Mandate, VirtualPool } from "@/lib/funds/types";
-import { serverSigningEnabled } from "@/lib/privy/server";
 
 export async function buildVirtualPool(fund: Fund): Promise<VirtualPool> {
-  if (serverSigningEnabled()) {
-    try {
-      await runRedemptionsForFund(fund.slug);
-    } catch {
-      /* best-effort — pool read must not fail */
-    }
-  }
-
   const mandates = await reconcileFundMandates(fund.slug);
   const [instructions, trades, positions] = await Promise.all([
     listInstructionsByFund(fund.slug),
