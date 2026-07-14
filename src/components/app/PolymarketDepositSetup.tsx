@@ -5,6 +5,7 @@ import { polygon } from "wagmi/chains";
 import { ensureDepositWallet } from "@/lib/polymarket/depositWallet";
 import { useEnsurePolygon } from "@/lib/wagmi/useEnsurePolygon";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
+import { DEPOSIT_WALLET_UPDATED_EVENT } from "@/lib/wagmi/events";
 import { wagmiConfig } from "@/lib/wagmi/config";
 
 /** Create the user's Polymarket deposit wallet after Privy login (idempotent). */
@@ -46,6 +47,7 @@ export default function PolymarketDepositSetup() {
 
         await ensureDepositWallet(walletClient);
         readyFor.current = key;
+        window.dispatchEvent(new Event(DEPOSIT_WALLET_UPDATED_EVENT));
       } catch {
         /* user may dismiss relayer approval — retry next connect */
       } finally {

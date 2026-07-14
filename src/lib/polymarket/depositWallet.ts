@@ -19,6 +19,12 @@ async function fetchDeployed(address: string): Promise<boolean> {
   return !!data.deployed;
 }
 
+export async function isDepositWalletDeployed(
+  depositAddress: Address,
+): Promise<boolean> {
+  return fetchDeployed(depositAddress);
+}
+
 async function submitRelayerTransaction(request: unknown) {
   const res = await fetch("/api/polymarket/relayer/submit", {
     method: "POST",

@@ -1,8 +1,5 @@
-import { useEffect, useRef, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
-import CreatorAvatar from "@/components/creators/CreatorAvatar";
-import CaretDown from "@/components/fundations/icons/CaretDown";
-import SignOut from "@/components/fundations/icons/SignOut";
+import WalletAccountMenu from "@/components/app/WalletAccountMenu";
 import { privyAppId } from "@/lib/privy/config";
 import { WAGMI_DISCONNECT_EVENT } from "@/lib/wagmi/events";
 import { creatorPath } from "@/lib/funds/creator";
@@ -10,80 +7,11 @@ import { addressDisplayFallback } from "@/lib/polymarket/profile";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
 import { useEnsurePolygon } from "@/lib/wagmi/useEnsurePolygon";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
+import SignOut from "@/components/fundations/icons/SignOut";
 
 type Props = {
   variant?: "nav" | "panel" | "create";
 };
-
-function WalletNavMenu({
-  address,
-  label,
-  onLogout,
-}: {
-  address: `0x${string}`;
-  label: string;
-  onLogout: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-
-    function onPointerDown(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    }
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
-    }
-
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
-
-  return (
-    <div className="relative" ref={rootRef}>
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        className="hover:bg-primary/5 flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition-colors"
-      >
-        <CreatorAvatar address={address} name={label} size="xs" />
-        <span className="text-primary max-w-32 truncate text-sm">{label}</span>
-        <CaretDown size="sm" className="text-primary/50" />
-      </button>
-
-      {open && (
-        <div
-          role="menu"
-          className="border-primary/10 bg-secondary absolute right-0 z-50 mt-2 min-w-40 rounded-lg border p-1 shadow-lg"
-        >
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false);
-              onLogout();
-            }}
-            className="text-primary hover:bg-primary/5 flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors"
-          >
-            <SignOut size="sm" aria-hidden />
-            Log out
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 const navButtonClass =
   "bg-accent text-secondary hover:opacity-90 rounded-full px-4 py-1.5 text-sm font-medium transition-opacity disabled:cursor-wait disabled:opacity-60";
@@ -130,7 +58,7 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
 
     if (variant === "nav") {
       return (
-        <WalletNavMenu
+        <WalletAccountMenu
           address={address}
           label={label}
           onLogout={disconnectWallet}
