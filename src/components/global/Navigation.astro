@@ -5,7 +5,10 @@ import Logo from "@/components/assets/Logo.astro";
 import Wrapper from "@/components/fundations/containers/Wrapper.astro";
 // Components
 import MobileNav from "@/components/global/MobileNav.astro";
-import ConnectWalletIsland from "@/components/app/ConnectWalletIsland";
+import { PUBLIC_PRIVY_APP_ID } from "astro:env/client";
+
+const privyConfigured = Boolean(PUBLIC_PRIVY_APP_ID?.trim());
+
 const navLinks = [
   { href: "/", label: "Funds" },
   { href: "/funds/create", label: "Create fund" },
@@ -36,7 +39,18 @@ const navLinks = [
       </div>
       <div class="col-span-1 flex items-center justify-end gap-3">
         <div class="hidden lg:block">
-          <ConnectWalletIsland client:only="react" />
+          {
+            privyConfigured ? (
+              <div
+                id="nav-login-slot"
+                class="flex min-h-9 min-w-[5.5rem] items-center justify-end"
+              />
+            ) : (
+              <span class="text-primary/60 text-xs">
+                Login unavailable
+              </span>
+            )
+          }
         </div>
         <button
           id="navToggle"

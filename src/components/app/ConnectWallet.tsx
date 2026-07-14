@@ -85,6 +85,9 @@ function WalletNavMenu({
   );
 }
 
+const navButtonClass =
+  "bg-accent text-secondary hover:opacity-90 rounded-full px-4 py-1.5 text-sm font-medium transition-opacity disabled:cursor-wait disabled:opacity-60";
+
 function ConnectWalletInner({ variant = "panel" }: Props) {
   const { login, logout, ready } = usePrivy();
   const { address, displayAddress, isConnected, restoring } = useWalletSession();
@@ -99,11 +102,7 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
   if (!ready || restoring) {
     if (variant === "nav") {
       return (
-        <button
-          type="button"
-          disabled
-          className="text-primary/40 cursor-wait text-sm"
-        >
+        <button type="button" disabled className={navButtonClass}>
           Log in
         </button>
       );
@@ -165,7 +164,7 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
       onClick={() => login()}
       className={
         variant === "nav"
-          ? "text-primary hover:text-primary/80 text-sm"
+          ? navButtonClass
           : "bg-accent text-secondary hover:opacity-90 w-full rounded px-3 py-2 text-sm font-medium"
       }
     >

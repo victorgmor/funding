@@ -1,8 +1,10 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { PrivyProvider, usePrivy } from "@privy-io/react-auth";
 import { WagmiProvider } from "@privy-io/wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getAccount, watchAccount } from "@wagmi/core";
+import ConnectWallet from "@/components/app/ConnectWallet";
 import { privyAppId, privyConfig } from "@/lib/privy/config";
 import { wagmiConfig } from "@/lib/wagmi/config";
 import { WAGMI_DISCONNECT_EVENT } from "@/lib/wagmi/events";
@@ -41,14 +43,37 @@ function WalletSessionSync() {
   return null;
 }
 
+function NavLoginPortals() {
+  const [navSlot, setNavSlot] = useState<HTMLElement | null>(null);
+  const [mobileSlot, setMobileSlot] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setNavSlot(document.getElementById("nav-login-slot"));
+    setMobileSlot(document.getElementById("mobile-login-slot"));
+  }, []);
+
+  return (
+    <>
+      {navSlot && createPortal(<ConnectWallet variant="nav" />, navSlot)}
+      {mobileSlot && createPortal(<ConnectWallet variant="nav" />, mobileSlot)}
+    </>
+  );
+}
+
 type Props = {
   children?: ReactNode;
   /** Only the global AppProviders island should sync wallet session. */
   syncSession?: boolean;
+  /** Portal nav login buttons from the single Privy provider tree. */
+  portalNavLogin?: boolean;
 };
 
 /** Privy + wagmi context for Astro client islands (each island needs its own wrapper). */
-export default function Providers({ children, syncSession = false }: Props) {
+export default function Providers({
+  children,
+  syncSession = false,
+  portalNavLogin = false,
+}: Props) {
   if (!privyAppId) {
     return <>{children}</>;
   }
@@ -58,6 +83,7 @@ export default function Providers({ children, syncSession = false }: Props) {
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig}>
           {syncSession && <WalletSessionSync />}
+          {portalNavLogin && <NavLoginPortals />}
           {children}
         </WagmiProvider>
       </QueryClientProvider>
