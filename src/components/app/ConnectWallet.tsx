@@ -97,20 +97,23 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
   }
 
   if (!ready || restoring) {
+    if (variant === "nav") {
+      return (
+        <button
+          type="button"
+          disabled
+          className="text-primary/40 cursor-wait text-sm"
+        >
+          Log in
+        </button>
+      );
+    }
+
     if (variant === "panel" || variant === "create") {
       return <span className="text-primary/40 block min-h-9 text-sm" aria-hidden />;
     }
 
-    if (displayAddress) {
-      const label = displayName ?? addressDisplayFallback(displayAddress);
-      return (
-        <span className="text-primary/50 text-sm" aria-busy="true">
-          {label}
-        </span>
-      );
-    }
-
-    return <span className="text-primary/40 text-sm" aria-busy="true">&nbsp;</span>;
+    return null;
   }
 
   if (isConnected && address) {

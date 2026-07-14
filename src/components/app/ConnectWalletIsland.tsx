@@ -1,5 +1,10 @@
-import ConnectWallet from "./ConnectWallet";
+import ConnectWallet from "@/components/app/ConnectWallet";
+import Providers from "@/components/app/Providers";
 
 export default function ConnectWalletIsland() {
-  return <ConnectWallet variant="nav" />;
+  return (
+    <Providers>
+      <ConnectWallet variant="nav" />
+    </Providers>
+  );
 }

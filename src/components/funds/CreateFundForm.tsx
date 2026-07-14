@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Providers from "@/components/app/Providers";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
 import ConnectWallet from "@/components/app/ConnectWallet";
 import { defaultLifecycleDate } from "@/lib/funds/lifecycle";
@@ -7,7 +8,11 @@ import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 export default function CreateFundForm() {
-  return <CreateFundFormInner />;
+  return (
+    <Providers>
+      <CreateFundFormInner />
+    </Providers>
+  );
 }
 
 function CreateFundFormInner() {

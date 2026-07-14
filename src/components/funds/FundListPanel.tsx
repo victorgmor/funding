@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import FundFeedCard from "@/components/funds/FundFeedCard";
 import YourMandatesPanel from "@/components/funds/YourMandatesPanel";
+import Providers from "@/components/app/Providers";
 import GearIcon from "@/components/fundations/icons/GearIcon";
 import SearchIcon from "@/components/fundations/icons/SearchIcon";
 import { usePoolTotals } from "@/lib/funds/usePoolTotals";
@@ -307,5 +308,9 @@ function FundListPanelInner({ funds }: Props) {
 }
 
 export default function FundListPanel(props: Props) {
-  return <FundListPanelInner {...props} />;
+  return (
+    <Providers>
+      <FundListPanelInner {...props} />
+    </Providers>
+  );
 }

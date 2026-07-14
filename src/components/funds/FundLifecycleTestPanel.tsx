@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ConnectWallet from "@/components/app/ConnectWallet";
+import Providers from "@/components/app/Providers";
 import { isFundOwner, isUserFund } from "@/lib/funds/editable";
 import {
   resolveLifecycleStage,
@@ -17,7 +18,15 @@ const STAGES: { id: LifecycleStage; label: string }[] = [
   { id: "closed", label: "Closed" },
 ];
 
-export default function FundLifecycleTestPanel({ fund, demoMode = false }: Props) {
+export default function FundLifecycleTestPanel(props: Props) {
+  return (
+    <Providers>
+      <FundLifecycleTestPanelInner {...props} />
+    </Providers>
+  );
+}
+
+function FundLifecycleTestPanelInner({ fund, demoMode = false }: Props) {
   const { address, isConnected, restoring } = useWalletSession();
   const [busy, setBusy] = useState(false);
   const [signing, setSigning] = useState(false);
