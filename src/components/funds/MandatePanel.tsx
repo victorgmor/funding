@@ -5,7 +5,10 @@ import { polygon } from "wagmi/chains";
 import ConnectWallet from "@/components/app/ConnectWallet";
 import FundTradeAutopilot from "@/components/funds/FundTradeAutopilot";
 import { privySignerQuorumId } from "@/lib/privy/config";
-import { privyWalletIdForAddress } from "@/lib/privy/wallet";
+import {
+  delegatedPrivyWallet,
+  privyWalletIdForAddress,
+} from "@/lib/privy/wallet";
 import type {
   Fund,
   Mandate,
@@ -23,6 +26,7 @@ import {
 } from "@/lib/polymarket/trade";
 import {
   readLocalTradingCreds,
+  clearLocalTradingCreds,
 } from "@/lib/funds/trading-session-client";
 import { wagmiConfig } from "@/lib/wagmi/config";
 import { useEnsurePolygon } from "@/lib/wagmi/useEnsurePolygon";
@@ -58,6 +62,7 @@ export default function MandatePanel({ fund }: Props) {
   const [loading, setLoading] = useState(false);
   const [committing, setCommitting] = useState(false);
   const [authorizing, setAuthorizing] = useState(false);
+  const [revoking, setRevoking] = useState(false);
   const [signing, setSigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tradingId, setTradingId] = useState<string | null>(null);
@@ -226,17 +231,47 @@ export default function MandatePanel({ fund }: Props) {
   }
 
   async function revokeTrading() {
-    if (!address) return;
+    if (!address || revoking) return;
+
+    setRevoking(true);
+    setError(null);
+
     try {
-      await removeSigners({ address });
-    } catch {
-      /* signer may already be removed */
+      const delegated = delegatedPrivyWallet(user);
+      const signerAddress = (delegated?.address ?? address) as `0x${string}`;
+
+      let privyError: string | undefined;
+      try {
+        await removeSigners({ address: signerAddress });
+      } catch (e) {
+        privyError =
+          e instanceof Error ? e.message : "Could not remove Privy session signer";
+      }
+
+      const res = await fetch(
+        `/api/funds/${fund.slug}/session?address=${encodeURIComponent(address)}`,
+        { method: "DELETE" },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error ?? "Could not revoke trading session");
+      }
+
+      clearLocalTradingCreds(fund.slug, address);
+      setSummary((prev) => (prev ? { ...prev, session: null } : prev));
+      setPendingTrades([]);
+      await refresh();
+
+      if (privyError) {
+        setError(
+          `Auto-trading revoked on server, but Privy signer removal failed: ${privyError}`,
+        );
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Revoke failed");
+    } finally {
+      setRevoking(false);
     }
-    await fetch(
-      `/api/funds/${fund.slug}/session?address=${encodeURIComponent(address)}`,
-      { method: "DELETE" },
-    );
-    await refresh();
   }
 
   async function executePendingTrade(trade: MandateTrade) {
@@ -289,7 +324,7 @@ export default function MandatePanel({ fund }: Props) {
 
   return (
     <div className="border-primary/10 border-b pb-4 lg:sticky lg:top-24 lg:self-start">
-      {address && onPolygon && serverSignerActive && (
+      {address && onPolygon && serverSignerActive && !revoking && (
         <FundTradeAutopilot
           fundSlug={fund.slug}
           address={address}
@@ -366,10 +401,11 @@ export default function MandatePanel({ fund }: Props) {
               {sessionActive ? (
                 <button
                   type="button"
+                  disabled={revoking}
                   onClick={revokeTrading}
-                  className="text-primary/50 hover:text-primary mt-2 text-[0.65rem] uppercase"
+                  className="text-primary/50 hover:text-primary mt-2 text-[0.65rem] uppercase disabled:opacity-40"
                 >
-                  Revoke
+                  {revoking ? "Revoking…" : "Revoke"}
                 </button>
               ) : (
                 <button
