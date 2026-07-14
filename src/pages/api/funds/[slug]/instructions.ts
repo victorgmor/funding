@@ -14,6 +14,7 @@ import { poolTradingOpen } from "@/lib/funds/pool";
 import type { MarketSide } from "@/lib/funds/types";
 import { fetchGammaMarket, midPrice, parseOutcomes, outcomeIndex, tokenIdForSide } from "@/lib/polymarket/gamma";
 import { getFund } from "@/lib/funds/store";
+import { serverSigningEnabled } from "@/lib/privy/server";
 
 export const prerender = false;
 
@@ -148,7 +149,19 @@ export const POST: APIRoute = async ({ params, request }) => {
     }
 
     const summary = await beginInstructionExecution(fund.slug, instruction.id);
-    const serverRuns = await runPendingTradesForFund(fund.slug).catch(() => []);
+    let serverRuns: Awaited<ReturnType<typeof runPendingTradesForFund>> = [];
+    let serverSigningError: string | undefined;
+
+    if (serverSigningEnabled()) {
+      try {
+        serverRuns = await runPendingTradesForFund(fund.slug);
+      } catch (e) {
+        serverSigningError =
+          e instanceof Error ? e.message : "Server trade execution failed";
+      }
+    } else {
+      serverSigningError = "Server signing not configured";
+    }
 
     return new Response(
       JSON.stringify({
@@ -157,6 +170,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         slices,
         summary,
         serverRuns,
+        serverSigningError,
       }),
       { status: 201, headers: { "Content-Type": "application/json" } },
     );

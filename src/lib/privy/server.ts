@@ -28,10 +28,16 @@ export function getPrivyServerClient(): PrivyClient {
   return client;
 }
 
+function normalizeAuthorizationPrivateKey(key: string): string {
+  return key.startsWith("wallet-auth:") ? key : `wallet-auth:${key}`;
+}
+
 export function getAuthorizationContext(): AuthorizationContext {
   const privateKey = privyAuthorizationPrivateKey();
   if (!privateKey) {
     throw new Error("PRIVY_AUTHORIZATION_PRIVATE_KEY not configured");
   }
-  return { authorization_private_keys: [privateKey] };
+  return {
+    authorization_private_keys: [normalizeAuthorizationPrivateKey(privateKey)],
+  };
 }

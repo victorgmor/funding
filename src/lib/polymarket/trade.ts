@@ -3,6 +3,7 @@ import {
   ClobClient,
   OrderType,
   Side,
+  SignatureTypeV2,
   type ApiKeyCreds,
 } from "@polymarket/clob-client-v2";
 import type { WalletClient } from "viem";
@@ -93,6 +94,55 @@ export async function executeMandateTrade(
     onStatus,
     storedCreds,
   );
+
+  return executeLeg(
+    client,
+    {
+      tokenId: trade.tokenId,
+      question: trade.question,
+      side: trade.side,
+      usdcAmount: trade.usdcAmount,
+      price: trade.price,
+      shares: trade.shares,
+    },
+    trading,
+  );
+}
+
+/** Server-side fan-out: use stored deposit wallet + CLOB creds (no browser relayer). */
+export async function executeMandateTradeWithSession(
+  walletClient: WalletClient,
+  trade: MandateTrade,
+  session: {
+    depositAddress: string;
+    signatureType: number;
+    creds: StoredClobCreds;
+  },
+  onStatus?: (message: string) => void,
+): Promise<LegResult> {
+  if (!walletClient.account?.address) {
+    throw new Error("Wallet account unavailable");
+  }
+
+  const trading: TradingWallet = {
+    signatureType: session.signatureType as SignatureTypeV2,
+    funderAddress: session.depositAddress,
+    depositAddress: session.depositAddress,
+  };
+
+  const client = new ClobClient({
+    host: HOST,
+    chain: CHAIN,
+    signer: walletClient,
+    creds: session.creds as ApiKeyCreds,
+    signatureType: trading.signatureType,
+    funderAddress: trading.funderAddress,
+    throwOnError: true,
+    builderConfig: getClobBuilderConfig(),
+  });
+
+  onStatus?.("Syncing balance with Polymarket…");
+  await client.updateBalanceAllowance({ asset_type: AssetType.COLLATERAL });
 
   return executeLeg(
     client,

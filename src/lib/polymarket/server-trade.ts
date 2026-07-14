@@ -3,7 +3,7 @@ import { createWalletClient, http, type Hex } from "viem";
 import { polygon } from "viem/chains";
 import type { MandateTrade } from "@/lib/funds/types";
 import type { LegResult } from "@/lib/polymarket/trade";
-import { executeMandateTrade } from "@/lib/polymarket/trade";
+import { executeMandateTradeWithSession } from "@/lib/polymarket/trade";
 import {
   getAuthorizationContext,
   getPrivyServerClient,
@@ -36,5 +36,9 @@ export async function executeMandateTradeServer(input: {
     transport: http(),
   });
 
-  return executeMandateTrade(walletClient, input.trade, undefined, input.creds);
+  return executeMandateTradeWithSession(walletClient, input.trade, {
+    depositAddress: input.depositAddress,
+    signatureType: input.signatureType,
+    creds: input.creds,
+  });
 }
