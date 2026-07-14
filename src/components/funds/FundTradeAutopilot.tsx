@@ -14,7 +14,7 @@ type RedeemRun = {
 };
 
 type Props = {
-  fundSlug: string;
+  fundSlug?: string;
   address: `0x${string}`;
   enabled: boolean;
   onTradeSettled?: () => void;
@@ -23,7 +23,7 @@ type Props = {
 
 const POLL_MS = 5000;
 
-/** Triggers server-side fan-out execution via Privy session signers. */
+/** Triggers server-side fan-out execution and redemptions via Privy session signers. */
 export default function FundTradeAutopilot({
   fundSlug,
   address,
@@ -43,7 +43,10 @@ export default function FundTradeAutopilot({
       running.current = true;
 
       try {
-        const res = await fetch(`/api/funds/${fundSlug}/trades/execute`, {
+        const url = fundSlug
+          ? `/api/funds/${fundSlug}/trades/execute`
+          : "/api/investor/trades/execute-pending";
+        const res = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ address }),

@@ -1,9 +1,12 @@
 import { resolveLifecycleStage } from "@/lib/funds/lifecycle";
-import { listMandatesByFund } from "@/lib/funds/mandates";
 import { listPositionsByFund } from "@/lib/funds/mandate-positions";
+import { buildVirtualPool } from "@/lib/funds/pool";
 import { getFundSettlement } from "@/lib/funds/settlement";
-import { fetchTokenMidPrices } from "@/lib/polymarket/clob-prices";
-import type { Fund, Mandate, MandatePosition } from "@/lib/funds/types";
+import {
+  fetchTokenValuations,
+  mandateMarkValue,
+} from "@/lib/funds/valuation";
+import type { Fund } from "@/lib/funds/types";
 
 export type FundPerformance = {
   roi: number;
@@ -19,20 +22,6 @@ function round(n: number, d: number) {
   return Math.round(n * f) / f;
 }
 
-function mandateAum(
-  mandate: Mandate,
-  positions: MandatePosition[],
-  mids: Map<string, number>,
-): number {
-  const positionsValue = positions
-    .filter((p) => p.mandateId === mandate.id)
-    .reduce(
-      (sum, pos) => sum + pos.shares * (mids.get(pos.tokenId) ?? pos.avgPrice),
-      0,
-    );
-  return mandate.cashUsdc + positionsValue;
-}
-
 /** Mark-to-market pool P&L — null during deposit stage or with no commitments. */
 export async function computeFundPoolPerformance(
   fund: Fund,
@@ -40,11 +29,8 @@ export async function computeFundPoolPerformance(
   const stage = resolveLifecycleStage(fund);
   if (stage === "deposit") return null;
 
-  const mandates = await listMandatesByFund(fund.slug);
-  const depositedUsdc = round(
-    mandates.reduce((sum, m) => sum + m.notionalUsdc, 0),
-    2,
-  );
+  const pool = await buildVirtualPool(fund);
+  const depositedUsdc = round(pool.totalNotional, 2);
   if (depositedUsdc <= 0) return null;
 
   if (stage === "closed") {
@@ -61,9 +47,12 @@ export async function computeFundPoolPerformance(
   }
 
   const positions = await listPositionsByFund(fund.slug);
-  const mids = await fetchTokenMidPrices(positions.map((p) => p.tokenId));
+  const valuations = await fetchTokenValuations(positions);
   const aumUsdc = round(
-    mandates.reduce((sum, m) => sum + mandateAum(m, positions, mids), 0),
+    pool.mandates.reduce(
+      (sum, mandate) => sum + mandateMarkValue(mandate, positions, valuations),
+      0,
+    ),
     2,
   );
   const profitUsdc = round(aumUsdc - depositedUsdc, 2);

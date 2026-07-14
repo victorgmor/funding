@@ -11,8 +11,8 @@ const INNER_R = 72;
 const GAP_STROKE = 8;
 
 const PRIMARY_FILL = "var(--color-primary)";
-const IDLE_FILL = "color-mix(in oklch, var(--color-primary) 10%, transparent)";
-const PLACEHOLDER_FILL = "color-mix(in oklch, var(--color-primary) 20%, transparent)";
+/** Muted ring — default for all slices until hover/focus. */
+const DEFAULT_FILL = "color-mix(in oklch, var(--color-primary) 20%, transparent)";
 
 type Entry = {
   fund: Fund;
@@ -99,11 +99,9 @@ export default function MandateAllocationChart({ entries }: Props) {
   const empty = slices.length === 0;
 
   const activeSlice = slices.find((slice) => slice.slug === activeSlug) ?? null;
-  const singleSlice = slices.length === 1;
 
   function sliceFill(isActive: boolean) {
-    if (isActive || singleSlice) return PRIMARY_FILL;
-    return IDLE_FILL;
+    return isActive ? PRIMARY_FILL : DEFAULT_FILL;
   }
 
   return (
@@ -122,7 +120,7 @@ export default function MandateAllocationChart({ entries }: Props) {
           {empty ? (
             <path
               d={arcPath(CX, CY, OUTER_R, INNER_R, 0, 359.99)}
-              fill={PLACEHOLDER_FILL}
+              fill={DEFAULT_FILL}
               aria-hidden
             />
           ) : (
@@ -199,8 +197,7 @@ export default function MandateAllocationChart({ entries }: Props) {
                       isActive ? "scale-125" : ""
                     }`}
                     style={{
-                      backgroundColor:
-                        isActive || singleSlice ? PRIMARY_FILL : IDLE_FILL,
+                      backgroundColor: isActive ? PRIMARY_FILL : DEFAULT_FILL,
                     }}
                     aria-hidden
                   />

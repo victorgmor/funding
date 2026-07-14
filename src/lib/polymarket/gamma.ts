@@ -236,17 +236,12 @@ export type ResolvedMarketMeta = {
   conditionId: `0x${string}`;
   negRisk: boolean;
   resolved: boolean;
+  /** $/share payout when resolved (0 or 1 for binary markets). */
+  settlementPrice?: number;
 };
 
 export function isMarketResolved(market: GammaMarketRow): boolean {
   if (!market.closed) return false;
-
-  try {
-    const statuses = JSON.parse(market.umaResolutionStatuses ?? "[]") as string[];
-    if (statuses.some((status) => /resolved/i.test(status))) return true;
-  } catch {
-    /* ignore */
-  }
 
   try {
     const prices = (JSON.parse(market.outcomePrices ?? "[]") as string[]).map(
@@ -255,13 +250,37 @@ export function isMarketResolved(market: GammaMarketRow): boolean {
     if (prices.length >= 2) {
       const max = Math.max(...prices);
       const min = Math.min(...prices);
-      if (max >= 0.99 && min <= 0.01) return true;
+      if (max >= 0.95 && min <= 0.05) return true;
     }
   } catch {
     /* ignore */
   }
 
+  try {
+    const statuses = JSON.parse(market.umaResolutionStatuses ?? "[]") as string[];
+    if (statuses.some((status) => /resolved/i.test(status))) return true;
+  } catch {
+    /* ignore */
+  }
+
   return false;
+}
+
+function settlementPriceForToken(
+  market: GammaMarketRow,
+  tokenId: string,
+): number | undefined {
+  try {
+    const tokens = JSON.parse(market.clobTokenIds ?? "[]") as string[];
+    const prices = JSON.parse(market.outcomePrices ?? "[]") as string[];
+    const idx = tokens.indexOf(tokenId);
+    if (idx === -1) return undefined;
+    const price = parseFloat(prices[idx] ?? "");
+    if (!Number.isFinite(price)) return undefined;
+    return Math.max(0, Math.min(1, price));
+  } catch {
+    return undefined;
+  }
 }
 
 export async function fetchMarketByTokenId(
@@ -281,10 +300,15 @@ export async function fetchMarketByTokenId(
       ? market.conditionId
       : `0x${market.conditionId}`;
 
+    const resolved = isMarketResolved(market);
+
     return {
       conditionId: conditionId as `0x${string}`,
       negRisk: market.negRisk === true,
-      resolved: isMarketResolved(market),
+      resolved,
+      settlementPrice: resolved
+        ? settlementPriceForToken(market, tokenId)
+        : undefined,
     };
   } catch {
     return null;

@@ -4,6 +4,7 @@ import {
   savePositionRecord,
 } from "@/lib/funds/mandate-positions";
 import type { MandatePosition } from "@/lib/funds/types";
+import { getAllFunds } from "@/lib/funds/store";
 import { fetchMarketByTokenId } from "@/lib/polymarket/gamma";
 import { submitResolvedPositionRedemption } from "@/lib/polymarket/redeem";
 import { getRelayBuilderConfig } from "@/lib/polymarket/builder-server";
@@ -18,6 +19,11 @@ import { createWalletClient, http, type Hex } from "viem";
 import { polygon } from "wagmi/chains";
 import { getAuthorizationContext, getPrivyServerClient } from "@/lib/privy/server";
 import { readOutcomeTokenBalance } from "@/lib/polymarket/redeem";
+
+function round(n: number, d: number) {
+  const f = 10 ** d;
+  return Math.round(n * f) / f;
+}
 
 export type RedeemRun = {
   positionId: string;
@@ -55,6 +61,28 @@ export async function runRedemptionsForFund(
   return results;
 }
 
+/** Redeem resolved positions for an investor across every fund. */
+export async function runRedemptionsForInvestor(
+  investorWallet: string,
+): Promise<Array<RedeemRun & { fundSlug: string }>> {
+  if (!serverSigningEnabled()) {
+    throw new Error("Server signing not configured");
+  }
+
+  const normalized = investorWallet.toLowerCase();
+  const funds = await getAllFunds();
+  const results: Array<RedeemRun & { fundSlug: string }> = [];
+
+  for (const fund of funds) {
+    const runs = await runRedemptionsForFund(fund.slug, normalized);
+    for (const run of runs) {
+      results.push({ ...run, fundSlug: fund.slug });
+    }
+  }
+
+  return results;
+}
+
 async function redeemSinglePosition(
   fundSlug: string,
   position: MandatePosition,
@@ -65,7 +93,7 @@ async function redeemSinglePosition(
     return {
       positionId: position.id,
       status: "skipped",
-      detail: "Market not resolved yet",
+      detail: market ? "Market not resolved yet" : "Market data unavailable",
     };
   }
 
@@ -87,12 +115,19 @@ async function redeemSinglePosition(
   );
 
   if (onChainBalance === 0n) {
+    const estimatedProceeds =
+      market.settlementPrice != null
+        ? round(position.shares * market.settlementPrice, 2)
+        : 0;
+    if (estimatedProceeds > 0 && position.costUsdc > 0) {
+      await adjustMandateCash(position.mandateId, fundSlug, estimatedProceeds);
+    }
     await markPositionRedeemed(position);
     return {
       positionId: position.id,
       status: "redeemed",
       detail: "Tokens already redeemed",
-      proceedsUsdc: 0,
+      proceedsUsdc: estimatedProceeds,
     };
   }
 

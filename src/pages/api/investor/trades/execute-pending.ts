@@ -1,10 +1,11 @@
 import type { APIRoute } from "astro";
+import { runRedemptionsForInvestor } from "@/lib/funds/redeem-positions";
 import { runPendingTradesForInvestor } from "@/lib/funds/run-pending-trades";
 import { serverSigningEnabled } from "@/lib/privy/server";
 
 export const prerender = false;
 
-/** Execute all pending fan-out slices for a logged-in investor (any fund). */
+/** Execute pending trades and redeem resolved positions for an investor (any fund). */
 export const POST: APIRoute = async ({ request }) => {
   if (!serverSigningEnabled()) {
     return new Response(JSON.stringify({ error: "Server signing not configured" }), {
@@ -23,8 +24,11 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   try {
-    const results = await runPendingTradesForInvestor(address);
-    return new Response(JSON.stringify({ results }), {
+    const [results, redeems] = await Promise.all([
+      runPendingTradesForInvestor(address),
+      runRedemptionsForInvestor(address),
+    ]);
+    return new Response(JSON.stringify({ results, redeems }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (e) {

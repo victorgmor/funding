@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import FundFeedCard from "@/components/funds/FundFeedCard";
+import FundTradeAutopilot from "@/components/funds/FundTradeAutopilot";
 import YourMandatesPanel from "@/components/funds/YourMandatesPanel";
 import Providers from "@/components/app/Providers";
 import GearIcon from "@/components/fundations/icons/GearIcon";
 import SearchIcon from "@/components/fundations/icons/SearchIcon";
 import { usePoolTotals } from "@/lib/funds/usePoolTotals";
 import type { Fund } from "@/lib/funds/types";
+import { notifyPoolUpdated } from "@/lib/funds/pool-events";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 type Props = {
@@ -126,8 +128,8 @@ function SortIndicator({
 }
 
 function FundListPanelInner({ funds }: Props) {
-  const { isConnected } = useWalletSession();
-  const { totals: poolTotals } = usePoolTotals();
+  const { address, isConnected } = useWalletSession();
+  const { totals: poolTotals, refresh: refreshPoolTotals } = usePoolTotals();
   const [query, setQuery] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [onlyParticipating, setOnlyParticipating] = useState(false);
@@ -191,6 +193,16 @@ function FundListPanelInner({ funds }: Props) {
 
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,672px)_minmax(280px,1fr)]">
+      {isConnected && address && (
+        <FundTradeAutopilot
+          address={address}
+          enabled
+          onTradeSettled={() => {
+            refreshPoolTotals();
+            notifyPoolUpdated();
+          }}
+        />
+      )}
       <div className="min-w-0">
       <div className="pb-5">
         <label className="flex items-center gap-2 pb-2">

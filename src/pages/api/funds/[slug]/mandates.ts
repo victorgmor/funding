@@ -10,8 +10,11 @@ import { getFund } from "@/lib/funds/store";
 import { readDepositWalletBalanceUsdc } from "@/lib/polymarket/deposit-balance";
 import { getMandateSettlement } from "@/lib/funds/settlement";
 import { reconcileMandatePositions } from "@/lib/funds/mandate-reconcile";
+import {
+  fetchTokenValuations,
+  mandateMarkValue,
+} from "@/lib/funds/valuation";
 import { getTradingSession } from "@/lib/funds/trading-sessions";
-import { fetchTokenMidPrices } from "@/lib/polymarket/clob-prices";
 import { serverSigningEnabled } from "@/lib/privy/server";
 
 export const prerender = false;
@@ -57,13 +60,8 @@ export const GET: APIRoute = async ({ params, url }) => {
     let mandateValueUsdc: number | null = null;
     let mandateProfitUsdc: number | null = null;
     if (mandate) {
-      const mids = await fetchTokenMidPrices(positions.map((p) => p.tokenId));
-      const positionsValue = positions.reduce(
-        (sum, pos) => sum + pos.shares * (mids.get(pos.tokenId) ?? pos.avgPrice),
-        0,
-      );
-      mandateValueUsdc =
-        Math.round((mandate.cashUsdc + positionsValue) * 100) / 100;
+      const valuations = await fetchTokenValuations(positions);
+      mandateValueUsdc = mandateMarkValue(mandate, positions, valuations);
       mandateProfitUsdc =
         Math.round((mandateValueUsdc - mandate.notionalUsdc) * 100) / 100;
     }
