@@ -1,5 +1,6 @@
 import { SignatureTypeV2, type ClobClient } from "@polymarket/clob-client-v2";
 import type { WalletClient } from "viem";
+import { ensureDepositWalletApprovals } from "@/lib/polymarket/deposit-approvals";
 import { ensureDepositWallet } from "@/lib/polymarket/depositWallet";
 
 export type TradingWallet = {
@@ -13,6 +14,7 @@ export async function resolveTradingWallet(
   onStatus?: (message: string) => void,
 ): Promise<TradingWallet> {
   const depositAddress = await ensureDepositWallet(walletClient, onStatus);
+  await ensureDepositWalletApprovals(walletClient, depositAddress, onStatus);
 
   return {
     signatureType: SignatureTypeV2.POLY_1271,

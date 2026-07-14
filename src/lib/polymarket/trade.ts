@@ -212,13 +212,14 @@ function formatTradeError(
     return msg;
   }
 
-  if (
-    lower.includes("balance") ||
-    lower.includes("allowance") ||
-    lower.includes("insufficient")
-  ) {
+  if (lower.includes("allowance")) {
     const short = `${trading.depositAddress.slice(0, 6)}…${trading.depositAddress.slice(-4)}`;
-    return `Fund your Polymarket deposit wallet (${short}) with pUSD on Polygon — deposit at polymarket.com`;
+    return `Deposit wallet (${short}) needs trading approval — revoke and re-authorize auto-trading`;
+  }
+
+  if (lower.includes("balance") || lower.includes("insufficient")) {
+    const short = `${trading.depositAddress.slice(0, 6)}…${trading.depositAddress.slice(-4)}`;
+    return `Fund your Polymarket deposit wallet (${short}) with pUSD on Polygon`;
   }
 
   if (lower.includes("signer") && lower.includes("api key")) {

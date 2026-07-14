@@ -4,6 +4,7 @@ import { polygon } from "viem/chains";
 import type { MandateTrade } from "@/lib/funds/types";
 import type { LegResult } from "@/lib/polymarket/trade";
 import { executeMandateTradeWithSession } from "@/lib/polymarket/trade";
+import { ensureDepositWalletApprovalsServer } from "@/lib/polymarket/deposit-approvals-server";
 import {
   getAuthorizationContext,
   getPrivyServerClient,
@@ -38,6 +39,11 @@ export async function executeMandateTradeServer(input: {
     chain: polygon,
     transport: http(rpcUrl),
   });
+
+  await ensureDepositWalletApprovalsServer(
+    walletClient,
+    input.depositAddress as `0x${string}`,
+  );
 
   return executeMandateTradeWithSession(walletClient, input.trade, {
     depositAddress: input.depositAddress,
