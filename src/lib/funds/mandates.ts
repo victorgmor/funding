@@ -114,11 +114,11 @@ export async function adjustMandateCash(
     ":now": now,
   };
 
-  // ConditionExpression cannot use arithmetic — compare to a precomputed floor.
+  // ConditionExpression cannot use functions like if_not_exists.
   let condition = "attribute_exists(mandate)";
   if (deltaUsdc < 0) {
     values[":minCash"] = round(-deltaUsdc, 2);
-    condition += " AND if_not_exists(mandate.cashUsdc, :zero) >= :minCash";
+    condition += " AND mandate.cashUsdc >= :minCash";
   }
 
   try {
