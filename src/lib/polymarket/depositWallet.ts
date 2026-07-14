@@ -10,7 +10,11 @@ const RELAYER_URL = "https://relayer-v2.polymarket.com";
 
 async function fetchDeployed(address: string): Promise<boolean> {
   const params = new URLSearchParams({ address, type: "WALLET" });
-  const res = await fetch(`/api/polymarket/relayer/deployed?${params}`);
+  const url =
+    typeof window !== "undefined"
+      ? `/api/polymarket/relayer/deployed?${params}`
+      : `${RELAYER_URL}/deployed?${params}`;
+  const res = await fetch(url);
   if (!res.ok) {
     const data = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(data.error ?? `Could not check deposit wallet (${res.status})`);

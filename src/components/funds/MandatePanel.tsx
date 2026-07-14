@@ -260,7 +260,10 @@ export default function MandatePanel({ fund }: Props) {
 
       const res = await fetch(
         `/api/funds/${fund.slug}/session?address=${encodeURIComponent(address)}`,
-        { method: "DELETE" },
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
