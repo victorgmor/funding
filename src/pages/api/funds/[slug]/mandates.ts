@@ -153,7 +153,10 @@ export const POST: APIRoute = async ({ params, request }) => {
     }
 
     const existing = await getMandate(fund.slug, address);
-    const nextNotional = (existing?.notionalUsdc ?? 0) + amountUsdc;
+    const existingNotional = existing?.notionalUsdc ?? 0;
+    const nextNotional = existingNotional + amountUsdc;
+    // Top-ups only need the incremental amount in the deposit wallet.
+    const requiredDeposit = existingNotional > 0 ? amountUsdc : nextNotional;
 
     let depositBalanceUsdc: number;
     try {
@@ -166,13 +169,12 @@ export const POST: APIRoute = async ({ params, request }) => {
       return new Response(JSON.stringify({ error: message }), { status: 502 });
     }
 
-    if (depositBalanceUsdc < nextNotional) {
-      return new Response(
-        JSON.stringify({
-          error: `Deposit wallet has $${depositBalanceUsdc.toFixed(2)} pUSD — need $${nextNotional.toFixed(2)} to back this mandate`,
-        }),
-        { status: 400 },
-      );
+    if (depositBalanceUsdc < requiredDeposit) {
+      const error =
+        existingNotional > 0
+          ? `Deposit wallet has $${depositBalanceUsdc.toFixed(2)} pUSD — need $${requiredDeposit.toFixed(2)} to add`
+          : `Deposit wallet has $${depositBalanceUsdc.toFixed(2)} pUSD — need $${requiredDeposit.toFixed(2)} to back this mandate`;
+      return new Response(JSON.stringify({ error }), { status: 400 });
     }
 
     const mandate = await upsertMandateCommitment(
