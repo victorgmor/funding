@@ -87,6 +87,19 @@ export async function adjustMandateCash(
   if (!mandate) return undefined;
 
   const now = new Date().toISOString();
+  const values: Record<string, number | string> = {
+    ":delta": deltaUsdc,
+    ":zero": 0,
+    ":now": now,
+  };
+
+  // ConditionExpression cannot use arithmetic — compare to a precomputed floor.
+  let condition = "attribute_exists(mandate)";
+  if (deltaUsdc < 0) {
+    values[":minCash"] = round(-deltaUsdc, 2);
+    condition += " AND if_not_exists(mandate.cashUsdc, :zero) >= :minCash";
+  }
+
   try {
     const row = await mandateDocClient().send(
       new UpdateCommand({
@@ -97,13 +110,8 @@ export async function adjustMandateCash(
         },
         UpdateExpression:
           "SET mandate.cashUsdc = if_not_exists(mandate.cashUsdc, :zero) + :delta, mandate.updatedAt = :now",
-        ConditionExpression:
-          "attribute_exists(mandate) AND if_not_exists(mandate.cashUsdc, :zero) + :delta >= :zero",
-        ExpressionAttributeValues: {
-          ":delta": deltaUsdc,
-          ":zero": 0,
-          ":now": now,
-        },
+        ConditionExpression: condition,
+        ExpressionAttributeValues: values,
         ReturnValues: "ALL_NEW",
       }),
     );
