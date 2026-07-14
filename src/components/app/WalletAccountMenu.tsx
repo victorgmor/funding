@@ -243,16 +243,16 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
           )}
 
           <div className="mt-3 flex flex-col gap-2">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void registerWithPolymarket()}
-              className="bg-accent text-secondary hover:opacity-90 disabled:opacity-50 w-full rounded px-3 py-2 text-sm font-medium transition-opacity disabled:cursor-not-allowed"
-            >
-              {info?.depositDeployed
-                ? "Re-register with Polymarket"
-                : "Register with Polymarket"}
-            </button>
+            {!info?.depositDeployed && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void registerWithPolymarket()}
+                className="bg-accent text-secondary hover:opacity-90 disabled:opacity-50 w-full rounded px-3 py-2 text-sm font-medium transition-opacity disabled:cursor-not-allowed"
+              >
+                Register with Polymarket
+              </button>
+            )}
 
             {canMovePusd && (
               <button
