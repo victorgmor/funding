@@ -81,6 +81,7 @@ export const GET: APIRoute = async ({ params, url }) => {
 
   const address = url.searchParams.get("address")?.toLowerCase();
   const pendingOnly = url.searchParams.get("pending") === "1";
+  const statusFilter = url.searchParams.get("status");
 
   try {
     let trades = await listTradesByFund(fund.slug);
@@ -90,6 +91,8 @@ export const GET: APIRoute = async ({ params, url }) => {
     }
     if (pendingOnly) {
       trades = trades.filter((t) => t.status === "pending");
+    } else if (statusFilter) {
+      trades = trades.filter((t) => t.status === statusFilter);
     }
 
     return new Response(JSON.stringify({ trades }), {

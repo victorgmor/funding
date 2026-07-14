@@ -39,6 +39,7 @@ type MandateSummary = {
   depositBalanceUsdc: number | null;
   positions: MandatePosition[];
   session: TradingSession | null;
+  serverSigningEnabled?: boolean;
   mandateSettlement: MandateSettlement | null;
 };
 
@@ -52,6 +53,7 @@ export default function MandatePanel({ fund }: Props) {
   const { onPolygon, switching } = useEnsurePolygon();
   const [summary, setSummary] = useState<MandateSummary | null>(null);
   const [pendingTrades, setPendingTrades] = useState<MandateTrade[]>([]);
+  const [failedTrades, setFailedTrades] = useState<MandateTrade[]>([]);
   const [amount, setAmount] = useState("50");
   const [loading, setLoading] = useState(false);
   const [committing, setCommitting] = useState(false);
@@ -72,19 +74,26 @@ export default function MandatePanel({ fund }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const [mandateRes, tradesRes] = await Promise.all([
+      const [mandateRes, tradesRes, failedRes] = await Promise.all([
         fetch(
           `/api/funds/${fund.slug}/mandates?address=${encodeURIComponent(address)}`,
         ),
         fetch(
           `/api/funds/${fund.slug}/trades?address=${encodeURIComponent(address)}&pending=1`,
         ),
+        fetch(
+          `/api/funds/${fund.slug}/trades?address=${encodeURIComponent(address)}&status=failed`,
+        ),
       ]);
       const mandateData = await mandateRes.json();
       const tradesData = await tradesRes.json();
+      const failedData = await failedRes.json();
       if (!mandateRes.ok) throw new Error(mandateData.error ?? "Load failed");
       setSummary(mandateData);
       setPendingTrades(tradesRes.ok ? (tradesData.trades ?? []) : []);
+      setFailedTrades(
+        failedRes.ok ? (failedData.trades ?? []).slice(0, 3) : [],
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Load failed");
     } finally {
@@ -286,6 +295,7 @@ export default function MandatePanel({ fund }: Props) {
           address={address}
           enabled={serverSignerActive}
           onTradeSettled={refresh}
+          onError={setError}
         />
       )}
 
@@ -346,6 +356,13 @@ export default function MandatePanel({ fund }: Props) {
                 Authorize once — manager fan-out trades execute on the server
                 via your Privy wallet. No per-trade wallet popups.
               </p>
+              {serverSignerActive && summary?.serverSigningEnabled === false && (
+                <p className="text-red-400 mt-2">
+                  Server signing is not configured on the host — trades cannot
+                  execute until PRIVY_APP_SECRET and PRIVY_AUTHORIZATION_PRIVATE_KEY
+                  are set.
+                </p>
+              )}
               {sessionActive ? (
                 <button
                   type="button"
@@ -503,6 +520,29 @@ export default function MandatePanel({ fund }: Props) {
                         </button>
                       )}
                     </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {failedTrades.length > 0 && (
+            <div className="border-primary/10 mt-4 border-t pt-4">
+              <p className="text-primary/45 text-xs uppercase tracking-wide">
+                Recent failed trades
+              </p>
+              <ul className="mt-2">
+                {failedTrades.map((trade, index) => (
+                  <li
+                    key={trade.id}
+                    className={`border-primary/10 space-y-1 py-3 text-xs ${
+                      index > 0 ? "border-t" : ""
+                    }`}
+                  >
+                    <p className="text-primary/80 line-clamp-2">{trade.question}</p>
+                    <p className="text-red-400">
+                      {formatUsdExact(trade.usdcAmount)} — {trade.detail ?? "Trade failed"}
+                    </p>
                   </li>
                 ))}
               </ul>

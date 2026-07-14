@@ -8,6 +8,7 @@ import {
 import type { MandateTrade } from "@/lib/funds/types";
 import { executeMandateTradeServer } from "@/lib/polymarket/server-trade";
 import { getAllFunds } from "@/lib/funds/store";
+import { resolvePrivyWalletId } from "@/lib/privy/resolve-wallet";
 import { serverSigningEnabled } from "@/lib/privy/server";
 
 export type PendingTradeRun = {
@@ -60,6 +61,15 @@ export async function runPendingTradesForInvestor(
   return results;
 }
 
+async function failPendingTrade(
+  fundSlug: string,
+  trade: MandateTrade,
+  detail: string,
+): Promise<PendingTradeRun> {
+  await settleMandateTrade(fundSlug, trade, "failed", detail);
+  return { tradeId: trade.id, status: "failed", detail };
+}
+
 async function runSinglePendingTrade(
   fundSlug: string,
   trade: MandateTrade,
@@ -69,29 +79,38 @@ async function runSinglePendingTrade(
   const creds = await readSessionCredsForExecution(fundSlug, trade.investorWallet);
 
   if (!session?.authorized || !session.serverSigner) {
-    return { tradeId: trade.id, status: "skipped", detail: "Auto-trading not authorized" };
-  }
-  if (!payload?.privyWalletId) {
-    return {
-      tradeId: trade.id,
-      status: "skipped",
-      detail: "Missing Privy wallet id — revoke and re-authorize auto-trading",
-    };
+    return failPendingTrade(fundSlug, trade, "Auto-trading not authorized");
   }
   if (!creds) {
-    return { tradeId: trade.id, status: "skipped", detail: "Missing Polymarket credentials" };
+    return failPendingTrade(
+      fundSlug,
+      trade,
+      "Missing Polymarket credentials — revoke and re-authorize auto-trading",
+    );
   }
   if (!session.depositAddress) {
-    return {
-      tradeId: trade.id,
-      status: "skipped",
-      detail: "Missing deposit wallet — re-authorize auto-trading",
-    };
+    return failPendingTrade(
+      fundSlug,
+      trade,
+      "Missing deposit wallet — re-authorize auto-trading",
+    );
+  }
+
+  const privyWalletId = await resolvePrivyWalletId(
+    trade.investorWallet,
+    payload?.privyWalletId,
+  );
+  if (!privyWalletId) {
+    return failPendingTrade(
+      fundSlug,
+      trade,
+      "Privy wallet not found — revoke and re-authorize auto-trading",
+    );
   }
 
   try {
     const result = await executeMandateTradeServer({
-      privyWalletId: payload.privyWalletId,
+      privyWalletId,
       investorWallet: trade.investorWallet as `0x${string}`,
       depositAddress: session.depositAddress,
       signatureType: session.signatureType,

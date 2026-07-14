@@ -1,15 +1,15 @@
 import { useEffect, useRef } from "react";
-import { useAccount } from "wagmi";
+import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 const POLL_MS = 5000;
 
 /** Polls server-side fan-out execution while the investor is logged in (any fund). */
 export default function InvestorTradeAutopilot() {
-  const { address, isConnected } = useAccount();
+  const { walletAddress } = useWalletSession();
   const running = useRef(false);
 
   useEffect(() => {
-    if (!isConnected || !address) return;
+    if (!walletAddress) return;
 
     let cancelled = false;
 
@@ -21,7 +21,7 @@ export default function InvestorTradeAutopilot() {
         await fetch("/api/investor/trades/execute-pending", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ address }),
+          body: JSON.stringify({ address: walletAddress }),
         });
       } catch {
         /* retry next poll */
@@ -36,7 +36,7 @@ export default function InvestorTradeAutopilot() {
       cancelled = true;
       clearInterval(id);
     };
-  }, [address, isConnected]);
+  }, [walletAddress]);
 
   return null;
 }

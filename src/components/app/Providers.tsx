@@ -64,9 +64,9 @@ function NavLoginPortals() {
 
 type Props = {
   children?: ReactNode;
-  /** Only the global AppProviders island should sync wallet session. */
+  /** Global-only extras (deposit setup, cross-fund autopilot). */
   syncSession?: boolean;
-  /** Portal nav login buttons from the single Privy provider tree. */
+  /** Portal nav login buttons from the global AppProviders island. */
   portalNavLogin?: boolean;
 };
 
@@ -84,7 +84,7 @@ export default function Providers({
     <PrivyProvider appId={privyAppId} config={privyConfig}>
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig}>
-          {syncSession && <WalletSessionSync />}
+          <WalletSessionSync />
           {syncSession && <PolymarketDepositSetup />}
           {syncSession && <InvestorTradeAutopilot />}
           {portalNavLogin && <NavLoginPortals />}

@@ -30,10 +30,13 @@ export async function executeMandateTradeServer(input: {
     authorizationContext: getAuthorizationContext(),
   });
 
+  const rpcUrl =
+    process.env.POLYGON_RPC_URL?.trim() || "https://polygon-rpc.com";
+
   const walletClient = createWalletClient({
     account,
     chain: polygon,
-    transport: http(),
+    transport: http(rpcUrl),
   });
 
   return executeMandateTradeWithSession(walletClient, input.trade, {

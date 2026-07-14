@@ -14,6 +14,7 @@ import { getMandateSettlement } from "@/lib/funds/settlement";
 import { listPositionsByWallet } from "@/lib/funds/mandate-positions";
 import { getTradingSession } from "@/lib/funds/trading-sessions";
 import { fetchTokenMidPrices } from "@/lib/polymarket/clob-prices";
+import { serverSigningEnabled } from "@/lib/privy/server";
 
 export const prerender = false;
 
@@ -83,6 +84,7 @@ export const GET: APIRoute = async ({ params, url }) => {
         depositBalanceUsdc,
         positions,
         session: session ?? null,
+        serverSigningEnabled: serverSigningEnabled(),
         mandateSettlement: mandateSettlement ?? null,
       }),
       { headers: { "Content-Type": "application/json" } },
