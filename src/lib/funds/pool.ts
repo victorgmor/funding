@@ -1,12 +1,12 @@
 import { listInstructionsByFund } from "@/lib/funds/instructions";
-import { listMandatesByFund } from "@/lib/funds/mandates";
+import { reconcileFundMandates } from "@/lib/funds/mandate-reconcile";
 import { listPositionsByFund } from "@/lib/funds/mandate-positions";
 import { listTradesByFund } from "@/lib/funds/mandate-trades";
 import { totalPoolCash, totalPoolNotional } from "@/lib/funds/fanout";
 import type { Fund, Mandate, VirtualPool } from "@/lib/funds/types";
 
 export async function buildVirtualPool(fund: Fund): Promise<VirtualPool> {
-  const mandates = await listMandatesByFund(fund.slug);
+  const mandates = await reconcileFundMandates(fund.slug);
   const [instructions, trades, positions] = await Promise.all([
     listInstructionsByFund(fund.slug),
     listTradesByFund(fund.slug),

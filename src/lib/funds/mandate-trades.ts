@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { demoMemory, ensureDemoMemory } from "@/lib/demo/memory";
 import { useDemoStore } from "@/lib/demo/mode";
 import type { FanoutSlice, MandateTrade, MarketSide } from "@/lib/funds/types";
@@ -96,6 +96,63 @@ export async function markTradeStatus(
 
   await saveTrade(updated);
   return updated;
+}
+
+/** Atomically settle a pending trade — no-op if already claimed. */
+export async function claimPendingTrade(
+  fundSlug: string,
+  tradeId: string,
+  status: "filled" | "failed",
+  detail?: string,
+): Promise<MandateTrade | undefined> {
+  if (useDemoStore()) {
+    ensureDemoMemory();
+    const trade = demoMemory.trades.get(tradeId);
+    if (!trade || trade.status !== "pending") return undefined;
+    const updated: MandateTrade = {
+      ...trade,
+      status,
+      detail,
+      filledAt: status === "filled" ? new Date().toISOString() : trade.filledAt,
+    };
+    demoMemory.trades.set(tradeId, updated);
+    return updated;
+  }
+
+  const filledAt = status === "filled" ? new Date().toISOString() : undefined;
+  try {
+    const row = await mandateDocClient().send(
+      new UpdateCommand({
+        TableName: mandatesTableName(),
+        Key: { fundSlug, sk: mandateSk("trade", tradeId) },
+        ConditionExpression: "#trade.#status = :pending",
+        UpdateExpression:
+          "SET #trade.#status = :status, #trade.detail = :detail, #trade.filledAt = :filledAt",
+        ExpressionAttributeNames: {
+          "#trade": "trade",
+          "#status": "status",
+        },
+        ExpressionAttributeValues: {
+          ":pending": "pending",
+          ":status": status,
+          ":detail": detail ?? null,
+          ":filledAt": filledAt ?? null,
+        },
+        ReturnValues: "ALL_NEW",
+      }),
+    );
+    return row.Attributes?.trade as MandateTrade | undefined;
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "name" in error &&
+      error.name === "ConditionalCheckFailedException"
+    ) {
+      return undefined;
+    }
+    throw error;
+  }
 }
 
 async function saveTrade(trade: MandateTrade): Promise<void> {

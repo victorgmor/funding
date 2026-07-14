@@ -154,7 +154,11 @@ export const POST: APIRoute = async ({ params, request }) => {
 
     if (serverSigningEnabled()) {
       try {
-        serverRuns = await runPendingTradesForFund(fund.slug);
+        serverRuns = await runPendingTradesForFund(
+          fund.slug,
+          undefined,
+          instruction.id,
+        );
       } catch (e) {
         serverSigningError =
           e instanceof Error ? e.message : "Server trade execution failed";

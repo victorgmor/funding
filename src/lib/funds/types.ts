@@ -124,6 +124,8 @@ export type MandatePosition = {
   avgPrice: number;
   costUsdc: number;
   updatedAt: string;
+  /** Set after on-chain redemption — hidden from active positions. */
+  redeemedAt?: string;
 };
 
 export type TradingSession = {

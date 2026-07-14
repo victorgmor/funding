@@ -2,8 +2,8 @@ import { adjustMandateCash } from "@/lib/funds/mandates";
 import { markInstructionStatus } from "@/lib/funds/instructions";
 import { addPositionFromTrade } from "@/lib/funds/mandate-positions";
 import {
+  claimPendingTrade,
   listTradesByInstruction,
-  markTradeStatus,
 } from "@/lib/funds/mandate-trades";
 import { getTradingSession } from "@/lib/funds/trading-sessions";
 import type { MandateTrade } from "@/lib/funds/types";
@@ -26,20 +26,18 @@ export async function settleMandateTrade(
   status: "filled" | "failed",
   detail?: string,
 ): Promise<MandateTrade | undefined> {
-  if (trade.status !== "pending") return trade;
+  const updated = await claimPendingTrade(fundSlug, trade.id, status, detail);
+  if (!updated) return undefined;
 
   if (status === "failed") {
     await adjustMandateCash(trade.mandateId, fundSlug, trade.usdcAmount);
   }
 
-  const updated = await markTradeStatus(fundSlug, trade.id, status, detail);
-  if (updated && status === "filled") {
+  if (status === "filled") {
     await addPositionFromTrade(updated);
   }
 
-  if (updated) {
-    await syncInstructionStatus(fundSlug, updated.instructionId);
-  }
+  await syncInstructionStatus(fundSlug, updated.instructionId);
 
   return updated;
 }
@@ -96,6 +94,7 @@ export async function beginInstructionExecution(
 export async function listPendingTradesForFund(
   fundSlug: string,
   investorWallet?: string,
+  instructionId?: string,
 ): Promise<MandateTrade[]> {
   const { listTradesByFund } = await import("@/lib/funds/mandate-trades");
   let trades = (await listTradesByFund(fundSlug)).filter(
@@ -104,6 +103,9 @@ export async function listPendingTradesForFund(
   if (investorWallet) {
     const normalized = investorWallet.toLowerCase();
     trades = trades.filter((t) => t.investorWallet === normalized);
+  }
+  if (instructionId) {
+    trades = trades.filter((t) => t.instructionId === instructionId);
   }
   return trades;
 }

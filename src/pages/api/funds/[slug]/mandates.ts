@@ -11,7 +11,7 @@ import {
 import { getFund } from "@/lib/funds/store";
 import { readDepositWalletBalanceUsdc } from "@/lib/polymarket/deposit-balance";
 import { getMandateSettlement } from "@/lib/funds/settlement";
-import { listPositionsByWallet } from "@/lib/funds/mandate-positions";
+import { reconcileMandatePositions } from "@/lib/funds/mandate-reconcile";
 import { getTradingSession } from "@/lib/funds/trading-sessions";
 import { fetchTokenMidPrices } from "@/lib/polymarket/clob-prices";
 import { serverSigningEnabled } from "@/lib/privy/server";
@@ -51,7 +51,9 @@ export const GET: APIRoute = async ({ params, url }) => {
     }
 
     const [positions, session, mandateSettlement] = await Promise.all([
-      listPositionsByWallet(fund.slug, address),
+      mandate
+        ? reconcileMandatePositions(fund.slug, mandate.id)
+        : Promise.resolve([]),
       getTradingSession(fund.slug, address),
       fund.status === "closed"
         ? getMandateSettlement(fund.slug, address)

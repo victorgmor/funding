@@ -24,12 +24,17 @@ export type InvestorPendingTradeRun = PendingTradeRun & {
 export async function runPendingTradesForFund(
   fundSlug: string,
   investorWallet?: string,
+  instructionId?: string,
 ): Promise<PendingTradeRun[]> {
   if (!serverSigningEnabled()) {
     throw new Error("Server signing not configured");
   }
 
-  const pending = await listPendingTradesForFund(fundSlug, investorWallet);
+  const pending = await listPendingTradesForFund(
+    fundSlug,
+    investorWallet,
+    instructionId,
+  );
   const results: PendingTradeRun[] = [];
 
   for (const trade of pending) {

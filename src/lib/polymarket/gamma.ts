@@ -36,8 +36,11 @@ type GammaMarketRow = {
   conditionId: string;
   clobTokenIds?: string;
   outcomes: string;
+  outcomePrices?: string;
   active?: boolean;
   closed?: boolean;
+  negRisk?: boolean;
+  umaResolutionStatuses?: string;
 };
 
 function toSearchMarket(market: GammaMarketRow): SearchMarket | null {
@@ -227,4 +230,63 @@ export function midPrice(gamma: GammaMarket, side: string): number {
   }
 
   return fromGamma || 0.5;
+}
+
+export type ResolvedMarketMeta = {
+  conditionId: `0x${string}`;
+  negRisk: boolean;
+  resolved: boolean;
+};
+
+export function isMarketResolved(market: GammaMarketRow): boolean {
+  if (!market.closed) return false;
+
+  try {
+    const statuses = JSON.parse(market.umaResolutionStatuses ?? "[]") as string[];
+    if (statuses.some((status) => /resolved/i.test(status))) return true;
+  } catch {
+    /* ignore */
+  }
+
+  try {
+    const prices = (JSON.parse(market.outcomePrices ?? "[]") as string[]).map(
+      (price) => parseFloat(price),
+    );
+    if (prices.length >= 2) {
+      const max = Math.max(...prices);
+      const min = Math.min(...prices);
+      if (max >= 0.99 && min <= 0.01) return true;
+    }
+  } catch {
+    /* ignore */
+  }
+
+  return false;
+}
+
+export async function fetchMarketByTokenId(
+  tokenId: string,
+): Promise<ResolvedMarketMeta | null> {
+  try {
+    const res = await fetch(
+      `https://gamma-api.polymarket.com/markets?clob_token_ids=${encodeURIComponent(tokenId)}`,
+    );
+    if (!res.ok) return null;
+
+    const rows = (await res.json()) as GammaMarketRow[];
+    const market = rows[0];
+    if (!market?.conditionId) return null;
+
+    const conditionId = market.conditionId.startsWith("0x")
+      ? market.conditionId
+      : `0x${market.conditionId}`;
+
+    return {
+      conditionId: conditionId as `0x${string}`,
+      negRisk: market.negRisk === true,
+      resolved: isMarketResolved(market),
+    };
+  } catch {
+    return null;
+  }
 }

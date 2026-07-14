@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { GetCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { demoMemory, ensureDemoMemory } from "@/lib/demo/memory";
 import { useDemoStore } from "@/lib/demo/mode";
 import type { Mandate, MandateStatus } from "@/lib/funds/types";
@@ -104,17 +104,51 @@ export async function adjustMandateCash(
   const mandate = mandates.find((m) => m.id === mandateId);
   if (!mandate) return undefined;
 
-  const cashUsdc = round(mandate.cashUsdc + deltaUsdc, 2);
-  if (cashUsdc < 0) throw new Error("Mandate cash cannot go negative");
+  if (useDemoStore()) {
+    const cashUsdc = round(mandate.cashUsdc + deltaUsdc, 2);
+    if (cashUsdc < 0) throw new Error("Mandate cash cannot go negative");
+    const updated: Mandate = {
+      ...mandate,
+      cashUsdc,
+      updatedAt: new Date().toISOString(),
+    };
+    await saveMandate(updated);
+    return updated;
+  }
 
-  const updated: Mandate = {
-    ...mandate,
-    cashUsdc,
-    updatedAt: new Date().toISOString(),
-  };
-
-  await saveMandate(updated);
-  return updated;
+  const now = new Date().toISOString();
+  try {
+    const row = await mandateDocClient().send(
+      new UpdateCommand({
+        TableName: mandatesTableName(),
+        Key: {
+          fundSlug,
+          sk: mandateSk("mandate", mandate.investorWallet),
+        },
+        UpdateExpression:
+          "SET mandate.cashUsdc = if_not_exists(mandate.cashUsdc, :zero) + :delta, mandate.updatedAt = :now",
+        ConditionExpression:
+          "attribute_exists(mandate) AND if_not_exists(mandate.cashUsdc, :zero) + :delta >= :zero",
+        ExpressionAttributeValues: {
+          ":delta": deltaUsdc,
+          ":zero": 0,
+          ":now": now,
+        },
+        ReturnValues: "ALL_NEW",
+      }),
+    );
+    return row.Attributes?.mandate as Mandate | undefined;
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "name" in error &&
+      error.name === "ConditionalCheckFailedException"
+    ) {
+      throw new Error("Mandate cash cannot go negative");
+    }
+    throw error;
+  }
 }
 
 async function saveMandate(mandate: Mandate): Promise<void> {

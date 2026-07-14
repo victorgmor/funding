@@ -6,6 +6,13 @@ type TradeRun = {
   detail?: string;
 };
 
+type RedeemRun = {
+  positionId: string;
+  status: "redeemed" | "skipped" | "failed";
+  detail?: string;
+  proceedsUsdc?: number;
+};
+
 type Props = {
   fundSlug: string;
   address: `0x${string}`;
@@ -50,12 +57,19 @@ export default function FundTradeAutopilot({
         }
 
         const results = (data.results ?? []) as TradeRun[];
+        const redeems = (data.redeems ?? []) as RedeemRun[];
         const failure = results.find((r) => r.status === "failed");
+        const redeemFailure = redeems.find((r) => r.status === "failed");
         if (failure?.detail) {
           onError?.(failure.detail);
+        } else if (redeemFailure?.detail) {
+          onError?.(redeemFailure.detail);
         }
 
-        if (results.some((r) => r.status === "filled" || r.status === "failed")) {
+        if (
+          results.some((r) => r.status === "filled" || r.status === "failed") ||
+          redeems.some((r) => r.status === "redeemed")
+        ) {
           onTradeSettled?.();
         }
       } catch {
