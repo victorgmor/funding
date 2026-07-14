@@ -132,35 +132,62 @@ export default function FundPoolOverview({ fund }: Props) {
         </div>
       )}
 
-      {pool.recentInstructions.length > 0 && (
-        <div className="border-primary/10 mt-4 border-t pt-4">
-          <p className="text-primary/45 text-xs uppercase tracking-wide">
-            Recent trades
-          </p>
-          <ul className="mt-2">
-            {pool.recentInstructions.slice(0, 8).map((row, index) => (
-              <li
-                key={row.id}
-                className={`border-primary/10 flex items-start justify-between gap-4 py-3 text-sm ${
-                  index > 0 ? "border-t" : ""
-                }`}
-              >
-                <span className="text-primary/60 line-clamp-1">{row.question}</span>
-                <span className="text-primary/70 shrink-0 font-mono text-xs tabular-nums">
-                  {formatUsdExact(row.totalUsdc)}{" "}
-                  <span className="text-primary/45 uppercase">{row.side}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {(() => {
+        const tradeRows = (pool.recentTrades ?? [])
+          .filter((trade) => trade.status === "filled" || trade.status === "failed")
+          .slice(0, 8);
 
-      {!closed && pool.recentInstructions.length === 0 && (
-        <p className="text-primary/45 mt-4 border-t border-primary/10 pt-4 text-sm">
-          No manager trades yet. Commit capital in the sidebar to join the fund.
-        </p>
-      )}
+        if (tradeRows.length === 0) {
+          if (closed) return null;
+          return (
+            <p className="text-primary/45 mt-4 border-t border-primary/10 pt-4 text-sm">
+              No manager trades yet. Commit capital in the sidebar to join the fund.
+            </p>
+          );
+        }
+
+        return (
+          <div className="border-primary/10 mt-4 border-t pt-4">
+            <p className="text-primary/45 text-xs uppercase tracking-wide">
+              Recent trades
+            </p>
+            <ul className="mt-2">
+              {tradeRows.map((trade, index) => {
+                const failed = trade.status === "failed";
+                return (
+                  <li
+                    key={trade.id}
+                    className={`border-primary/10 space-y-1 py-3 text-sm ${
+                      index > 0 ? "border-t" : ""
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <span
+                        className={`line-clamp-1 ${
+                          failed ? "text-red-400" : "text-primary/60"
+                        }`}
+                      >
+                        {trade.question}
+                      </span>
+                      <span
+                        className={`shrink-0 font-mono text-xs tabular-nums uppercase ${
+                          failed ? "text-red-400" : "text-primary/70"
+                        }`}
+                      >
+                        {formatUsdExact(trade.usdcAmount)}{" "}
+                        {failed ? "FAILED" : trade.side}
+                      </span>
+                    </div>
+                    {failed && trade.detail && (
+                      <p className="text-red-400/80 text-xs">{trade.detail}</p>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })()}
     </div>
   );
 }

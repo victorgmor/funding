@@ -1,7 +1,5 @@
 import type { APIRoute } from "astro";
 import { verifyBundleSignature } from "@/lib/auth/bundle-auth";
-import { ensureDemoWalletMandates } from "@/lib/demo/memory";
-import { useDemoStore } from "@/lib/demo/mode";
 import { upsertMandateCommitment, getMandate } from "@/lib/funds/mandates";
 import {
   buildVirtualPool,
@@ -29,10 +27,6 @@ export const GET: APIRoute = async ({ params, url }) => {
     return new Response(JSON.stringify({ error: "Wallet required" }), {
       status: 400,
     });
-  }
-
-  if (useDemoStore()) {
-    ensureDemoWalletMandates(address);
   }
 
   try {

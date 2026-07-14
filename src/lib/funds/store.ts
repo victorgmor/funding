@@ -1,7 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { seedFunds } from "@/data/funds";
-import { demoMemory, ensureDemoMemory } from "@/lib/demo/memory";
-import { useDemoStore } from "@/lib/demo/mode";
 import {
   fetchPolymarketProfile,
   polymarketDisplayName,
@@ -68,47 +65,22 @@ export type SetLifecycleStageInput = {
 };
 
 async function replaceUserFund(fund: Fund): Promise<void> {
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    demoMemory.funds.set(fund.slug, fund);
-    return;
-  }
   await dbUpdateFund(fund);
 }
 
 async function listUserFunds(): Promise<Fund[]> {
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    return [...demoMemory.funds.values()];
-  }
   return dbListFunds();
 }
 
 async function getUserFund(slug: string): Promise<Fund | undefined> {
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    return demoMemory.funds.get(slug);
-  }
   return dbGetFund(slug);
 }
 
 async function saveUserFund(fund: Fund): Promise<void> {
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    if (demoMemory.funds.has(fund.slug)) {
-      throw new Error("A fund with this slug already exists");
-    }
-    demoMemory.funds.set(fund.slug, fund);
-    return;
-  }
   await dbPutFund(fund);
 }
 
 async function userFundSlugExists(slug: string): Promise<boolean> {
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    return demoMemory.funds.has(slug);
-  }
   return dbSlugExists(slug);
 }
 
@@ -187,38 +159,15 @@ export async function deleteFund(
 }
 
 export async function getAllFunds(): Promise<Fund[]> {
-  const userFunds = await listUserFunds();
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    const seeds = seedFunds.map(
-      (fund) => demoMemory.funds.get(fund.slug) ?? fund,
-    );
-    const seedSlugs = new Set(seeds.map((fund) => fund.slug));
-    const extraUser = userFunds.filter((fund) => !seedSlugs.has(fund.slug));
-    return [...seeds, ...extraUser];
-  }
-  return [...seedFunds, ...userFunds];
+  return listUserFunds();
 }
 
 export async function getFund(slug: string): Promise<Fund | undefined> {
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    const override = demoMemory.funds.get(slug);
-    if (override) return override;
-  }
-  const seed = seedFunds.find((fund) => fund.slug === slug);
-  if (seed) return seed;
   return getUserFund(slug);
 }
 
 export async function getFundsByCreator(creatorId: string): Promise<Fund[]> {
-  const id = creatorId.toLowerCase();
-  const fromSeed = seedFunds.filter((fund) => fund.manager.id.toLowerCase() === id);
-  const fromDb = useDemoStore()
-    ? (await listUserFunds()).filter((fund) => fund.manager.id.toLowerCase() === id)
-    : await dbListFundsByCreator(id);
-  const seen = new Set(fromSeed.map((fund) => fund.slug));
-  return [...fromSeed, ...fromDb.filter((fund) => !seen.has(fund.slug))];
+  return dbListFundsByCreator(creatorId.toLowerCase());
 }
 
 function slugify(name: string): string {
@@ -241,7 +190,6 @@ async function uniqueSlug(base: string): Promise<string> {
 }
 
 async function slugTaken(slug: string): Promise<boolean> {
-  if (seedFunds.some((fund) => fund.slug === slug)) return true;
   return userFundSlugExists(slug);
 }
 
@@ -375,14 +323,11 @@ export async function setFundTestLifecycleStage(
     throw new Error("Fund not found");
   }
 
-  const demo = useDemoStore();
-  if (!demo) {
-    if (!isUserFund(fund)) {
-      throw new Error("Fund not found");
-    }
-    if (fund.manager.id.toLowerCase() !== input.managerAddress.toLowerCase()) {
-      throw new Error("Only the creator can manage this fund");
-    }
+  if (!isUserFund(fund)) {
+    throw new Error("Fund not found");
+  }
+  if (fund.manager.id.toLowerCase() !== input.managerAddress.toLowerCase()) {
+    throw new Error("Only the creator can manage this fund");
   }
 
   const validStages: LifecycleStage[] = ["deposit", "trading", "closed"];

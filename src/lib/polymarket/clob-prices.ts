@@ -1,5 +1,3 @@
-import { demoMemory, ensureDemoMemory } from "@/lib/demo/memory";
-import { useDemoStore } from "@/lib/demo/mode";
 import { fetchErrorMessage } from "@/lib/fetch-error";
 
 const CLOB_HOST = "https://clob.polymarket.com";
@@ -24,15 +22,6 @@ export async function fetchTokenMidPrices(
 ): Promise<Map<string, number>> {
   const unique = [...new Set(tokenIds)];
   const prices = new Map<string, number>();
-
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    for (const tokenId of unique) {
-      const mid = demoMemory.mids.get(tokenId);
-      if (mid != null) prices.set(tokenId, mid);
-    }
-    return prices;
-  }
 
   await Promise.all(
     unique.map(async (tokenId) => {

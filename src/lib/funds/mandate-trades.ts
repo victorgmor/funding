@@ -1,7 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { demoMemory, ensureDemoMemory } from "@/lib/demo/memory";
-import { useDemoStore } from "@/lib/demo/mode";
 import type { FanoutSlice, MandateTrade, MarketSide } from "@/lib/funds/types";
 import {
   mandateDocClient,
@@ -10,13 +8,6 @@ import {
 } from "@/lib/funds/mandate-db";
 
 export async function listTradesByFund(fundSlug: string): Promise<MandateTrade[]> {
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    return [...demoMemory.trades.values()]
-      .filter((row) => row.fundSlug === fundSlug)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }
-
   const rows = await mandateDocClient().send(
     new QueryCommand({
       TableName: mandatesTableName(),
@@ -98,6 +89,24 @@ export async function markTradeStatus(
   return updated;
 }
 
+/** Atomically lock a pending trade before CLOB execution. */
+export async function lockPendingTradeForExecution(
+  fundSlug: string,
+  tradeId: string,
+): Promise<MandateTrade | undefined> {
+  return transitionTradeStatus(fundSlug, tradeId, "pending", "executing");
+}
+
+/** Finish a locked trade after CLOB execution. */
+export async function completeTradeExecution(
+  fundSlug: string,
+  tradeId: string,
+  status: "filled" | "failed",
+  detail?: string,
+): Promise<MandateTrade | undefined> {
+  return transitionTradeStatus(fundSlug, tradeId, "executing", status, detail);
+}
+
 /** Atomically settle a pending trade — no-op if already claimed. */
 export async function claimPendingTrade(
   fundSlug: string,
@@ -105,39 +114,44 @@ export async function claimPendingTrade(
   status: "filled" | "failed",
   detail?: string,
 ): Promise<MandateTrade | undefined> {
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    const trade = demoMemory.trades.get(tradeId);
-    if (!trade || trade.status !== "pending") return undefined;
-    const updated: MandateTrade = {
-      ...trade,
-      status,
-      detail,
-      filledAt: status === "filled" ? new Date().toISOString() : trade.filledAt,
-    };
-    demoMemory.trades.set(tradeId, updated);
-    return updated;
+  return transitionTradeStatus(fundSlug, tradeId, "pending", status, detail);
+}
+
+async function transitionTradeStatus(
+  fundSlug: string,
+  tradeId: string,
+  fromStatus: MandateTrade["status"],
+  toStatus: MandateTrade["status"],
+  detail?: string,
+): Promise<MandateTrade | undefined> {
+  const filledAt = toStatus === "filled" ? new Date().toISOString() : undefined;
+  const updates = ["#trade.#status = :toStatus"];
+  const values: Record<string, unknown> = {
+    ":fromStatus": fromStatus,
+    ":toStatus": toStatus,
+  };
+
+  if (detail !== undefined) {
+    updates.push("#trade.detail = :detail");
+    values[":detail"] = detail;
+  }
+  if (filledAt) {
+    updates.push("#trade.filledAt = :filledAt");
+    values[":filledAt"] = filledAt;
   }
 
-  const filledAt = status === "filled" ? new Date().toISOString() : undefined;
   try {
     const row = await mandateDocClient().send(
       new UpdateCommand({
         TableName: mandatesTableName(),
         Key: { fundSlug, sk: mandateSk("trade", tradeId) },
-        ConditionExpression: "#trade.#status = :pending",
-        UpdateExpression:
-          "SET #trade.#status = :status, #trade.detail = :detail, #trade.filledAt = :filledAt",
+        ConditionExpression: "#trade.#status = :fromStatus",
+        UpdateExpression: `SET ${updates.join(", ")}`,
         ExpressionAttributeNames: {
           "#trade": "trade",
           "#status": "status",
         },
-        ExpressionAttributeValues: {
-          ":pending": "pending",
-          ":status": status,
-          ":detail": detail ?? null,
-          ":filledAt": filledAt ?? null,
-        },
+        ExpressionAttributeValues: values,
         ReturnValues: "ALL_NEW",
       }),
     );
@@ -156,12 +170,6 @@ export async function claimPendingTrade(
 }
 
 async function saveTrade(trade: MandateTrade): Promise<void> {
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    demoMemory.trades.set(trade.id, trade);
-    return;
-  }
-
   await mandateDocClient().send(
     new PutCommand({
       TableName: mandatesTableName(),

@@ -1,7 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { GetCommand, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { demoMemory, ensureDemoMemory } from "@/lib/demo/memory";
-import { useDemoStore } from "@/lib/demo/mode";
 import type { Mandate, MandateStatus } from "@/lib/funds/types";
 import {
   mandateDocClient,
@@ -13,19 +11,10 @@ function normalizeWallet(wallet: string) {
   return wallet.toLowerCase();
 }
 
-function mandateKey(fundSlug: string, wallet: string) {
-  return `${fundSlug}#${normalizeWallet(wallet)}`;
-}
-
 export async function getMandate(
   fundSlug: string,
   wallet: string,
 ): Promise<Mandate | undefined> {
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    return demoMemory.mandates.get(mandateKey(fundSlug, wallet));
-  }
-
   const row = await mandateDocClient().send(
     new GetCommand({
       TableName: mandatesTableName(),
@@ -37,13 +26,6 @@ export async function getMandate(
 }
 
 export async function listMandatesByFund(fundSlug: string): Promise<Mandate[]> {
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    return [...demoMemory.mandates.values()]
-      .filter((m) => m.fundSlug === fundSlug)
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  }
-
   const rows = await mandateDocClient().send(
     new QueryCommand({
       TableName: mandatesTableName(),
@@ -104,18 +86,6 @@ export async function adjustMandateCash(
   const mandate = mandates.find((m) => m.id === mandateId);
   if (!mandate) return undefined;
 
-  if (useDemoStore()) {
-    const cashUsdc = round(mandate.cashUsdc + deltaUsdc, 2);
-    if (cashUsdc < 0) throw new Error("Mandate cash cannot go negative");
-    const updated: Mandate = {
-      ...mandate,
-      cashUsdc,
-      updatedAt: new Date().toISOString(),
-    };
-    await saveMandate(updated);
-    return updated;
-  }
-
   const now = new Date().toISOString();
   try {
     const row = await mandateDocClient().send(
@@ -152,15 +122,6 @@ export async function adjustMandateCash(
 }
 
 async function saveMandate(mandate: Mandate): Promise<void> {
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    demoMemory.mandates.set(
-      mandateKey(mandate.fundSlug, mandate.investorWallet),
-      mandate,
-    );
-    return;
-  }
-
   await mandateDocClient().send(
     new PutCommand({
       TableName: mandatesTableName(),

@@ -8,7 +8,6 @@
     "aws:doctor": "./scripts/aws-doctor.sh",
     "aws:setup": "./scripts/aws-ecs-express-setup.sh",
     "dev": "astro dev",
-    "dev:demo": "DEMO_MODE=true astro dev",
     "start": "node ./dist/server/entry.mjs",
     "build": "astro build",
     "preview": "astro preview",

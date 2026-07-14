@@ -46,11 +46,16 @@ function arcPath(
   startDeg: number,
   endDeg: number,
 ) {
+  // SVG arcs cannot sweep a full 360° (start and end coincide).
+  const sweep = endDeg - startDeg;
+  const safeEndDeg = sweep >= 360 ? startDeg + 359.99 : endDeg;
+  const safeSweep = safeEndDeg - startDeg;
+
   const startOuter = polar(cx, cy, outerR, startDeg);
-  const endOuter = polar(cx, cy, outerR, endDeg);
-  const startInner = polar(cx, cy, innerR, endDeg);
+  const endOuter = polar(cx, cy, outerR, safeEndDeg);
+  const startInner = polar(cx, cy, innerR, safeEndDeg);
   const endInner = polar(cx, cy, innerR, startDeg);
-  const large = endDeg - startDeg > 180 ? 1 : 0;
+  const large = safeSweep > 180 ? 1 : 0;
 
   return [
     `M ${startOuter.x} ${startOuter.y}`,

@@ -1,12 +1,8 @@
-import { seedFunds } from "@/data/funds";
 import { isCreatorWallet } from "@/lib/funds/creator";
 import type { Fund } from "@/lib/funds/types";
 
 export function isUserFund(fund: Fund): boolean {
-  return (
-    isCreatorWallet(fund.manager.id) &&
-    !seedFunds.some((row) => row.id === fund.id)
-  );
+  return isCreatorWallet(fund.manager.id);
 }
 
 export function isFundOwner(fund: Fund, wallet?: string): boolean {

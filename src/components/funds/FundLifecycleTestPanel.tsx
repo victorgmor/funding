@@ -10,7 +10,7 @@ import type { Fund } from "@/lib/funds/types";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
-type Props = { fund: Fund; demoMode?: boolean };
+type Props = { fund: Fund };
 
 const STAGES: { id: LifecycleStage; label: string }[] = [
   { id: "deposit", label: "Open for orders" },
@@ -26,19 +26,32 @@ export default function FundLifecycleTestPanel(props: Props) {
   );
 }
 
-function FundLifecycleTestPanelInner({ fund, demoMode = false }: Props) {
+function FundLifecycleTestPanelInner({ fund }: Props) {
   const { address, isConnected, restoring } = useWalletSession();
   const [busy, setBusy] = useState(false);
   const [signing, setSigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!demoMode && !isUserFund(fund)) return null;
+  if (!isUserFund(fund)) return null;
+  if (!isFundOwner(fund, address)) return null;
 
-  const isOwner = isFundOwner(fund, address);
-  const canManage = demoMode ? isConnected && Boolean(address) : isOwner;
   const currentStage = resolveLifecycleStage(fund);
 
-  if (!demoMode && !isOwner) return null;
+  if (!isConnected || !address) {
+    return (
+      <div className="border-primary/10 bg-primary/5 mt-3 rounded-lg border border-dashed px-4 py-3">
+        <p className="text-primary/50 text-[0.65rem] font-medium uppercase">
+          Test lifecycle
+        </p>
+        <div className="mt-2">
+          <p className="text-primary/60 mb-2 text-xs">
+            Connect your creator wallet to switch stages.
+          </p>
+          {!restoring && <ConnectWallet variant="panel" />}
+        </div>
+      </div>
+    );
+  }
 
   async function setStage(stage: LifecycleStage) {
     if (!address || busy || stage === currentStage) return;
@@ -89,17 +102,7 @@ function FundLifecycleTestPanelInner({ fund, demoMode = false }: Props) {
       <p className="text-primary/50 text-[0.65rem] font-medium uppercase">
         Test lifecycle
       </p>
-      {!canManage ? (
-        <div className="mt-2">
-          <p className="text-primary/60 mb-2 text-xs">
-            {demoMode
-              ? "Connect a wallet to switch stages."
-              : "Connect your creator wallet to switch stages."}
-          </p>
-          {!restoring && <ConnectWallet variant="panel" />}
-        </div>
-      ) : (
-        <>
+      <>
           {currentStage === "deposit" && (
             <button
               type="button"
@@ -137,8 +140,7 @@ function FundLifecycleTestPanelInner({ fund, demoMode = false }: Props) {
           <p className="text-primary/40 mt-2 text-xs">
             Adjusts dates and status for testing. Does not run close settlement.
           </p>
-        </>
-      )}
+      </>
       {error && <p className="text-red-400 mt-2 text-xs">{error}</p>}
     </div>
   );

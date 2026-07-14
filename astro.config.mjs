@@ -80,11 +80,6 @@ export default defineConfig({
         access: "secret",
         optional: true,
       }),
-      DEMO_MODE: envField.string({
-        context: "server",
-        access: "secret",
-        optional: true,
-      }),
     },
   },
   vite: {

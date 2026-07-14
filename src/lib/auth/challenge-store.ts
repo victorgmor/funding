@@ -9,8 +9,6 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import type { BundleAuthAction } from "@/lib/auth/bundle-auth";
 import { awsRegion, challengesTableName } from "@/lib/aws/dynamo-tables";
-import { demoMemory, ensureDemoMemory } from "@/lib/demo/memory";
-import { useDemoStore } from "@/lib/demo/mode";
 
 export type StoredChallenge = {
   address: string;
@@ -38,12 +36,6 @@ export async function saveChallenge(
   nonce: string,
   challenge: StoredChallenge,
 ): Promise<void> {
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    demoMemory.challenges.set(nonce, challenge);
-    return;
-  }
-
   await docClient().send(
     new PutCommand({
       TableName: table(),
@@ -63,22 +55,6 @@ export async function consumeChallenge(
   nonce: string,
   expected: StoredChallenge,
 ): Promise<boolean> {
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    const row = demoMemory.challenges.get(nonce);
-    if (
-      !row ||
-      row.address !== expected.address ||
-      row.action !== expected.action ||
-      row.slug !== expected.slug ||
-      row.expiresAt <= Date.now()
-    ) {
-      return false;
-    }
-    demoMemory.challenges.delete(nonce);
-    return true;
-  }
-
   try {
     await docClient().send(
       new DeleteCommand({

@@ -53,10 +53,6 @@ export const POST: APIRoute = async ({ params, request }) => {
       });
     }
 
-    if (body.status === "failed") {
-      /* cash restored inside settleMandateTrade */
-    }
-
     const updated = await settleMandateTrade(
       fund.slug,
       trade,

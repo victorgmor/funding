@@ -77,7 +77,7 @@ For production persistence, plan one of:
 - **Amazon S3** — replace file reads/writes in `src/lib/funds/store.ts`
 - **Amazon RDS / DynamoDB** — if you outgrow a single JSON file
 
-Seed bundles from `src/data/funds.ts` are always included in the build.
+Funds are stored in DynamoDB (`FUNDS_TABLE`); the list shows creator-published funds only.
 
 ---
 

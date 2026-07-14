@@ -1,5 +1,6 @@
-import { settleMandateTrade } from "@/lib/funds/execute-trades";
+import { settleExecutingTrade, settleMandateTrade } from "@/lib/funds/execute-trades";
 import { listPendingTradesForFund } from "@/lib/funds/execute-trades";
+import { lockPendingTradeForExecution } from "@/lib/funds/mandate-trades";
 import {
   getTradingSession,
   readSessionCredsForExecution,
@@ -113,6 +114,15 @@ async function runSinglePendingTrade(
     );
   }
 
+  const locked = await lockPendingTradeForExecution(fundSlug, trade.id);
+  if (!locked) {
+    return {
+      tradeId: trade.id,
+      status: "skipped",
+      detail: "Trade already executing or settled",
+    };
+  }
+
   try {
     const result = await executeMandateTradeServer({
       privyWalletId,
@@ -120,16 +130,16 @@ async function runSinglePendingTrade(
       depositAddress: session.depositAddress,
       signatureType: session.signatureType,
       creds,
-      trade,
+      trade: locked,
     });
 
     const status = result.status === "filled" ? "filled" : "failed";
-    await settleMandateTrade(fundSlug, trade, status, result.detail);
+    await settleExecutingTrade(fundSlug, trade.id, status, result.detail);
 
     return { tradeId: trade.id, status, detail: result.detail };
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Server trade failed";
-    await settleMandateTrade(fundSlug, trade, "failed", detail);
+    await settleExecutingTrade(fundSlug, trade.id, "failed", detail);
     return { tradeId: trade.id, status: "failed", detail };
   }
 }

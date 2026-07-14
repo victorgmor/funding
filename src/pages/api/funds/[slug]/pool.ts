@@ -33,7 +33,6 @@ export const GET: APIRoute = async ({ params, url }) => {
       pool = {
         ...pool,
         mandates: [],
-        recentTrades: [],
       };
     }
 

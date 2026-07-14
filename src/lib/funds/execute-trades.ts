@@ -3,6 +3,7 @@ import { markInstructionStatus } from "@/lib/funds/instructions";
 import { addPositionFromTrade } from "@/lib/funds/mandate-positions";
 import {
   claimPendingTrade,
+  completeTradeExecution,
   listTradesByInstruction,
 } from "@/lib/funds/mandate-trades";
 import { getTradingSession } from "@/lib/funds/trading-sessions";
@@ -28,18 +29,41 @@ export async function settleMandateTrade(
 ): Promise<MandateTrade | undefined> {
   const updated = await claimPendingTrade(fundSlug, trade.id, status, detail);
   if (!updated) return undefined;
+  return applyTradeSettlement(fundSlug, updated, status);
+}
 
+/** Settle after server-side CLOB execution (trade was locked as executing). */
+export async function settleExecutingTrade(
+  fundSlug: string,
+  tradeId: string,
+  status: "filled" | "failed",
+  detail?: string,
+): Promise<MandateTrade | undefined> {
+  const updated = await completeTradeExecution(
+    fundSlug,
+    tradeId,
+    status,
+    detail,
+  );
+  if (!updated) return undefined;
+  return applyTradeSettlement(fundSlug, updated, status);
+}
+
+async function applyTradeSettlement(
+  fundSlug: string,
+  trade: MandateTrade,
+  status: "filled" | "failed",
+): Promise<MandateTrade> {
   if (status === "failed") {
     await adjustMandateCash(trade.mandateId, fundSlug, trade.usdcAmount);
   }
 
   if (status === "filled") {
-    await addPositionFromTrade(updated);
+    await addPositionFromTrade(trade);
   }
 
-  await syncInstructionStatus(fundSlug, updated.instructionId);
-
-  return updated;
+  await syncInstructionStatus(fundSlug, trade.instructionId);
+  return trade;
 }
 
 export async function syncInstructionStatus(
@@ -47,7 +71,9 @@ export async function syncInstructionStatus(
   instructionId: string,
 ): Promise<ExecutionSummary> {
   const trades = await listTradesByInstruction(fundSlug, instructionId);
-  const pending = trades.filter((t) => t.status === "pending").length;
+  const pending = trades.filter(
+    (t) => t.status === "pending" || t.status === "executing",
+  ).length;
   const filled = trades.filter((t) => t.status === "filled").length;
   const failed = trades.filter((t) => t.status === "failed").length;
   const skipped = trades.filter((t) => t.status === "skipped").length;

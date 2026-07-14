@@ -1,6 +1,4 @@
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { demoMemory, ensureDemoMemory } from "@/lib/demo/memory";
-import { useDemoStore } from "@/lib/demo/mode";
 import type { MandatePosition, MandateTrade } from "@/lib/funds/types";
 import {
   mandateDocClient,
@@ -22,13 +20,6 @@ export async function listPositionsByFund(
 export async function listAllPositionsByFund(
   fundSlug: string,
 ): Promise<MandatePosition[]> {
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    return [...demoMemory.positions.values()]
-      .filter((row) => row.fundSlug === fundSlug)
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  }
-
   const rows = await mandateDocClient().send(
     new QueryCommand({
       TableName: mandatesTableName(),
@@ -107,14 +98,6 @@ export async function deletePositionsForMandate(
 ): Promise<void> {
   const existing = await listPositionsByMandate(fundSlug, mandateId);
 
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    for (const position of existing) {
-      demoMemory.positions.delete(position.id);
-    }
-    return;
-  }
-
   for (const position of existing) {
     await mandateDocClient().send(
       new DeleteCommand({
@@ -155,12 +138,6 @@ function mergePosition(
 }
 
 async function savePosition(position: MandatePosition): Promise<void> {
-  if (useDemoStore()) {
-    ensureDemoMemory();
-    demoMemory.positions.set(position.id, position);
-    return;
-  }
-
   await mandateDocClient().send(
     new PutCommand({
       TableName: mandatesTableName(),
