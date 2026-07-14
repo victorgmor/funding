@@ -264,15 +264,6 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                 Move pUSD to deposit wallet
               </button>
             )}
-
-            <a
-              href="https://polymarket.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border-primary/15 text-primary/70 hover:text-primary w-full rounded border px-3 py-2 text-center text-sm transition-colors"
-            >
-              Deposit on Polymarket
-            </a>
           </div>
 
           <button

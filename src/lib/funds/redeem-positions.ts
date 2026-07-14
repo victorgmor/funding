@@ -8,17 +8,16 @@ import { getAllFunds } from "@/lib/funds/store";
 import { fetchMarketByTokenId } from "@/lib/polymarket/gamma";
 import { submitResolvedPositionRedemption } from "@/lib/polymarket/redeem";
 import { getRelayBuilderConfig } from "@/lib/polymarket/builder-server";
-import {
-  getTradingSession,
-  readSessionPayload,
-} from "@/lib/funds/trading-sessions";
+import { readSessionPayload } from "@/lib/funds/trading-sessions";
 import { resolvePrivyWalletId } from "@/lib/privy/resolve-wallet";
 import { serverSigningEnabled } from "@/lib/privy/server";
 import { createViemAccount } from "@privy-io/node/viem";
-import { createWalletClient, http, type Hex } from "viem";
+import { createWalletClient, http, type Address, type Hex } from "viem";
 import { polygon } from "wagmi/chains";
 import { getAuthorizationContext, getPrivyServerClient } from "@/lib/privy/server";
 import { readOutcomeTokenBalance } from "@/lib/polymarket/redeem";
+import { isDepositWalletDeployed } from "@/lib/polymarket/depositWallet";
+import { deriveDepositWalletAddress } from "@/lib/polymarket/positions";
 
 function round(n: number, d: number) {
   const f = 10 ** d;
@@ -97,18 +96,20 @@ async function redeemSinglePosition(
     };
   }
 
-  const session = await getTradingSession(fundSlug, position.investorWallet);
   const payload = await readSessionPayload(fundSlug, position.investorWallet);
 
-  if (!session?.authorized || !session.serverSigner || !session.depositAddress) {
+  const depositAddress = await resolveDepositAddress(
+    position.investorWallet,
+    payload?.depositAddress,
+  );
+  if (!depositAddress) {
     return {
       positionId: position.id,
       status: "skipped",
-      detail: "Auto-trading not authorized",
+      detail: "Polymarket deposit wallet not registered",
     };
   }
 
-  const depositAddress = session.depositAddress as `0x${string}`;
   const onChainBalance = await readOutcomeTokenBalance(
     depositAddress,
     position.tokenId,
@@ -138,8 +139,8 @@ async function redeemSinglePosition(
   if (!privyWalletId) {
     return {
       positionId: position.id,
-      status: "failed",
-      detail: "Privy wallet not found — revoke and re-authorize auto-trading",
+      status: "skipped",
+      detail: "Authorize auto-trading once so the server can redeem for you",
     };
   }
 
@@ -193,4 +194,18 @@ async function markPositionRedeemed(position: MandatePosition): Promise<void> {
     redeemedAt: now,
     updatedAt: now,
   });
+}
+
+async function resolveDepositAddress(
+  investorWallet: string,
+  sessionDeposit?: string,
+): Promise<Address | null> {
+  if (sessionDeposit) {
+    return sessionDeposit as Address;
+  }
+
+  const owner = investorWallet as Address;
+  const depositAddress = await deriveDepositWalletAddress(owner);
+  const deployed = await isDepositWalletDeployed(depositAddress);
+  return deployed ? depositAddress : null;
 }

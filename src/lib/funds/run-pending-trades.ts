@@ -8,6 +8,7 @@ import {
 } from "@/lib/funds/trading-sessions";
 import type { MandateTrade } from "@/lib/funds/types";
 import { executeMandateTradeServer } from "@/lib/polymarket/server-trade";
+import { runRedemptionsForFund } from "@/lib/funds/redeem-positions";
 import { getAllFunds } from "@/lib/funds/store";
 import { resolvePrivyWalletId } from "@/lib/privy/resolve-wallet";
 import { serverSigningEnabled } from "@/lib/privy/server";
@@ -40,6 +41,13 @@ export async function runPendingTradesForFund(
 
   for (const trade of pending) {
     results.push(await runSinglePendingTrade(fundSlug, trade));
+  }
+
+  // Best-effort: redeem resolved positions whenever the server executes trades.
+  try {
+    await runRedemptionsForFund(fundSlug, investorWallet);
+  } catch {
+    /* redemption is optional follow-up */
   }
 
   return results;

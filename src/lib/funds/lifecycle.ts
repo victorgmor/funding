@@ -29,6 +29,18 @@ export function daysSince(iso: string, now = Date.now()): number {
   return Math.max(0, Math.floor((now - Date.parse(iso)) / DAY_MS));
 }
 
+export function formatDaysLeft(iso: string, now = Date.now()): string {
+  const days = daysUntil(iso, now);
+  if (days === 0) return "Ends today";
+  return `${days} ${days === 1 ? "day" : "days"} left`;
+}
+
+export function formatDaysAgo(iso: string, now = Date.now()): string {
+  const ago = daysSince(iso, now);
+  if (ago === 0) return "Today";
+  return `${ago} ${ago === 1 ? "day" : "days"} ago`;
+}
+
 export function effectiveClosedAt(fund: Fund, now = Date.now()): string | null {
   if (fund.closedAt) return fund.closedAt;
   if (fund.status === "closed" && fund.tradingEndsAt) return fund.tradingEndsAt;
@@ -72,13 +84,10 @@ export function buildLifecycleStages(
   };
 
   if (fund.raiseEndsAt) {
-    const date = formatFundDate(fund.raiseEndsAt);
     if (current === "deposit") {
-      const days = daysUntil(fund.raiseEndsAt, now);
-      deposit.line1 =
-        days > 0 ? `Ends ${date} · ${days} ${days === 1 ? "day" : "days"}` : `Ends ${date}`;
+      deposit.line1 = formatDaysLeft(fund.raiseEndsAt, now);
     } else {
-      deposit.line1 = `Closed ${date}`;
+      deposit.line1 = formatDaysAgo(fund.raiseEndsAt, now);
     }
   } else {
     deposit.line1 = current === "deposit" ? "Accepting commitments" : "—";
@@ -97,15 +106,12 @@ export function buildLifecycleStages(
   };
 
   if (fund.tradingEndsAt) {
-    const date = formatFundDate(fund.tradingEndsAt);
     if (current === "trading") {
-      const days = daysUntil(fund.tradingEndsAt, now);
-      trading.line1 =
-        days > 0 ? `Ends ${date} · ${days} ${days === 1 ? "day" : "days"}` : `Ends ${date}`;
+      trading.line1 = formatDaysLeft(fund.tradingEndsAt, now);
     } else if (current === "closed") {
-      trading.line1 = `Ends ${date}`;
+      trading.line1 = formatDaysAgo(fund.tradingEndsAt, now);
     } else {
-      trading.line1 = `Opens after deposit · ends ${date}`;
+      trading.line1 = formatDaysLeft(fund.tradingEndsAt, now);
     }
   } else {
     trading.line1 =
@@ -120,16 +126,9 @@ export function buildLifecycleStages(
   };
 
   if (current === "closed" && closedAt) {
-    const date = formatFundDate(closedAt);
-    const ago = daysSince(closedAt, now);
-    closed.line1 = date;
-    closed.line2 =
-      ago === 0
-        ? "Fund closed today"
-        : `Fund closed ${ago} ${ago === 1 ? "day" : "days"} ago`;
+    closed.line1 = formatDaysAgo(closedAt, now);
   } else if (fund.tradingEndsAt) {
-    closed.line1 = formatFundDate(fund.tradingEndsAt);
-    closed.line2 = "Planned close";
+    closed.line1 = formatDaysLeft(fund.tradingEndsAt, now);
   } else {
     closed.line1 = "—";
   }

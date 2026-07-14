@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { notifyPoolUpdated } from "@/lib/funds/pool-events";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 const POLL_MS = 5000;
@@ -18,11 +19,23 @@ export default function InvestorTradeAutopilot() {
       running.current = true;
 
       try {
-        await fetch("/api/investor/trades/execute-pending", {
+        const res = await fetch("/api/investor/trades/execute-pending", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ address: walletAddress }),
         });
+        if (!res.ok || cancelled) return;
+
+        const data = (await res.json()) as {
+          redeems?: Array<{ status: string; fundSlug?: string }>;
+        };
+        if (
+          (data.redeems ?? []).some(
+            (run) => run.status === "redeemed" || run.status === "failed",
+          )
+        ) {
+          notifyPoolUpdated();
+        }
       } catch {
         /* retry next poll */
       } finally {

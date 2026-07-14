@@ -241,8 +241,6 @@ export type ResolvedMarketMeta = {
 };
 
 export function isMarketResolved(market: GammaMarketRow): boolean {
-  if (!market.closed) return false;
-
   try {
     const prices = (JSON.parse(market.outcomePrices ?? "[]") as string[]).map(
       (price) => parseFloat(price),
@@ -250,11 +248,14 @@ export function isMarketResolved(market: GammaMarketRow): boolean {
     if (prices.length >= 2) {
       const max = Math.max(...prices);
       const min = Math.min(...prices);
+      // Decisive outcome prices — redeemable even before Gamma marks closed.
       if (max >= 0.95 && min <= 0.05) return true;
     }
   } catch {
     /* ignore */
   }
+
+  if (!market.closed) return false;
 
   try {
     const statuses = JSON.parse(market.umaResolutionStatuses ?? "[]") as string[];
