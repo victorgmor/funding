@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ConnectWallet from "@/components/app/ConnectWallet";
+import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import Providers from "@/components/app/Providers";
 import { isFundOwner, isUserFund } from "@/lib/funds/editable";
 import {
@@ -9,7 +10,7 @@ import {
 import type { Fund } from "@/lib/funds/types";
 import { usePoolTotals } from "@/lib/funds/usePoolTotals";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
-import { useWalletSession } from "@/lib/wagmi/useWalletSession";
+import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 
 type Props = { fund: Fund };
 
@@ -28,17 +29,28 @@ export default function FundLifecycleTestPanel(props: Props) {
 }
 
 function FundLifecycleTestPanelInner({ fund }: Props) {
-  const { address, isConnected, restoring } = useWalletSession();
+  const { address, walletAddress, isConnected, loading } = useWalletGate();
   const { totals } = usePoolTotals();
   const [busy, setBusy] = useState(false);
   const [signing, setSigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!isUserFund(fund)) return null;
-  if (!isFundOwner(fund, address)) return null;
+  if (!loading && !isFundOwner(fund, walletAddress)) return null;
 
   const totalNotional = totals[fund.slug]?.deposited ?? 0;
   const currentStage = resolveLifecycleStage(fund, Date.now(), totalNotional);
+
+  if (loading) {
+    return (
+      <div className="border-primary/10 bg-primary/5 mt-3 rounded-lg border border-dashed px-4 py-3">
+        <p className="text-primary/50 text-[0.65rem] font-medium uppercase">
+          Test lifecycle
+        </p>
+        <WalletPanelPlaceholder className="mt-2" label="Loading wallet…" />
+      </div>
+    );
+  }
 
   if (!isConnected || !address) {
     return (
@@ -50,7 +62,7 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
           <p className="text-primary/60 mb-2 text-xs">
             Connect your creator wallet to switch stages.
           </p>
-          {!restoring && <ConnectWallet variant="panel" />}
+          <ConnectWallet variant="panel" />
         </div>
       </div>
     );

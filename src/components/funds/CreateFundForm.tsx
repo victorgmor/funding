@@ -2,10 +2,11 @@ import { useState } from "react";
 import Providers from "@/components/app/Providers";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
 import ConnectWallet from "@/components/app/ConnectWallet";
+import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import { defaultLifecycleDate } from "@/lib/funds/lifecycle";
 import { MAX_POOL_CAP_USDC } from "@/lib/funds/store";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
-import { useWalletSession } from "@/lib/wagmi/useWalletSession";
+import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 
 export default function CreateFundForm() {
   return (
@@ -16,7 +17,7 @@ export default function CreateFundForm() {
 }
 
 function CreateFundFormInner() {
-  const { address, isConnected } = useWalletSession();
+  const { address, isConnected, loading } = useWalletGate();
   const [signing, setSigning] = useState(false);
   const [name, setName] = useState("");
   const [thesis, setThesis] = useState("");
@@ -103,7 +104,11 @@ function CreateFundFormInner() {
     <form className="mt-10 space-y-6" onSubmit={(e) => e.preventDefault()}>
       <div>
         <p className="text-primary mb-2 text-sm">Creator</p>
-        <ConnectWallet variant="create" />
+        {loading ? (
+          <WalletPanelPlaceholder label="Loading wallet…" />
+        ) : (
+          <ConnectWallet variant="create" />
+        )}
         {managerName && (
           <p className="text-primary/60 mt-2 text-xs">
             Publishing as <span className="text-primary">{managerName}</span>

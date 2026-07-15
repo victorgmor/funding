@@ -3,6 +3,7 @@ import { useSigners, useUser } from "@privy-io/react-auth";
 import { getWalletClient } from "@wagmi/core";
 import { polygon } from "wagmi/chains";
 import ConnectWallet from "@/components/app/ConnectWallet";
+import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import FundTradeAutopilot from "@/components/funds/FundTradeAutopilot";
 import { privySignerQuorumId } from "@/lib/privy/config";
 import {
@@ -32,7 +33,7 @@ import {
 } from "@/lib/funds/trading-session-client";
 import { wagmiConfig } from "@/lib/wagmi/config";
 import { useEnsurePolygon } from "@/lib/wagmi/useEnsurePolygon";
-import { useWalletSession } from "@/lib/wagmi/useWalletSession";
+import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 
 type Props = { fund: Fund };
@@ -55,7 +56,7 @@ const headerClass =
 export default function MandatePanel({ fund }: Props) {
   const { user } = useUser();
   const { addSigners, removeSigners } = useSigners();
-  const { address, isConnected, restoring } = useWalletSession();
+  const { address, isConnected, loading: walletLoading } = useWalletGate();
   const { onPolygon, switching } = useEnsurePolygon();
   const [summary, setSummary] = useState<MandateSummary | null>(null);
   const [pendingTrades, setPendingTrades] = useState<MandateTrade[]>([]);
@@ -354,8 +355,8 @@ export default function MandatePanel({ fund }: Props) {
       </h2>
 
       <div className="mt-3">
-      {restoring ? (
-        <p className="text-primary/50 text-sm">Loading wallet…</p>
+      {walletLoading ? (
+        <WalletPanelPlaceholder label="Loading wallet…" />
       ) : !isConnected ? (
         <div className="space-y-3">
           <p className="text-primary/60 text-sm">

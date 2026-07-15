@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import ConnectWallet from "@/components/app/ConnectWallet";
+import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import GearIcon from "@/components/fundations/icons/GearIcon";
 import MandateAllocationChart from "@/components/funds/MandateAllocationChart";
 import { resolveLifecycleStage } from "@/lib/funds/lifecycle";
 import type { Fund, Mandate } from "@/lib/funds/types";
-import { useWalletSession } from "@/lib/wagmi/useWalletSession";
+import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 
 type Entry = {
   fund: Fund;
@@ -13,14 +14,14 @@ type Entry = {
 };
 
 export default function YourMandatesPanel() {
-  const { address, isConnected, restoring } = useWalletSession();
+  const { address, isConnected, loading: walletLoading } = useWalletGate();
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [hideClosed, setHideClosed] = useState(false);
 
   useEffect(() => {
-    if (!isConnected || !address) {
+    if (walletLoading || !isConnected || !address) {
       setEntries(null);
       setLoading(false);
       return;
@@ -66,7 +67,7 @@ export default function YourMandatesPanel() {
     return () => {
       cancelled = true;
     };
-  }, [address, isConnected]);
+  }, [address, isConnected, walletLoading]);
 
   const visibleEntries = (entries ?? []).filter(
     ({ fund }) => !hideClosed || resolveLifecycleStage(fund) !== "closed",
@@ -120,18 +121,18 @@ export default function YourMandatesPanel() {
         </div>
       </div>
 
-      {!isConnected ? (
+      {walletLoading ? (
+        <div className="border-primary/10 border-t pt-4">
+          <WalletPanelPlaceholder label="Loading wallet…" />
+        </div>
+      ) : !isConnected ? (
         <div className="border-primary/10 border-t pt-4">
           <p className="text-primary/55 text-sm leading-relaxed">
-            {restoring
-              ? "Restoring wallet…"
-              : "Connect your wallet to see the funds you're in."}
+            Connect your wallet to see the funds you're in.
           </p>
-          {!restoring && (
-            <div className="mt-4 max-w-56">
-              <ConnectWallet variant="panel" />
-            </div>
-          )}
+          <div className="mt-4 max-w-56">
+            <ConnectWallet variant="panel" />
+          </div>
         </div>
       ) : loading || entries === null ? (
         <div className="border-primary/10 border-t">

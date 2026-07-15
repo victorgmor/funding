@@ -10,7 +10,6 @@ export { WAGMI_ACCOUNT_EVENT } from "@/lib/wagmi/wallet-session";
 
 export function useWalletSession() {
   const [sessionAddress, setSessionAddress] = useState(readWalletSession);
-  const [hydrated, setHydrated] = useState(() => !readWalletSession());
   const [account, setAccount] = useState<GetAccountReturnType>(() =>
     getAccount(wagmiConfig),
   );
@@ -21,7 +20,6 @@ export function useWalletSession() {
 
   useEffect(() => {
     const onAccount = (event: Event) => {
-      setHydrated(true);
       const detail = (
         event as CustomEvent<{ address?: string; isConnected?: boolean }>
       ).detail;
@@ -33,19 +31,13 @@ export function useWalletSession() {
     };
 
     window.addEventListener(WAGMI_ACCOUNT_EVENT, onAccount);
-    const timeout = window.setTimeout(() => setHydrated(true), 2500);
-
-    return () => {
-      window.removeEventListener(WAGMI_ACCOUNT_EVENT, onAccount);
-      window.clearTimeout(timeout);
-    };
+    return () => window.removeEventListener(WAGMI_ACCOUNT_EVENT, onAccount);
   }, []);
 
   const { address, isConnected, status } = account;
   const reconnecting =
     status === "connecting" || status === "reconnecting";
-  const pending =
-    Boolean(sessionAddress) && !isConnected && (!hydrated || reconnecting);
+  const pending = Boolean(sessionAddress) && !isConnected;
   const restoring = pending || reconnecting;
 
   return {

@@ -6,7 +6,7 @@ import { creatorPath } from "@/lib/funds/creator";
 import { addressDisplayFallback } from "@/lib/polymarket/profile";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
 import { useEnsurePolygon } from "@/lib/wagmi/useEnsurePolygon";
-import { useWalletSession } from "@/lib/wagmi/useWalletSession";
+import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 import SignOut from "@/components/fundations/icons/SignOut";
 
 type Props = {
@@ -17,8 +17,8 @@ const navButtonClass =
   "bg-accent text-secondary hover:opacity-90 rounded-full px-4 py-1.5 text-sm font-medium transition-opacity disabled:cursor-wait disabled:opacity-60";
 
 function ConnectWalletInner({ variant = "panel" }: Props) {
-  const { login, logout, ready } = usePrivy();
-  const { address, displayAddress, isConnected, restoring } = useWalletSession();
+  const { login, logout } = usePrivy();
+  const { address, displayAddress, isConnected, loading } = useWalletGate();
   const { switching } = useEnsurePolygon();
   const { name: displayName } = usePolymarketProfile(address ?? displayAddress);
 
@@ -27,7 +27,7 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
     window.dispatchEvent(new Event(WAGMI_DISCONNECT_EVENT));
   }
 
-  if (!ready || restoring) {
+  if (loading) {
     if (variant === "nav") {
       return (
         <button type="button" disabled className={navButtonClass}>

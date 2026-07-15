@@ -8,7 +8,7 @@ import SearchIcon from "@/components/fundations/icons/SearchIcon";
 import { usePoolTotals } from "@/lib/funds/usePoolTotals";
 import type { Fund } from "@/lib/funds/types";
 import { notifyPoolUpdated } from "@/lib/funds/pool-events";
-import { useWalletSession } from "@/lib/wagmi/useWalletSession";
+import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 
 type Props = {
   funds: Fund[];
@@ -62,12 +62,12 @@ function sortFunds(
 }
 
 function useParticipatingSlugs(enabled: boolean) {
-  const { address, isConnected } = useWalletSession();
+  const { address, isConnected, loading: walletLoading } = useWalletGate();
   const [slugs, setSlugs] = useState<Set<string> | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!enabled || !isConnected || !address) {
+    if (!enabled || walletLoading || !isConnected || !address) {
       setSlugs(null);
       setLoading(false);
       return;
@@ -104,9 +104,9 @@ function useParticipatingSlugs(enabled: boolean) {
     return () => {
       cancelled = true;
     };
-  }, [enabled, address, isConnected]);
+  }, [enabled, address, isConnected, walletLoading]);
 
-  return { slugs, loading };
+  return { slugs, loading, walletLoading };
 }
 
 const defaultDirection = (field: SortField): SortDirection =>
@@ -128,7 +128,7 @@ function SortIndicator({
 }
 
 function FundListPanelInner({ funds }: Props) {
-  const { address, isConnected } = useWalletSession();
+  const { address, isConnected, loading: walletLoading } = useWalletGate();
   const { totals: poolTotals, refresh: refreshPoolTotals } = usePoolTotals();
   const [query, setQuery] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -137,7 +137,7 @@ function FundListPanelInner({ funds }: Props) {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [page, setPage] = useState(1);
 
-  const { slugs: participatingSlugs, loading: participatingLoading } =
+  const { slugs: participatingSlugs, loading: participatingLoading, walletLoading: participatingWalletLoading } =
     useParticipatingSlugs(onlyParticipating);
 
   useEffect(() => {
@@ -184,16 +184,18 @@ function FundListPanelInner({ funds }: Props) {
     }`;
 
   const emptyMessage = onlyParticipating
-    ? !isConnected
-      ? "Connect your wallet to filter funds you're in"
-      : participatingLoading
-        ? "Checking your mandates…"
-        : "You're not in any funds yet"
+    ? walletLoading || participatingWalletLoading
+      ? "Loading wallet…"
+      : !isConnected
+        ? "Connect your wallet to filter funds you're in"
+        : participatingLoading
+          ? "Checking your mandates…"
+          : "You're not in any funds yet"
     : "No funds match your search";
 
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,672px)_minmax(280px,1fr)]">
-      {isConnected && address && (
+      {!walletLoading && isConnected && address && (
         <FundTradeAutopilot
           address={address}
           enabled
@@ -246,7 +248,12 @@ function FundListPanelInner({ funds }: Props) {
                   />
                   Only funds I&apos;m in
                 </label>
-                {onlyParticipating && !isConnected && (
+                {onlyParticipating && walletLoading && (
+                  <span className="text-primary/50 text-xs whitespace-nowrap">
+                    Loading wallet…
+                  </span>
+                )}
+                {onlyParticipating && !walletLoading && !isConnected && (
                   <span className="text-primary/50 text-xs whitespace-nowrap">
                     Connect wallet
                   </span>

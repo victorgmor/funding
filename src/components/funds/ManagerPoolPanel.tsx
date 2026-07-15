@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import ConnectWallet from "@/components/app/ConnectWallet";
+import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import { isFundOwner } from "@/lib/funds/editable";
 import { formatUsdExact } from "@/lib/funds/format";
 import type { Fund, FanoutSlice, VirtualPool } from "@/lib/funds/types";
 import type { MarketSide } from "@/lib/funds/types";
 import { parseOutcomes, type SearchMarket } from "@/lib/polymarket/gamma";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
-import { useWalletSession } from "@/lib/wagmi/useWalletSession";
+import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 
 type Props = { fund: Fund };
 
@@ -20,8 +21,8 @@ type DryRun = {
 };
 
 export default function ManagerPoolPanel({ fund }: Props) {
-  const { address, isConnected, restoring } = useWalletSession();
-  const isOwner = isFundOwner(fund, address);
+  const { address, walletAddress, isConnected, loading: walletLoading } = useWalletGate();
+  const isOwner = isFundOwner(fund, walletAddress);
 
   const [pool, setPool] = useState<VirtualPool | null>(null);
   const [loading, setLoading] = useState(false);
@@ -206,8 +207,8 @@ export default function ManagerPoolPanel({ fund }: Props) {
         Manager view — pooled AUM with per-investor fan-out from their wallets.
       </p>
 
-      {restoring ? (
-        <p className="text-primary/50 mt-3 text-sm">Loading wallet…</p>
+      {walletLoading ? (
+        <WalletPanelPlaceholder className="mt-3" label="Loading wallet…" />
       ) : !isConnected || !address ? (
         <div className="mt-3">
           <ConnectWallet variant="panel" />

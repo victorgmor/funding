@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import ConnectWallet from "@/components/app/ConnectWallet";
+import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import { isCreatorWallet } from "@/lib/funds/creator";
 import { isFundOwner, isUserFund } from "@/lib/funds/editable";
 import type { Fund } from "@/lib/funds/types";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
-import { useWalletSession } from "@/lib/wagmi/useWalletSession";
+import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 
 type Props = {
   fund: Fund;
@@ -23,7 +24,7 @@ export default function FundOwnerControls({ fund }: Props) {
 export function FundOwnerControlsInner({ fund }: Props) {
   if (!isUserFund(fund) || !isCreatorWallet(fund.manager.id)) return null;
 
-  const { address, walletAddress, isConnected, restoring } = useWalletSession();
+  const { address, walletAddress, isConnected, loading } = useWalletGate();
   const [signing, setSigning] = useState(false);
   const isOwner = isFundOwner(fund, walletAddress);
 
@@ -157,15 +158,17 @@ export function FundOwnerControlsInner({ fund }: Props) {
     return (
       <div className="border-primary/10 border-b pb-4">
         <p className="text-primary text-sm font-medium">Creator controls</p>
-        <p className="text-primary/60 mt-1 text-xs">
-          {restoring
-            ? "Restoring wallet…"
-            : "Connect the wallet that created this fund to edit or close it."}
-        </p>
-        {!restoring && (
-          <div className="mt-3">
-            <ConnectWallet variant="panel" />
-          </div>
+        {loading ? (
+          <WalletPanelPlaceholder className="mt-3" label="Loading wallet…" />
+        ) : (
+          <>
+            <p className="text-primary/60 mt-1 text-xs">
+              Connect the wallet that created this fund to edit or close it.
+            </p>
+            <div className="mt-3">
+              <ConnectWallet variant="panel" />
+            </div>
+          </>
         )}
       </div>
     );
