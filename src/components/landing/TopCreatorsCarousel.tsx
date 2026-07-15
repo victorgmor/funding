@@ -42,7 +42,7 @@ export default function TopCreatorsCarousel({ creators }: Props) {
   return (
     <section aria-label="Creator spotlights" className="group">
       <p className="text-primary/50 mb-3 text-sm">
-        <a href="/creators" className="hover:text-primary transition-colors">
+        <a href="/managers" className="hover:text-primary transition-colors">
           Top managers
         </a>
       </p>
