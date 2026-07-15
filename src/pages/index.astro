@@ -6,13 +6,19 @@ import Wrapper from "@/components/fundations/containers/Wrapper.astro";
 import Hero from "@/components/landing/Hero.astro";
 import TopCreatorsCarousel from "@/components/landing/TopCreatorsCarousel";
 import FundListPanel from "@/components/funds/FundListPanel";
-import { getTopCreators } from "@/lib/funds/creators";
+import {
+  getTopCreators,
+  TOP_MANAGERS_CAROUSEL_LIMIT,
+} from "@/lib/funds/creators";
 import { computeProfitByFundSlug } from "@/lib/funds/performance";
 import { getAllFunds } from "@/lib/funds/store";
 
 const funds = await getAllFunds();
 const profitByFundSlug = await computeProfitByFundSlug(funds);
-const topCreators = getTopCreators(funds, { profitByFundSlug });
+const topCreators = getTopCreators(funds, {
+  profitByFundSlug,
+  limit: TOP_MANAGERS_CAROUSEL_LIMIT,
+});
 ---
 
 <BaseLayout>

@@ -1,0 +1,42 @@
+---
+export const prerender = false;
+
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Text from "@/components/fundations/elements/Text.astro";
+import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+import BackLink from "@/components/fundations/elements/BackLink.astro";
+import TopManagersList from "@/components/creators/TopManagersList";
+import { getTopCreators } from "@/lib/funds/creators";
+import { computeProfitByFundSlug } from "@/lib/funds/performance";
+import { getAllFunds } from "@/lib/funds/store";
+
+const funds = await getAllFunds();
+const profitByFundSlug = await computeProfitByFundSlug(funds);
+const topManagers = getTopCreators(funds, {
+  profitByFundSlug,
+  limit: Infinity,
+});
+---
+
+<BaseLayout>
+  <section>
+    <Wrapper variant="standard" class="py-24">
+      <BackLink />
+
+      <Text
+        tag="h1"
+        variant="displaySM"
+        class="text-primary mt-6 font-semibold"
+      >
+        Top managers
+      </Text>
+      <p class="text-primary/60 mt-2 max-w-xl text-sm">
+        Ranked by total fund pool PnL across all published funds.
+      </p>
+
+      <div class="mt-8">
+        <TopManagersList client:load managers={topManagers} />
+      </div>
+    </Wrapper>
+  </section>
+</BaseLayout>

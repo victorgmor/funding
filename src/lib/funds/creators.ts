@@ -1,5 +1,7 @@
 import type { Fund } from "@/lib/funds/types";
 
+export const TOP_MANAGERS_CAROUSEL_LIMIT = 15;
+
 export type TopCreator = {
   id: string;
   name: string;
