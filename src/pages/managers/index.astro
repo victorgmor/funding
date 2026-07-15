@@ -7,13 +7,20 @@ import Wrapper from "@/components/fundations/containers/Wrapper.astro";
 import BackLink from "@/components/fundations/elements/BackLink.astro";
 import TopManagersList from "@/components/creators/TopManagersList";
 import { getTopCreators } from "@/lib/funds/creators";
-import { computeProfitByFundSlug } from "@/lib/funds/performance";
+import {
+  computeDepositedByFundSlug,
+  computeProfitByFundSlug,
+} from "@/lib/funds/performance";
 import { getAllFunds } from "@/lib/funds/store";
 
 const funds = await getAllFunds();
-const profitByFundSlug = await computeProfitByFundSlug(funds);
+const [profitByFundSlug, depositedByFundSlug] = await Promise.all([
+  computeProfitByFundSlug(funds),
+  computeDepositedByFundSlug(funds),
+]);
 const topManagers = getTopCreators(funds, {
   profitByFundSlug,
+  depositedByFundSlug,
   limit: Infinity,
 });
 ---

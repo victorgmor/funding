@@ -7,6 +7,8 @@ export type TopCreator = {
   name: string;
   verified: boolean;
   fundCount: number;
+  /** Sum of committed capital across all published funds. */
+  totalDepositedUsdc: number;
   /** Sum of pool P&L across all published funds (gains and losses). */
   totalProfitUsdc: number;
 };
@@ -14,6 +16,7 @@ export type TopCreator = {
 type Options = {
   limit?: number;
   profitByFundSlug?: Record<string, number>;
+  depositedByFundSlug?: Record<string, number>;
 };
 
 export function sumCreatorProfit(
@@ -28,11 +31,16 @@ export function sumCreatorProfit(
 }
 
 export function getTopCreators(funds: Fund[], options: Options = {}): TopCreator[] {
-  const { limit = 12, profitByFundSlug = {} } = options;
+  const {
+    limit = 12,
+    profitByFundSlug = {},
+    depositedByFundSlug = {},
+  } = options;
   const byId = new Map<string, TopCreator>();
 
   for (const fund of funds) {
     const profit = profitByFundSlug[fund.slug] ?? 0;
+    const deposited = depositedByFundSlug[fund.slug] ?? 0;
     const existing = byId.get(fund.manager.id);
 
     if (!existing) {
@@ -41,12 +49,14 @@ export function getTopCreators(funds: Fund[], options: Options = {}): TopCreator
         name: fund.manager.name,
         verified: fund.manager.verified,
         fundCount: 1,
+        totalDepositedUsdc: deposited,
         totalProfitUsdc: profit,
       });
       continue;
     }
 
     existing.fundCount += 1;
+    existing.totalDepositedUsdc += deposited;
     existing.totalProfitUsdc += profit;
   }
 

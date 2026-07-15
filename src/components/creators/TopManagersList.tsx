@@ -3,10 +3,14 @@ import PnlAmount from "@/components/funds/PnlAmount";
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { creatorPath } from "@/lib/funds/creator";
 import type { TopCreator } from "@/lib/funds/creators";
+import { formatUsdExact } from "@/lib/funds/format";
 
 type Props = {
   managers: TopCreator[];
 };
+
+const headerClass =
+  "text-primary/50 px-4 py-3 text-left text-[0.65rem] font-medium uppercase tracking-wide";
 
 export default function TopManagersList({ managers }: Props) {
   if (managers.length === 0) {
@@ -18,38 +22,61 @@ export default function TopManagersList({ managers }: Props) {
   }
 
   return (
-    <ol className="divide-primary/10 border-primary/10 divide-y border-y">
-      {managers.map((manager, index) => (
-        <li key={manager.id}>
-          <a
-            href={creatorPath(manager.id)}
-            className="hover:bg-primary/5 flex items-center gap-4 px-2 py-4 transition-colors"
-          >
-            <span className="text-primary/40 w-8 shrink-0 text-center font-mono text-sm tabular-nums">
-              {index + 1}
-            </span>
-            <CreatorAvatar
-              address={manager.id}
-              name={manager.name}
-              size="sm"
-            />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-primary truncate font-medium">
-                  {manager.name}
-                </span>
-                {manager.verified && (
-                  <SealCheck size="sm" className="text-[#32BCFF]" />
-                )}
-              </div>
-              <p className="text-primary/50 text-xs">
-                {manager.fundCount} fund{manager.fundCount === 1 ? "" : "s"}
-              </p>
-            </div>
-            <PnlAmount amount={manager.totalProfitUsdc} />
-          </a>
-        </li>
-      ))}
-    </ol>
+    <div className="border-primary/10 overflow-x-auto rounded-lg border">
+      <table className="w-full min-w-[36rem] text-sm">
+        <thead className="border-primary/10 border-b">
+          <tr>
+            <th className={`${headerClass} w-12 text-center`}>#</th>
+            <th className={headerClass}>Manager</th>
+            <th className={`${headerClass} text-right`}>Funds</th>
+            <th className={`${headerClass} text-right`}>Deposits</th>
+            <th className={`${headerClass} text-right`}>PnL</th>
+          </tr>
+        </thead>
+        <tbody className="divide-primary/10 divide-y">
+          {managers.map((manager, index) => (
+            <tr
+              key={manager.id}
+              className="hover:bg-primary/5 transition-colors"
+            >
+              <td className="text-primary/40 px-4 py-4 text-center font-mono text-xs tabular-nums">
+                {index + 1}
+              </td>
+              <td className="px-4 py-4">
+                <a
+                  href={creatorPath(manager.id)}
+                  className="flex min-w-0 items-center gap-3"
+                >
+                  <CreatorAvatar
+                    address={manager.id}
+                    name={manager.name}
+                    size="sm"
+                  />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-primary truncate font-medium">
+                        {manager.name}
+                      </span>
+                      {manager.verified && (
+                        <SealCheck size="sm" className="text-[#32BCFF]" />
+                      )}
+                    </div>
+                  </div>
+                </a>
+              </td>
+              <td className="text-primary/70 px-4 py-4 text-right font-mono text-xs tabular-nums">
+                {manager.fundCount}
+              </td>
+              <td className="text-primary/70 px-4 py-4 text-right font-mono text-xs tabular-nums">
+                {formatUsdExact(manager.totalDepositedUsdc)}
+              </td>
+              <td className="px-4 py-4 text-right">
+                <PnlAmount amount={manager.totalProfitUsdc} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

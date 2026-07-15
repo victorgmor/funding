@@ -1,6 +1,8 @@
 import { resolveLifecycleStage } from "@/lib/funds/lifecycle";
 import { listPositionsByFund } from "@/lib/funds/mandate-positions";
 import { listTradesByFund } from "@/lib/funds/mandate-trades";
+import { totalPoolNotional } from "@/lib/funds/fanout";
+import { listMandatesByFund } from "@/lib/funds/mandates";
 import { buildVirtualPool } from "@/lib/funds/pool";
 import { getFundSettlement } from "@/lib/funds/settlement";
 import {
@@ -76,6 +78,20 @@ export async function computeFundPoolPerformance(
   const roi = round((profitUsdc / depositedUsdc) * 100, 2);
 
   return { roi, profitUsdc, aumUsdc, depositedUsdc };
+}
+
+/** Committed capital per fund slug (sum of mandate notionals). */
+export async function computeDepositedByFundSlug(
+  funds: Fund[],
+): Promise<Record<string, number>> {
+  return Object.fromEntries(
+    await Promise.all(
+      funds.map(async (fund) => {
+        const mandates = await listMandatesByFund(fund.slug);
+        return [fund.slug, round(totalPoolNotional(mandates), 2)] as const;
+      }),
+    ),
+  );
 }
 
 /** Pool P&L per fund slug — 0 during deposit or with no commitments; losses are negative. */
