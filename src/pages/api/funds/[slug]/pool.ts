@@ -5,7 +5,9 @@ import {
   maskMandateWallet,
   redactPoolForInvestor,
 } from "@/lib/funds/pool";
+import { listPositionsByFund } from "@/lib/funds/mandate-positions";
 import { computeFundPoolPerformance } from "@/lib/funds/performance";
+import { enrichTradesWithPnl } from "@/lib/funds/valuation";
 import { getFund } from "@/lib/funds/store";
 
 export const prerender = false;
@@ -37,10 +39,17 @@ export const GET: APIRoute = async ({ params, url }) => {
     }
 
     const performance = await computeFundPoolPerformance(fund);
+    const positions = await listPositionsByFund(fund.slug);
+    const recentTrades = await enrichTradesWithPnl(
+      fund.slug,
+      pool.recentTrades,
+      positions,
+    );
 
-    return new Response(JSON.stringify({ ...pool, performance }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ ...pool, recentTrades, performance }),
+      { headers: { "Content-Type": "application/json" } },
+    );
   } catch (e) {
     const message = e instanceof Error ? e.message : "Pool read failed";
     return new Response(JSON.stringify({ error: message }), { status: 500 });

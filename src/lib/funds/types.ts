@@ -106,6 +106,8 @@ export type MandateTrade = {
   createdAt: string;
   filledAt?: string;
   detail?: string;
+  /** Mark-to-market PnL when settlement/live price is known (API only). */
+  pnlUsdc?: number | null;
 };
 
 export type FanoutSlice = {

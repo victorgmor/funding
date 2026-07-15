@@ -172,3 +172,44 @@ export function mandateMarkValue(
 
   return round(mandate.cashUsdc + openValue + realizedPnl, 2);
 }
+
+/** Per-trade PnL from current/settlement price when available. */
+export function tradePnlUsdc(
+  trade: MandateTrade,
+  valuations: Map<string, number>,
+): number | null {
+  if (trade.status === "failed") return 0;
+  if (trade.status !== "filled") return null;
+  const price = valuations.get(trade.tokenId);
+  if (price == null) return null;
+  return round(trade.shares * price - trade.usdcAmount, 2);
+}
+
+export async function enrichTradesWithPnl(
+  fundSlug: string,
+  trades: MandateTrade[],
+  positions: MandatePosition[],
+): Promise<MandateTrade[]> {
+  const filled = trades.filter((trade) => trade.status === "filled");
+  if (filled.length === 0) {
+    return trades.map((trade) => ({
+      ...trade,
+      pnlUsdc: trade.status === "failed" ? 0 : null,
+    }));
+  }
+
+  const depositByInvestor = await resolveDepositAddresses(fundSlug, [
+    ...filled.map((trade) => trade.investorWallet),
+    ...positions.map((pos) => pos.investorWallet),
+  ]);
+  const valuations = await fetchTokenValuations(
+    positions,
+    depositByInvestor,
+    filled,
+  );
+
+  return trades.map((trade) => ({
+    ...trade,
+    pnlUsdc: tradePnlUsdc(trade, valuations),
+  }));
+}

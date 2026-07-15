@@ -154,6 +154,8 @@ export default function FundPoolOverview({ fund }: Props) {
             <ul className="mt-2">
               {tradeRows.map((trade, index) => {
                 const failed = trade.status === "failed";
+                const pnl = trade.pnlUsdc;
+                const showPnl = !failed && pnl != null;
                 return (
                   <li
                     key={trade.id}
@@ -170,12 +172,23 @@ export default function FundPoolOverview({ fund }: Props) {
                         {trade.question}
                       </span>
                       <span
-                        className={`shrink-0 font-mono text-xs tabular-nums uppercase ${
+                        className={`shrink-0 text-right font-mono text-xs tabular-nums uppercase ${
                           failed ? "text-red-400" : "text-primary/70"
                         }`}
                       >
-                        {formatUsdExact(trade.usdcAmount)}{" "}
-                        {failed ? "FAILED" : trade.side}
+                        <span className="block">
+                          {formatUsdExact(trade.usdcAmount)}{" "}
+                          {failed ? "FAILED" : trade.side}
+                        </span>
+                        {showPnl && (
+                          <span
+                            className={
+                              pnl >= 0 ? "text-emerald-400" : "text-red-400"
+                            }
+                          >
+                            {formatUsdExact(pnl, true)} PnL
+                          </span>
+                        )}
                       </span>
                     </div>
                     {failed && trade.detail && (
