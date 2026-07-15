@@ -1,4 +1,5 @@
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
+import { managersListGridClass } from "@/components/creators/managers-list-layout";
 import PnlAmount from "@/components/funds/PnlAmount";
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { creatorPath } from "@/lib/funds/creator";
@@ -10,7 +11,10 @@ type Props = {
 };
 
 const headerClass =
-  "text-primary/50 px-4 py-3 text-left text-[0.65rem] font-medium uppercase tracking-wide";
+  "text-primary/50 py-0 text-[0.65rem] font-medium leading-none tracking-wide uppercase";
+
+const cellLabelClass =
+  "text-primary/50 mb-1 text-[0.65rem] font-medium uppercase lg:hidden";
 
 export default function TopManagersList({ managers }: Props) {
   if (managers.length === 0) {
@@ -22,61 +26,71 @@ export default function TopManagersList({ managers }: Props) {
   }
 
   return (
-    <div className="border-primary/10 overflow-x-auto rounded-lg border">
-      <table className="w-full min-w-[36rem] text-sm">
-        <thead className="border-primary/10 border-b">
-          <tr>
-            <th className={`${headerClass} w-12 text-center`}>#</th>
-            <th className={headerClass}>Manager</th>
-            <th className={`${headerClass} text-right`}>Funds</th>
-            <th className={`${headerClass} text-right`}>Deposits</th>
-            <th className={`${headerClass} text-right`}>PnL</th>
-          </tr>
-        </thead>
-        <tbody className="divide-primary/10 divide-y">
-          {managers.map((manager, index) => (
-            <tr
-              key={manager.id}
-              className="hover:bg-primary/5 transition-colors"
-            >
-              <td className="text-primary/40 px-4 py-4 text-center font-mono text-xs tabular-nums">
-                {index + 1}
-              </td>
-              <td className="px-4 py-4">
-                <a
-                  href={creatorPath(manager.id)}
-                  className="flex min-w-0 items-center gap-3"
-                >
-                  <CreatorAvatar
-                    address={manager.id}
-                    name={manager.name}
-                    size="sm"
-                  />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-primary truncate font-medium">
-                        {manager.name}
-                      </span>
-                      {manager.verified && (
-                        <SealCheck size="sm" className="text-[#32BCFF]" />
-                      )}
-                    </div>
+    <div className="space-y-1">
+      <div className={`px-4 pb-2 ${managersListGridClass} lg:items-baseline`}>
+        <p className={headerClass}>Manager</p>
+        <p className={`${headerClass} text-right lg:w-full`}>Funds</p>
+        <p className={`${headerClass} text-right lg:w-full`}>Deposits</p>
+        <p className={`${headerClass} text-right lg:w-full`}>PnL</p>
+      </div>
+
+      <div className="space-y-1">
+        {managers.map((manager, index) => (
+          <article
+            key={manager.id}
+            className={`bg-primary/5 hover:bg-primary/8 grid grid-cols-1 gap-3 rounded-lg px-4 py-3 transition-colors ${managersListGridClass}`}
+          >
+            <div className="min-w-0">
+              <a
+                href={creatorPath(manager.id)}
+                className="hover:text-primary/80 flex min-w-0 items-center gap-4"
+              >
+                <span className="text-primary/40 w-6 shrink-0 text-center font-mono text-xs tabular-nums">
+                  {index + 1}
+                </span>
+                <CreatorAvatar
+                  address={manager.id}
+                  name={manager.name}
+                  size="sm"
+                />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-primary truncate font-medium">
+                      {manager.name}
+                    </span>
+                    {manager.verified && (
+                      <SealCheck size="sm" className="text-[#32BCFF]" />
+                    )}
                   </div>
-                </a>
-              </td>
-              <td className="text-primary/70 px-4 py-4 text-right font-mono text-xs tabular-nums">
+                  <p className="text-primary/50 mt-0.5 text-xs lg:hidden">
+                    {manager.fundCount} fund
+                    {manager.fundCount === 1 ? "" : "s"}
+                  </p>
+                </div>
+              </a>
+            </div>
+
+            <div className="min-w-0 lg:text-right">
+              <p className={cellLabelClass}>Funds</p>
+              <p className="text-primary/70 font-mono text-sm tabular-nums">
                 {manager.fundCount}
-              </td>
-              <td className="text-primary/70 px-4 py-4 text-right font-mono text-xs tabular-nums">
+              </p>
+            </div>
+
+            <div className="min-w-0 lg:text-right">
+              <p className={cellLabelClass}>Deposits</p>
+              <p className="text-primary/70 font-mono text-sm tabular-nums">
                 {formatUsdExact(manager.totalDepositedUsdc)}
-              </td>
-              <td className="px-4 py-4 text-right">
-                <PnlAmount amount={manager.totalProfitUsdc} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              </p>
+            </div>
+
+            <div className="min-w-0 lg:flex lg:justify-end">
+              <p className={cellLabelClass}>PnL</p>
+              <PnlAmount amount={manager.totalProfitUsdc} />
+            </div>
+          </article>
+        ))}
+      </div>
     </div>
   );
 }

@@ -50,15 +50,39 @@ export function effectiveClosedAt(fund: Fund, now = Date.now()): string | null {
   return null;
 }
 
+export function poolCapReached(fund: Fund, totalNotional: number): boolean {
+  if (fund.capUsdc == null || fund.capUsdc <= 0) return false;
+  return totalNotional >= fund.capUsdc;
+}
+
+export function raiseWindowOpen(fund: Fund, now = Date.now()): boolean {
+  if (!fund.raiseEndsAt) return true;
+  return Date.parse(fund.raiseEndsAt) >= now;
+}
+
+/** Deposit window is open until the raise date passes or the pool cap fills. */
+export function depositPhaseActive(
+  fund: Fund,
+  totalNotional = 0,
+  now = Date.now(),
+): boolean {
+  if (fund.status === "closed" || fund.closedAt) return false;
+  if (fund.tradingEndsAt && Date.parse(fund.tradingEndsAt) < now) return false;
+  if (!raiseWindowOpen(fund, now)) return false;
+  if (poolCapReached(fund, totalNotional)) return false;
+  return true;
+}
+
 export function resolveLifecycleStage(
   fund: Fund,
   now = Date.now(),
+  totalNotional = 0,
 ): LifecycleStage {
   if (fund.status === "closed" || fund.closedAt) return "closed";
   if (fund.tradingEndsAt && Date.parse(fund.tradingEndsAt) < now) {
     return "closed";
   }
-  if (fund.raiseEndsAt && Date.parse(fund.raiseEndsAt) >= now) {
+  if (depositPhaseActive(fund, totalNotional, now)) {
     return "deposit";
   }
   return "trading";
@@ -67,8 +91,9 @@ export function resolveLifecycleStage(
 export function buildLifecycleStages(
   fund: Fund,
   now = Date.now(),
+  totalNotional = 0,
 ): LifecycleStageView[] {
-  const current = resolveLifecycleStage(fund, now);
+  const current = resolveLifecycleStage(fund, now, totalNotional);
   const closedAt = effectiveClosedAt(fund, now);
 
   const deposit: LifecycleStageView = {
@@ -86,6 +111,11 @@ export function buildLifecycleStages(
   if (fund.raiseEndsAt) {
     if (current === "deposit") {
       deposit.line1 = formatDaysLeft(fund.raiseEndsAt, now);
+    } else if (
+      poolCapReached(fund, totalNotional) &&
+      Date.parse(fund.raiseEndsAt) > now
+    ) {
+      deposit.line1 = "Cap reached";
     } else {
       deposit.line1 = formatDaysAgo(fund.raiseEndsAt, now);
     }

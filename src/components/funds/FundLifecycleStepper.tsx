@@ -1,7 +1,8 @@
 import type { Fund } from "@/lib/funds/types";
 import { buildLifecycleStages, type LifecycleStageView } from "@/lib/funds/lifecycle";
+import { usePoolTotals } from "@/lib/funds/usePoolTotals";
 
-type Props = { fund: Fund; variant?: "default" | "compact" };
+type Props = { fund: Fund; variant?: "default" | "compact"; totalNotional?: number };
 
 function StageIcon({ stage }: { stage: LifecycleStageView["id"] }) {
   if (stage === "deposit") {
@@ -135,8 +136,15 @@ function CompactStageRow({ stage }: { stage: LifecycleStageView }) {
   );
 }
 
-export default function FundLifecycleStepper({ fund, variant = "default" }: Props) {
-  const stages = buildLifecycleStages(fund);
+export default function FundLifecycleStepper({
+  fund,
+  variant = "default",
+  totalNotional: totalNotionalProp,
+}: Props) {
+  const { totals } = usePoolTotals();
+  const totalNotional =
+    totalNotionalProp ?? totals[fund.slug]?.deposited ?? 0;
+  const stages = buildLifecycleStages(fund, Date.now(), totalNotional);
 
   if (variant === "compact") {
     return (

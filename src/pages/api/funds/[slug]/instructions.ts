@@ -11,7 +11,7 @@ import { reconcileFundMandates } from "@/lib/funds/mandate-reconcile";
 import { recordFanoutTrades } from "@/lib/funds/mandate-trades";
 import { beginInstructionExecution } from "@/lib/funds/execute-trades";
 import { runPendingTradesForFund, type PendingTradeRun } from "@/lib/funds/run-pending-trades";
-import { poolTradingOpen } from "@/lib/funds/pool";
+import { buildVirtualPool, poolTradingOpen } from "@/lib/funds/pool";
 import type { MarketSide } from "@/lib/funds/types";
 import { fetchGammaMarket, midPrice, parseOutcomes, outcomeIndex, tokenIdForSide } from "@/lib/polymarket/gamma";
 import { getFund } from "@/lib/funds/store";
@@ -54,7 +54,9 @@ export const POST: APIRoute = async ({ params, request }) => {
   };
 
   try {
-    if (!poolTradingOpen(fund)) {
+    const pool = await buildVirtualPool(fund);
+
+    if (!poolTradingOpen(fund, pool.totalNotional)) {
       return new Response(JSON.stringify({ error: "Trading window is closed" }), {
         status: 400,
       });

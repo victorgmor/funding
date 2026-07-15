@@ -93,7 +93,11 @@ export default function FundPoolOverview({ fund }: Props) {
   return (
     <div>
       <div className="space-y-2">
-        <FundStageMetricsRow fund={fund} profitUsdc={pnlAmount} />
+        <FundStageMetricsRow
+          fund={fund}
+          profitUsdc={pnlAmount}
+          totalNotional={pool.totalNotional}
+        />
         <PoolCapBar
           deposited={pool.totalNotional}
           capUsdc={fund.capUsdc}

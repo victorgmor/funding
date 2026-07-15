@@ -96,7 +96,7 @@ export const GET: APIRoute = async ({ params, url }) => {
         mandateProfitUsdc,
         totalNotional: pool.totalNotional,
         capRemaining: poolCapRemaining(fund, pool.totalNotional),
-        raiseOpen: poolRaiseOpen(fund),
+        raiseOpen: poolRaiseOpen(fund, pool.totalNotional),
         depositBalanceUsdc,
         positions,
         session: session ?? null,
@@ -131,7 +131,9 @@ export const POST: APIRoute = async ({ params, request }) => {
       });
     }
 
-    if (!poolRaiseOpen(fund)) {
+    const pool = await buildVirtualPool(fund);
+
+    if (!poolRaiseOpen(fund, pool.totalNotional)) {
       return new Response(JSON.stringify({ error: "Raise window is closed" }), {
         status: 400,
       });
@@ -163,7 +165,6 @@ export const POST: APIRoute = async ({ params, request }) => {
       return new Response(JSON.stringify({ error: authError }), { status: 401 });
     }
 
-    const pool = await buildVirtualPool(fund);
     const capRemaining = poolCapRemaining(fund, pool.totalNotional);
     if (capRemaining != null && amountUsdc > capRemaining) {
       return new Response(

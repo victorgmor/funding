@@ -1,3 +1,4 @@
+import { depositPhaseActive } from "@/lib/funds/lifecycle";
 import { listInstructionsByFund } from "@/lib/funds/instructions";
 import { reconcileFundMandates } from "@/lib/funds/mandate-reconcile";
 import { listPositionsByFund } from "@/lib/funds/mandate-positions";
@@ -51,16 +52,22 @@ export function maskMandateWallet(mandate: Mandate): Mandate {
   return { ...mandate, investorWallet: masked };
 }
 
-export function poolRaiseOpen(fund: Fund): boolean {
-  if (fund.status === "closed") return false;
-  if (!fund.raiseEndsAt) return true;
-  return Date.parse(fund.raiseEndsAt) >= Date.now();
+export function poolRaiseOpen(
+  fund: Fund,
+  totalNotional = 0,
+  now = Date.now(),
+): boolean {
+  return depositPhaseActive(fund, totalNotional, now);
 }
 
-export function poolTradingOpen(fund: Fund): boolean {
-  if (fund.status === "closed") return false;
-  if (!fund.tradingEndsAt) return true;
-  return Date.parse(fund.tradingEndsAt) >= Date.now();
+export function poolTradingOpen(
+  fund: Fund,
+  totalNotional = 0,
+  now = Date.now(),
+): boolean {
+  if (fund.status === "closed" || fund.closedAt) return false;
+  if (fund.tradingEndsAt && Date.parse(fund.tradingEndsAt) < now) return false;
+  return !depositPhaseActive(fund, totalNotional, now);
 }
 
 export function poolCapRemaining(fund: Fund, totalNotional: number): number | null {

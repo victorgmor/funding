@@ -76,7 +76,11 @@ export default function FundFeedCard({
       )}
 
       <a href={`/funds/${fund.slug}`} className="mt-4 block space-y-2">
-        <FundStageMetricsRow fund={fund} profitUsdc={profitUsdc} />
+        <FundStageMetricsRow
+          fund={fund}
+          profitUsdc={profitUsdc}
+          totalNotional={deposited}
+        />
         <PoolCapBar
           deposited={deposited}
           capUsdc={fund.capUsdc}

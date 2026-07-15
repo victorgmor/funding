@@ -7,6 +7,7 @@ import {
   type LifecycleStage,
 } from "@/lib/funds/lifecycle";
 import type { Fund } from "@/lib/funds/types";
+import { usePoolTotals } from "@/lib/funds/usePoolTotals";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
@@ -28,6 +29,7 @@ export default function FundLifecycleTestPanel(props: Props) {
 
 function FundLifecycleTestPanelInner({ fund }: Props) {
   const { address, isConnected, restoring } = useWalletSession();
+  const { totals } = usePoolTotals();
   const [busy, setBusy] = useState(false);
   const [signing, setSigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,8 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
   if (!isUserFund(fund)) return null;
   if (!isFundOwner(fund, address)) return null;
 
-  const currentStage = resolveLifecycleStage(fund);
+  const totalNotional = totals[fund.slug]?.deposited ?? 0;
+  const currentStage = resolveLifecycleStage(fund, Date.now(), totalNotional);
 
   if (!isConnected || !address) {
     return (

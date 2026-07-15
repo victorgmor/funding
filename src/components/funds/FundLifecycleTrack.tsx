@@ -2,6 +2,7 @@ import {
   daysSince,
   daysUntil,
   effectiveClosedAt,
+  poolCapReached,
   resolveLifecycleStage,
   type LifecycleStage,
 } from "@/lib/funds/lifecycle";
@@ -19,7 +20,11 @@ const DOT_COLORS: Record<LifecycleStage, string> = {
   closed: "bg-red-400",
 };
 
-function stageTiming(fund: Fund, stage: LifecycleStage): string | null {
+function stageTiming(
+  fund: Fund,
+  stage: LifecycleStage,
+  totalNotional = 0,
+): string | null {
   if (stage === "deposit" && fund.raiseEndsAt) {
     const days = daysUntil(fund.raiseEndsAt);
     if (days === 0) return "Ends today";
@@ -30,6 +35,15 @@ function stageTiming(fund: Fund, stage: LifecycleStage): string | null {
     const days = daysUntil(fund.tradingEndsAt);
     if (days === 0) return "Ends today";
     return `${days} ${days === 1 ? "day" : "days"} left`;
+  }
+
+  if (
+    stage === "trading" &&
+    fund.raiseEndsAt &&
+    poolCapReached(fund, totalNotional) &&
+    Date.parse(fund.raiseEndsAt) > Date.now()
+  ) {
+    return "Cap reached";
   }
 
   if (stage === "closed") {
@@ -43,11 +57,11 @@ function stageTiming(fund: Fund, stage: LifecycleStage): string | null {
   return null;
 }
 
-type Props = { fund: Fund };
+type Props = { fund: Fund; totalNotional?: number };
 
-export default function FundLifecycleTrack({ fund }: Props) {
-  const stage = resolveLifecycleStage(fund);
-  const timing = stageTiming(fund, stage);
+export default function FundLifecycleTrack({ fund, totalNotional = 0 }: Props) {
+  const stage = resolveLifecycleStage(fund, Date.now(), totalNotional);
+  const timing = stageTiming(fund, stage, totalNotional);
 
   return (
     <div
