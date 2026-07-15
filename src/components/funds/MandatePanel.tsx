@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSigners, useUser } from "@privy-io/react-auth";
 import { getWalletClient } from "@wagmi/core";
 import { polygon } from "wagmi/chains";
@@ -7,7 +7,6 @@ import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import FundTradeAutopilot from "@/components/funds/FundTradeAutopilot";
 import { privySignerQuorumId } from "@/lib/privy/config";
 import {
-  delegatedPrivyWallet,
   embeddedPrivyWallet,
   isEmbeddedPrivyAddress,
   privyWalletIdForAddress,
@@ -17,7 +16,6 @@ import type {
   Mandate,
   MandatePosition,
   MandateTrade,
-  LegResult,
   TradingSession,
 } from "@/lib/funds/types";
 import type { MandateSettlement } from "@/lib/funds/settlement";
@@ -25,12 +23,7 @@ import { notifyPoolUpdated } from "@/lib/funds/pool-events";
 import { formatUsdExact } from "@/lib/funds/format";
 import {
   createTradingClient,
-  executeMandateTrade,
 } from "@/lib/polymarket/trade";
-import {
-  readLocalTradingCreds,
-  clearLocalTradingCreds,
-} from "@/lib/funds/trading-session-client";
 import { wagmiConfig } from "@/lib/wagmi/config";
 import { useEnsurePolygon } from "@/lib/wagmi/useEnsurePolygon";
 import { useWalletGate } from "@/lib/wagmi/useWalletGate";
@@ -55,7 +48,7 @@ const headerClass =
 
 export default function MandatePanel({ fund }: Props) {
   const { user } = useUser();
-  const { addSigners, removeSigners } = useSigners();
+  const { addSigners } = useSigners();
   const { address, isConnected, loading: walletLoading } = useWalletGate();
   const { onPolygon, switching } = useEnsurePolygon();
   const [summary, setSummary] = useState<MandateSummary | null>(null);
@@ -63,18 +56,14 @@ export default function MandatePanel({ fund }: Props) {
   const [amount, setAmount] = useState("50");
   const [loading, setLoading] = useState(false);
   const [committing, setCommitting] = useState(false);
-  const [authorizing, setAuthorizing] = useState(false);
-  const [revoking, setRevoking] = useState(false);
   const [signing, setSigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tradingId, setTradingId] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
-  const [results, setResults] = useState<LegResult[] | null>(null);
 
   const closed = fund.status === "closed";
   const hasMandate = (summary?.mandate?.notionalUsdc ?? 0) > 0;
-  const sessionActive = summary?.session?.authorized === true;
   const serverSignerActive = summary?.session?.serverSigner === true;
+  const ensuringSigner = useRef(false);
 
   const refresh = useCallback(async () => {
     if (!address) return;
@@ -128,6 +117,108 @@ export default function MandatePanel({ fund }: Props) {
     return data.message as string;
   }
 
+  const ensureServerSigner = useCallback(async () => {
+    if (!address || !onPolygon || serverSignerActive) return;
+
+    if (!privySignerQuorumId) {
+      throw new Error("PUBLIC_PRIVY_SIGNER_QUORUM_ID is not configured");
+    }
+
+    const alreadyDelegated =
+      embeddedPrivyWallet(user, address)?.delegated === true;
+    if (!alreadyDelegated) {
+      try {
+        await addSigners({
+          address,
+          signers: [{ signerId: privySignerQuorumId, policyIds: [] }],
+        });
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        if (!/duplicate signer/i.test(message)) throw e;
+      }
+    }
+
+    const privyWalletId = privyWalletIdForAddress(user, address);
+    if (!privyWalletId) {
+      throw new Error("Privy wallet id unavailable — try logging out and back in");
+    }
+
+    const walletClient = await getWalletClient(wagmiConfig, {
+      chainId: polygon.id,
+      account: address,
+    });
+    if (!walletClient) throw new Error("Wallet not ready");
+
+    const { trading, creds } = await createTradingClient(walletClient, setStatus);
+
+    const message = await requestChallenge("authorize");
+    setSigning(true);
+    const signature = await signWalletMessage(message).finally(() =>
+      setSigning(false),
+    );
+
+    const res = await fetch(`/api/funds/${fund.slug}/session`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        address,
+        message,
+        signature,
+        depositAddress: trading.depositAddress,
+        signatureType: trading.signatureType,
+        creds,
+        privyWalletId,
+        serverSigner: true,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "Authorization failed");
+
+    await refresh();
+  }, [
+    address,
+    onPolygon,
+    serverSignerActive,
+    user,
+    addSigners,
+    fund.slug,
+    refresh,
+  ]);
+
+  useEffect(() => {
+    if (
+      !address ||
+      !onPolygon ||
+      closed ||
+      !summary ||
+      !hasMandate ||
+      serverSignerActive ||
+      ensuringSigner.current
+    ) {
+      return;
+    }
+
+    ensuringSigner.current = true;
+    setError(null);
+    void ensureServerSigner()
+      .catch((e) => {
+        setError(e instanceof Error ? e.message : "Authorization failed");
+      })
+      .finally(() => {
+        ensuringSigner.current = false;
+        setStatus(null);
+      });
+  }, [
+    address,
+    onPolygon,
+    closed,
+    summary,
+    hasMandate,
+    serverSignerActive,
+    ensureServerSigner,
+  ]);
+
   async function commit() {
     if (!address || committing || closed) return;
     const amountUsdc = Number(amount);
@@ -140,6 +231,12 @@ export default function MandatePanel({ fund }: Props) {
     setError(null);
 
     try {
+      if (!serverSignerActive) {
+        setStatus("Authorize auto-trading…");
+        await ensureServerSigner();
+        setStatus(null);
+      }
+
       const message = await requestChallenge("commit");
       setSigning(true);
       const signature = await signWalletMessage(message).finally(() =>
@@ -166,172 +263,6 @@ export default function MandatePanel({ fund }: Props) {
       setError(e instanceof Error ? e.message : "Commit failed");
     } finally {
       setCommitting(false);
-    }
-  }
-
-  async function authorizeTrading() {
-    if (!address || authorizing || !onPolygon) return;
-
-    setAuthorizing(true);
-    setError(null);
-
-    try {
-      if (!privySignerQuorumId) {
-        throw new Error("PUBLIC_PRIVY_SIGNER_QUORUM_ID is not configured");
-      }
-
-      const alreadyDelegated =
-        embeddedPrivyWallet(user, address)?.delegated === true;
-      if (!alreadyDelegated) {
-        try {
-          await addSigners({
-            address,
-            signers: [{ signerId: privySignerQuorumId, policyIds: [] }],
-          });
-        } catch (e) {
-          const message = e instanceof Error ? e.message : String(e);
-          if (!/duplicate signer/i.test(message)) throw e;
-        }
-      }
-
-      const privyWalletId = privyWalletIdForAddress(user, address);
-      if (!privyWalletId) {
-        throw new Error("Privy wallet id unavailable — try logging out and back in");
-      }
-
-      const walletClient = await getWalletClient(wagmiConfig, {
-        chainId: polygon.id,
-        account: address,
-      });
-      if (!walletClient) throw new Error("Wallet not ready");
-
-      const { trading, creds } = await createTradingClient(
-        walletClient,
-        setStatus,
-      );
-
-      const message = await requestChallenge("authorize");
-      setSigning(true);
-      const signature = await signWalletMessage(message).finally(() =>
-        setSigning(false),
-      );
-
-      const res = await fetch(`/api/funds/${fund.slug}/session`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          address,
-          message,
-          signature,
-          depositAddress: trading.depositAddress,
-          signatureType: trading.signatureType,
-          creds,
-          privyWalletId,
-          serverSigner: true,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Authorization failed");
-
-      await refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Authorization failed");
-    } finally {
-      setAuthorizing(false);
-      setStatus(null);
-    }
-  }
-
-  async function revokeTrading() {
-    if (!address || revoking) return;
-
-    setRevoking(true);
-    setError(null);
-
-    try {
-      const delegated = delegatedPrivyWallet(user);
-      const signerAddress = (delegated?.address ?? address) as `0x${string}`;
-
-      let privyError: string | undefined;
-      try {
-        await removeSigners({ address: signerAddress });
-      } catch (e) {
-        privyError =
-          e instanceof Error ? e.message : "Could not remove Privy session signer";
-      }
-
-      const res = await fetch(
-        `/api/funds/${fund.slug}/session?address=${encodeURIComponent(address)}`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error ?? "Could not revoke trading session");
-      }
-
-      clearLocalTradingCreds(fund.slug, address);
-      setSummary((prev) => (prev ? { ...prev, session: null } : prev));
-      setPendingTrades([]);
-      await refresh();
-
-      if (privyError) {
-        setError(
-          `Auto-trading revoked on server, but Privy signer removal failed: ${privyError}`,
-        );
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Revoke failed");
-    } finally {
-      setRevoking(false);
-    }
-  }
-
-  async function executePendingTrade(trade: MandateTrade) {
-    if (!address || !onPolygon || tradingId) return;
-
-    setTradingId(trade.id);
-    setError(null);
-    setStatus(null);
-    setResults(null);
-
-    try {
-      const walletClient = await getWalletClient(wagmiConfig, {
-        chainId: polygon.id,
-        account: address,
-      });
-      if (!walletClient) throw new Error("Wallet not ready");
-
-      const creds = readLocalTradingCreds(fund.slug, address);
-      const result = await executeMandateTrade(
-        walletClient,
-        trade,
-        setStatus,
-        creds,
-      );
-      setResults([result]);
-
-      const res = await fetch(`/api/funds/${fund.slug}/trades`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          address,
-          tradeId: trade.id,
-          status: result.status === "filled" ? "filled" : "failed",
-          detail: result.detail,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not update trade");
-
-      await refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Trade failed");
-    } finally {
-      setTradingId(null);
       setStatus(null);
     }
   }
@@ -340,7 +271,7 @@ export default function MandatePanel({ fund }: Props) {
 
   return (
     <div className="border-primary/10 border-b pb-4 lg:sticky lg:top-24 lg:self-start">
-      {address && onPolygon && serverSignerActive && !revoking && (
+      {address && onPolygon && serverSignerActive && (
         <FundTradeAutopilot
           fundSlug={fund.slug}
           address={address}
@@ -391,53 +322,15 @@ export default function MandatePanel({ fund }: Props) {
             </>
           )}
 
-          {hasMandate && (
-            <div className="border-primary/10 mt-4 border-t pt-4 text-xs">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-primary/45 uppercase tracking-wide">Auto-trading</p>
-                {serverSignerActive ? (
-                  <span className="text-emerald-400">Server signer on</span>
-                ) : sessionActive ? (
-                  <span className="text-emerald-400">Active</span>
-                ) : (
-                  <span className="text-primary/40">Off</span>
-                )}
-              </div>
-              <p className="text-primary/50 mt-2">
-                Authorize once — manager fan-out trades execute on the server
-                via your Privy wallet. No per-trade wallet popups.
-              </p>
+          {!closed && summary?.raiseOpen !== false && (
+            <div className="mt-4">
               {serverSignerActive && summary?.serverSigningEnabled === false && (
-                <p className="text-red-400 mt-2">
+                <p className="text-red-400 mb-3 text-xs">
                   Server signing is not configured on the host — trades cannot
                   execute until PRIVY_APP_SECRET and PRIVY_AUTHORIZATION_PRIVATE_KEY
                   are set.
                 </p>
               )}
-              {sessionActive ? (
-                <button
-                  type="button"
-                  disabled={revoking}
-                  onClick={revokeTrading}
-                  className="text-primary/50 hover:text-primary mt-2 text-[0.65rem] uppercase disabled:opacity-40"
-                >
-                  {revoking ? "Revoking…" : "Revoke"}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled={authorizing || signing}
-                  onClick={authorizeTrading}
-                  className="border-primary/10 text-primary hover:bg-primary/10 mt-2 rounded-full border px-3 py-1.5 text-[0.65rem] font-medium uppercase"
-                >
-                  {authorizing ? status ?? "Authorizing…" : "Authorize trading"}
-                </button>
-              )}
-            </div>
-          )}
-
-          {!closed && summary?.raiseOpen !== false && (
-            <div className="mt-4">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <label className={headerClass} htmlFor="mandate-amount">
                   {hasMandate ? "Add capital" : "Commit"}
@@ -462,6 +355,7 @@ export default function MandatePanel({ fund }: Props) {
               </div>
               <p className="text-primary/40 mt-2 text-xs">
                 Commitment is backed by pUSD in your Polymarket deposit wallet.
+                Auto-trading is enabled when you join.
               </p>
               <button
                 type="button"
@@ -472,7 +366,7 @@ export default function MandatePanel({ fund }: Props) {
                 {signing
                   ? "Sign in wallet…"
                   : committing
-                    ? "Committing…"
+                    ? status ?? (hasMandate ? "Adding…" : "Joining…")
                     : hasMandate
                       ? "Add to mandate"
                       : "Commit to fund"}
@@ -537,11 +431,6 @@ export default function MandatePanel({ fund }: Props) {
             <div className="border-primary/10 mt-4 border-t pt-4">
               <p className="text-primary/45 text-xs uppercase tracking-wide">
                 Pending fan-out ({pendingTrades.length})
-                {serverSignerActive && (
-                  <span className="text-primary/40 ml-2 normal-case">
-                    server autopilot
-                  </span>
-                )}
               </p>
               <ul className="mt-2">
                 {pendingTrades.map((trade, index) => (
@@ -552,46 +441,16 @@ export default function MandatePanel({ fund }: Props) {
                     }`}
                   >
                     <p className="text-primary/80 line-clamp-2">{trade.question}</p>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-primary font-mono tabular-nums">
-                        {formatUsdExact(trade.usdcAmount)}{" "}
-                        <span className="text-primary/50 uppercase">
-                          {trade.side}
-                        </span>
+                    <p className="text-primary font-mono tabular-nums">
+                      {formatUsdExact(trade.usdcAmount)}{" "}
+                      <span className="text-primary/50 uppercase">
+                        {trade.side}
                       </span>
-                      {!serverSignerActive && (
-                        <button
-                          type="button"
-                          disabled={!!tradingId}
-                          onClick={() => executePendingTrade(trade)}
-                          className="border-primary/10 text-primary hover:bg-primary/10 rounded-full border px-3 py-1 text-[0.65rem] font-medium uppercase"
-                        >
-                          {tradingId === trade.id
-                            ? status ?? "Trading…"
-                            : "Execute"}
-                        </button>
-                      )}
-                    </div>
+                    </p>
                   </li>
                 ))}
               </ul>
             </div>
-          )}
-
-          {results && (
-            <ul className="border-primary/10 mt-4 space-y-1.5 border-t pt-3 text-xs">
-              {results.map((r) => (
-                <li
-                  key={r.question}
-                  className={
-                    r.status === "filled" ? "text-emerald-400" : "text-red-400"
-                  }
-                >
-                  {r.status === "filled" ? "✓" : "✗"} {r.question}
-                  {r.detail ? ` — ${r.detail}` : ""}
-                </li>
-              ))}
-            </ul>
           )}
         </>
       )}

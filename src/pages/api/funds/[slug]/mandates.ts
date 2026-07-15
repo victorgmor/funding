@@ -165,6 +165,16 @@ export const POST: APIRoute = async ({ params, request }) => {
       return new Response(JSON.stringify({ error: authError }), { status: 401 });
     }
 
+    const session = await getTradingSession(fund.slug, address);
+    if (!session?.authorized || !session.serverSigner) {
+      return new Response(
+        JSON.stringify({
+          error: "Authorize auto-trading before committing to this fund",
+        }),
+        { status: 400 },
+      );
+    }
+
     const capRemaining = poolCapRemaining(fund, pool.totalNotional);
     if (capRemaining != null && amountUsdc > capRemaining) {
       return new Response(
