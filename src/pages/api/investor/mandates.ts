@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { reconcileMandatePositions } from "@/lib/funds/mandate-reconcile";
+import { listTradesByFund } from "@/lib/funds/mandate-trades";
 import { listMandatesForInvestor } from "@/lib/funds/mandates";
 import { getFund } from "@/lib/funds/store";
 import {
@@ -41,14 +42,24 @@ export const GET: APIRoute = async ({ url }) => {
       let mandateProfitUsdc: number | null = null;
       try {
         const positions = await reconcileMandatePositions(fund.slug, mandate.id);
+        const filledTrades = (await listTradesByFund(fund.slug)).filter(
+          (trade) =>
+            trade.mandateId === mandate.id && trade.status === "filled",
+        );
         const depositByInvestor = await resolveDepositAddresses(fund.slug, [
           address,
         ]);
         const valuations = await fetchTokenValuations(
           positions,
           depositByInvestor,
+          filledTrades,
         );
-        const mandateValueUsdc = mandateMarkValue(mandate, positions, valuations);
+        const mandateValueUsdc = mandateMarkValue(
+          mandate,
+          positions,
+          valuations,
+          filledTrades,
+        );
         mandateProfitUsdc = round(mandateValueUsdc - mandate.notionalUsdc, 2);
       } catch {
         mandateProfitUsdc = null;

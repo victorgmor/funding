@@ -10,6 +10,7 @@ import { getFund } from "@/lib/funds/store";
 import { readDepositWalletBalanceUsdc } from "@/lib/polymarket/deposit-balance";
 import { getMandateSettlement } from "@/lib/funds/settlement";
 import { reconcileMandatePositions, investorMandateBacking } from "@/lib/funds/mandate-reconcile";
+import { listTradesByFund } from "@/lib/funds/mandate-trades";
 import {
   fetchTokenValuations,
   mandateMarkValue,
@@ -61,6 +62,10 @@ export const GET: APIRoute = async ({ params, url }) => {
     let mandateValueUsdc: number | null = null;
     let mandateProfitUsdc: number | null = null;
     if (mandate) {
+      const filledTrades = (await listTradesByFund(fund.slug)).filter(
+        (trade) =>
+          trade.mandateId === mandate.id && trade.status === "filled",
+      );
       const depositByInvestor = await resolveDepositAddresses(fund.slug, [
         address,
       ]);
@@ -71,8 +76,14 @@ export const GET: APIRoute = async ({ params, url }) => {
           : session?.depositAddress
             ? new Map([[address.toLowerCase(), session.depositAddress.toLowerCase()]])
             : undefined,
+        filledTrades,
       );
-      mandateValueUsdc = mandateMarkValue(mandate, positions, valuations);
+      mandateValueUsdc = mandateMarkValue(
+        mandate,
+        positions,
+        valuations,
+        filledTrades,
+      );
       mandateProfitUsdc =
         Math.round((mandateValueUsdc - mandate.notionalUsdc) * 100) / 100;
     }

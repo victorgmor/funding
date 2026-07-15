@@ -1,5 +1,6 @@
 import { resolveLifecycleStage } from "@/lib/funds/lifecycle";
 import { listPositionsByFund } from "@/lib/funds/mandate-positions";
+import { listTradesByFund } from "@/lib/funds/mandate-trades";
 import { buildVirtualPool } from "@/lib/funds/pool";
 import { getFundSettlement } from "@/lib/funds/settlement";
 import {
@@ -47,14 +48,26 @@ export async function computeFundPoolPerformance(
   }
 
   const positions = await listPositionsByFund(fund.slug);
+  const filledTrades = (await listTradesByFund(fund.slug)).filter(
+    (trade) => trade.status === "filled",
+  );
   const depositByInvestor = await resolveDepositAddresses(
     fund.slug,
-    positions.map((pos) => pos.investorWallet),
+    [
+      ...pool.mandates.map((mandate) => mandate.investorWallet),
+      ...filledTrades.map((trade) => trade.investorWallet),
+    ],
   );
-  const valuations = await fetchTokenValuations(positions, depositByInvestor);
+  const valuations = await fetchTokenValuations(
+    positions,
+    depositByInvestor,
+    filledTrades,
+  );
   const aumUsdc = round(
     pool.mandates.reduce(
-      (sum, mandate) => sum + mandateMarkValue(mandate, positions, valuations),
+      (sum, mandate) =>
+        sum +
+        mandateMarkValue(mandate, positions, valuations, filledTrades),
       0,
     ),
     2,

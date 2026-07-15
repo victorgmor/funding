@@ -139,6 +139,8 @@ export async function reconcileMandateCash(
   const expected = expectedMandateCash(mandate, positions);
   const delta = round(expected - mandate.cashUsdc, 2);
   if (Math.abs(delta) < 0.01) return mandate;
+  // Never claw back cash above deployable floor — keeps redeem proceeds / realized wins.
+  if (delta < 0 && mandate.cashUsdc > expected) return mandate;
 
   try {
     const updated = await adjustMandateCash(mandate.id, fundSlug, delta);

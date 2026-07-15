@@ -431,10 +431,77 @@ export async function fetchMarketByTokenId(
   return gamma;
 }
 
+type TokenPriceOpts = {
+  depositAddress?: string;
+  question?: string;
+  side?: string;
+};
+
+async function fetchMarkPriceFromQuestion(
+  question: string,
+  tokenId: string,
+  side?: string,
+): Promise<number | null> {
+  try {
+    const params = new URLSearchParams({
+      q: question,
+      limit_per_type: "5",
+      search_tags: "false",
+      search_profiles: "false",
+    });
+    const res = await fetch(
+      `https://gamma-api.polymarket.com/public-search?${params}`,
+    );
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as {
+      events?: Array<{
+        markets?: Array<{
+          question: string;
+          clobTokenIds?: string;
+          outcomes?: string;
+          outcomePrices?: string;
+        }>;
+      }>;
+    };
+
+    for (const event of data.events ?? []) {
+      for (const market of event.markets ?? []) {
+        if (market.question !== question) continue;
+        try {
+          const tokens = JSON.parse(market.clobTokenIds ?? "[]") as string[];
+          const prices = JSON.parse(market.outcomePrices ?? "[]") as string[];
+          const idx = tokens.indexOf(tokenId);
+          if (idx >= 0) {
+            const price = parseFloat(prices[idx] ?? "");
+            if (Number.isFinite(price)) return Math.max(0, Math.min(1, price));
+          }
+          if (side) {
+            const outcomes = JSON.parse(market.outcomes ?? "[]") as string[];
+            const sideIdx = outcomes.findIndex(
+              (label) => label.toLowerCase() === side.toLowerCase(),
+            );
+            if (sideIdx >= 0) {
+              const price = parseFloat(prices[sideIdx] ?? "");
+              if (Number.isFinite(price)) return Math.max(0, Math.min(1, price));
+            }
+          }
+        } catch {
+          /* ignore malformed gamma row */
+        }
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 /** Mark-to-market $/share — settlement price when resolved, else live mid. */
 export async function fetchMarkPriceByTokenId(
   tokenId: string,
-  opts?: { depositAddress?: string },
+  opts?: TokenPriceOpts,
 ): Promise<number | null> {
   if (opts?.depositAddress) {
     const dataPos = await fetchDataApiPosition(opts.depositAddress, tokenId);
@@ -446,6 +513,15 @@ export async function fetchMarkPriceByTokenId(
   const market = await fetchMarketByTokenId(tokenId, opts);
   if (market?.settlementPrice != null) {
     return market.settlementPrice;
+  }
+
+  if (opts?.question) {
+    const fromQuestion = await fetchMarkPriceFromQuestion(
+      opts.question,
+      tokenId,
+      opts.side,
+    );
+    if (fromQuestion != null) return fromQuestion;
   }
 
   const { fetchTokenMidPrice } = await import("@/lib/polymarket/clob-prices");
