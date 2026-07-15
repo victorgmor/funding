@@ -430,3 +430,24 @@ export async function fetchMarketByTokenId(
 
   return gamma;
 }
+
+/** Mark-to-market $/share — settlement price when resolved, else live mid. */
+export async function fetchMarkPriceByTokenId(
+  tokenId: string,
+  opts?: { depositAddress?: string },
+): Promise<number | null> {
+  if (opts?.depositAddress) {
+    const dataPos = await fetchDataApiPosition(opts.depositAddress, tokenId);
+    if (dataPos?.curPrice != null && Number.isFinite(dataPos.curPrice)) {
+      return Math.max(0, Math.min(1, dataPos.curPrice));
+    }
+  }
+
+  const market = await fetchMarketByTokenId(tokenId, opts);
+  if (market?.settlementPrice != null) {
+    return market.settlementPrice;
+  }
+
+  const { fetchTokenMidPrice } = await import("@/lib/polymarket/clob-prices");
+  return fetchTokenMidPrice(tokenId);
+}

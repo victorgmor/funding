@@ -5,6 +5,7 @@ import { getFundSettlement } from "@/lib/funds/settlement";
 import {
   fetchTokenValuations,
   mandateMarkValue,
+  resolveDepositAddresses,
 } from "@/lib/funds/valuation";
 import type { Fund } from "@/lib/funds/types";
 
@@ -22,12 +23,11 @@ function round(n: number, d: number) {
   return Math.round(n * f) / f;
 }
 
-/** Mark-to-market pool P&L — null during deposit stage or with no commitments. */
+/** Mark-to-market pool P&L — null with no commitments. */
 export async function computeFundPoolPerformance(
   fund: Fund,
 ): Promise<FundPoolPerformance | null> {
   const stage = resolveLifecycleStage(fund);
-  if (stage === "deposit") return null;
 
   const pool = await buildVirtualPool(fund);
   const depositedUsdc = round(pool.totalNotional, 2);
@@ -47,7 +47,11 @@ export async function computeFundPoolPerformance(
   }
 
   const positions = await listPositionsByFund(fund.slug);
-  const valuations = await fetchTokenValuations(positions);
+  const depositByInvestor = await resolveDepositAddresses(
+    fund.slug,
+    positions.map((pos) => pos.investorWallet),
+  );
+  const valuations = await fetchTokenValuations(positions, depositByInvestor);
   const aumUsdc = round(
     pool.mandates.reduce(
       (sum, mandate) => sum + mandateMarkValue(mandate, positions, valuations),

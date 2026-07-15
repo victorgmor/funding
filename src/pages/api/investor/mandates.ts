@@ -5,6 +5,7 @@ import { getFund } from "@/lib/funds/store";
 import {
   fetchTokenValuations,
   mandateMarkValue,
+  resolveDepositAddresses,
 } from "@/lib/funds/valuation";
 import type { Fund, Mandate } from "@/lib/funds/types";
 
@@ -40,7 +41,13 @@ export const GET: APIRoute = async ({ url }) => {
       let mandateProfitUsdc: number | null = null;
       try {
         const positions = await reconcileMandatePositions(fund.slug, mandate.id);
-        const valuations = await fetchTokenValuations(positions);
+        const depositByInvestor = await resolveDepositAddresses(fund.slug, [
+          address,
+        ]);
+        const valuations = await fetchTokenValuations(
+          positions,
+          depositByInvestor,
+        );
         const mandateValueUsdc = mandateMarkValue(mandate, positions, valuations);
         mandateProfitUsdc = round(mandateValueUsdc - mandate.notionalUsdc, 2);
       } catch {
