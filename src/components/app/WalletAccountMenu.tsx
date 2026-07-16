@@ -238,7 +238,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
 
   const canMovePusd = (info?.ownerPusd ?? 0) > 0 && info?.depositDeployed;
   const canMoveFromDeposit =
-    (info?.depositCollateral ?? 0) > 0 && info?.depositDeployed;
+    (info?.withdrawableUsdc ?? 0) > 0 && info?.depositDeployed;
 
   return (
     <div className="relative" ref={rootRef}>
@@ -353,8 +353,8 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
               Polymarket deposit wallet
             </p>
             <p className="mt-1 text-sm text-[var(--privy-color-foreground-3)]">
-              Fund commitments use this address. Move pUSD here to send from your
-              Privy wallet.
+              Fund commitments use this address. Committed capital stays locked
+              until a fund closes.
             </p>
             <div className="mt-2 space-y-1 text-sm">
               <div className="flex items-center justify-between gap-2">
@@ -386,6 +386,28 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                     : formatUsdExact(info?.depositCollateral ?? 0)}
                 </span>
               </div>
+              {(info?.lockedUsdc ?? 0) > 0 && (
+                <>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[var(--privy-color-foreground-3)]">
+                      Committed
+                    </span>
+                    <span className="font-mono tabular-nums text-[var(--privy-color-foreground-3)]">
+                      {loading ? "…" : formatUsdExact(info?.lockedUsdc ?? 0)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[var(--privy-color-foreground-3)]">
+                      Withdrawable
+                    </span>
+                    <span className="font-mono tabular-nums text-[var(--privy-color-foreground)]">
+                      {loading
+                        ? "…"
+                        : formatUsdExact(info?.withdrawableUsdc ?? 0)}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="mt-3 flex flex-col gap-2">

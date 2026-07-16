@@ -3,7 +3,12 @@ import {
   type DepositWalletCall,
 } from "@polymarket/builder-relayer-client";
 import type { BuilderConfig } from "@polymarket/builder-signing-sdk";
-import { encodeFunctionData, type Address, type WalletClient } from "viem";
+import {
+  encodeFunctionData,
+  parseUnits,
+  type Address,
+  type WalletClient,
+} from "viem";
 import { polygon } from "wagmi/chains";
 import { getClientRelayBuilderConfig } from "@/lib/polymarket/builder";
 import { readPusdBalanceWei } from "@/lib/polymarket/deposit-balance";
@@ -48,13 +53,39 @@ export async function transferPusdToDepositWallet(
   });
 }
 
+async function fetchWithdrawableDepositUsdc(
+  ownerAddress: Address,
+): Promise<number> {
+  const res = await fetch(
+    `/api/investor/deposit?address=${encodeURIComponent(ownerAddress)}`,
+  );
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(body?.error ?? "Could not verify withdrawable balance");
+  }
+  const data = (await res.json()) as { withdrawableUsdc: number };
+  return data.withdrawableUsdc;
+}
+
 async function submitDepositWalletPusdTransfer(
   walletClient: WalletClient,
   depositAddress: Address,
   ownerAddress: Address,
   builderConfig: BuilderConfig,
 ): Promise<void> {
-  const amount = await readPusdBalanceWei(depositAddress);
+  const [balanceWei, withdrawableUsdc] = await Promise.all([
+    readPusdBalanceWei(depositAddress),
+    fetchWithdrawableDepositUsdc(ownerAddress),
+  ]);
+
+  if (withdrawableUsdc <= 0) {
+    throw new Error(
+      "No withdrawable pUSD — committed funds stay locked until funds close",
+    );
+  }
+
+  const maxWei = parseUnits(withdrawableUsdc.toFixed(6), 6);
+  const amount = balanceWei < maxWei ? balanceWei : maxWei;
   if (amount <= 0n) {
     throw new Error("No pUSD in your deposit wallet to move");
   }

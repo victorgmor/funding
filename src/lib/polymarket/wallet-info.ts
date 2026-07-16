@@ -14,19 +14,38 @@ export type PolymarketWalletInfo = {
   ownerPusd: number;
   ownerCollateral: number;
   depositCollateral: number;
+  lockedUsdc: number;
+  withdrawableUsdc: number;
 };
 
 export async function fetchPolymarketWalletInfo(
   owner: Address,
 ): Promise<PolymarketWalletInfo> {
   const depositAddress = await deriveDepositWalletAddress(owner);
-  const [depositDeployed, ownerPusd, ownerCollateral, depositCollateral] =
-    await Promise.all([
-      isDepositWalletDeployed(depositAddress),
-      readPusdBalanceUsdc(owner),
-      readOwnerCollateralBalanceUsdc(owner),
-      readDepositWalletBalanceUsdc(owner),
-    ]);
+  const [
+    depositDeployed,
+    ownerPusd,
+    ownerCollateral,
+    depositCollateral,
+    depositRes,
+  ] = await Promise.all([
+    isDepositWalletDeployed(depositAddress),
+    readPusdBalanceUsdc(owner),
+    readOwnerCollateralBalanceUsdc(owner),
+    readDepositWalletBalanceUsdc(owner),
+    fetch(`/api/investor/deposit?address=${encodeURIComponent(owner)}`),
+  ]);
+
+  let lockedUsdc = 0;
+  let withdrawableUsdc = depositCollateral;
+  if (depositRes.ok) {
+    const data = (await depositRes.json()) as {
+      lockedUsdc: number;
+      withdrawableUsdc: number;
+    };
+    lockedUsdc = data.lockedUsdc;
+    withdrawableUsdc = data.withdrawableUsdc;
+  }
 
   return {
     owner,
@@ -35,5 +54,7 @@ export async function fetchPolymarketWalletInfo(
     ownerPusd,
     ownerCollateral,
     depositCollateral,
+    lockedUsdc,
+    withdrawableUsdc,
   };
 }
