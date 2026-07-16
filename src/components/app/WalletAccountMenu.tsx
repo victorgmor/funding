@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSendTransaction } from "@privy-io/react-auth";
+import { UserPill } from "@privy-io/react-auth/ui";
+import { getAddress, isAddress } from "viem";
 import { getWalletClient } from "@wagmi/core";
 import { polygon } from "wagmi/chains";
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
-import CaretDown from "@/components/fundations/icons/CaretDown";
-import SignOut from "@/components/fundations/icons/SignOut";
 import { formatUsdExact } from "@/lib/funds/format";
 import { ensureDepositWallet } from "@/lib/polymarket/depositWallet";
-import { addressDisplayFallback } from "@/lib/polymarket/profile";
+import { buildPusdTransferRequest } from "@/lib/polymarket/send-pusd";
 import { transferPusdToDepositWallet } from "@/lib/polymarket/transfer-pusd";
 import {
   fetchPolymarketWalletInfo,
@@ -30,12 +31,15 @@ async function copyText(value: string) {
 }
 
 export default function WalletAccountMenu({ address, label, onLogout }: Props) {
-  const [open, setOpen] = useState(false);
+  const { sendTransaction } = useSendTransaction();
+  const [extrasOpen, setExtrasOpen] = useState(false);
   const [info, setInfo] = useState<PolymarketWalletInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sendTo, setSendTo] = useState("");
+  const [sendAmount, setSendAmount] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
 
   const refresh = useCallback(async () => {
@@ -51,30 +55,30 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
   }, [address]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!extrasOpen) return;
     void refresh();
-  }, [open, refresh]);
+  }, [extrasOpen, refresh]);
 
   useEffect(() => {
     const onUpdate = () => {
-      if (open) void refresh();
+      if (extrasOpen) void refresh();
     };
     window.addEventListener(DEPOSIT_WALLET_UPDATED_EVENT, onUpdate);
     return () =>
       window.removeEventListener(DEPOSIT_WALLET_UPDATED_EVENT, onUpdate);
-  }, [open, refresh]);
+  }, [extrasOpen, refresh]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!extrasOpen) return;
 
     function onPointerDown(event: MouseEvent) {
       if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
+        setExtrasOpen(false);
       }
     }
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") setExtrasOpen(false);
     }
 
     document.addEventListener("mousedown", onPointerDown);
@@ -83,7 +87,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
       document.removeEventListener("mousedown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [open]);
+  }, [extrasOpen]);
 
   async function registerWithPolymarket() {
     setBusy(true);
@@ -138,61 +142,124 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
     }
   }
 
+  async function sendPusd() {
+    const amountUsdc = Number(sendAmount);
+    if (!sendTo.trim()) {
+      setError("Recipient address required");
+      return;
+    }
+    if (!isAddress(sendTo.trim())) {
+      setError("Invalid recipient address");
+      return;
+    }
+    if (!Number.isFinite(amountUsdc) || amountUsdc <= 0) {
+      setError("Enter a valid amount");
+      return;
+    }
+    if (amountUsdc > (info?.ownerPusd ?? 0)) {
+      setError("Amount exceeds pUSD on your Privy wallet");
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    setStatus(null);
+
+    try {
+      const to = getAddress(sendTo.trim());
+      await sendTransaction(buildPusdTransferRequest(to, amountUsdc), {
+        address,
+        uiOptions: { showWalletUIs: true },
+      });
+      setSendAmount("");
+      setStatus("pUSD sent");
+      await refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Send failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const canMovePusd = (info?.ownerPusd ?? 0) > 0 && info?.depositDeployed;
+  const inputClass =
+    "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/60 w-full rounded-lg border px-3 py-2 text-sm focus:border-primary/30 focus:outline-none";
 
   return (
-    <div className="relative" ref={rootRef}>
+    <div className="relative flex items-center gap-2" ref={rootRef}>
+      <UserPill
+        label={
+          <span className="flex items-center gap-2">
+            <CreatorAvatar address={address} name={label} size="xs" />
+            <span className="max-w-32 truncate text-sm">{label}</span>
+          </span>
+        }
+        ui={{ background: "secondary" }}
+      />
+
       <button
         type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        className="hover:bg-primary/5 flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition-colors"
+        onClick={() => setExtrasOpen((open) => !open)}
+        aria-expanded={extrasOpen}
+        className="text-primary/60 hover:text-primary rounded-full px-2 py-1 text-sm transition-colors"
       >
-        <CreatorAvatar address={address} name={label} size="xs" />
-        <span className="text-primary max-w-32 truncate text-sm">{label}</span>
-        <CaretDown size="sm" className="text-primary/50" />
+        pUSD
       </button>
 
-      {open && (
+      {extrasOpen && (
         <div
           role="menu"
-          className="border-primary/10 bg-secondary absolute right-0 z-50 mt-2 w-80 rounded-lg border p-3 shadow-lg"
+          className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-primary/10 bg-secondary p-4 shadow-lg"
         >
-          <p className="text-primary/45 text-sm font-medium uppercase tracking-wide">
-            Privy wallet
+          <p className="text-primary text-sm font-medium">Send pUSD</p>
+          <p className="text-primary/50 mt-1 text-sm">
+            Transfers from your Privy wallet on Polygon. Privy will ask you to
+            confirm.
           </p>
-          <div className="mt-2 space-y-1 text-xs">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-primary/50">EOA</span>
-              <button
-                type="button"
-                className="text-primary font-mono hover:underline"
-                onClick={() => copyText(address)}
-                title={address}
-              >
-                {shortAddress(address)}
-              </button>
+
+          <div className="mt-3 space-y-2">
+            <input
+              type="text"
+              value={sendTo}
+              onChange={(e) => setSendTo(e.target.value)}
+              placeholder="Recipient address (0x…)"
+              className={inputClass}
+            />
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={sendAmount}
+                onChange={(e) => setSendAmount(e.target.value)}
+                placeholder="Amount"
+                className={inputClass}
+              />
+              <span className="text-primary/50 shrink-0 text-sm">pUSD</span>
             </div>
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-primary/50">pUSD on EOA</span>
-              <span className="text-primary font-mono tabular-nums">
-                {loading
-                  ? "…"
-                  : formatUsdExact(info?.ownerPusd ?? 0)}
-              </span>
-            </div>
+            {info != null && (
+              <p className="text-primary/50 text-sm tabular-nums">
+                Available {formatUsdExact(info.ownerPusd)} on EOA
+              </p>
+            )}
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void sendPusd()}
+              className="bg-accent text-secondary hover:opacity-90 disabled:opacity-50 w-full rounded-lg px-3 py-2 text-sm font-medium transition-opacity disabled:cursor-not-allowed"
+            >
+              Send pUSD
+            </button>
           </div>
 
-          <div className="border-primary/10 mt-3 border-t pt-3">
-            <p className="text-primary/45 text-sm font-medium uppercase tracking-wide">
+          <div className="border-primary/10 mt-4 border-t pt-4">
+            <p className="text-primary text-sm font-medium">
               Polymarket deposit wallet
             </p>
-            <p className="text-primary/45 mt-1 text-sm leading-relaxed">
-              Send pUSD here — not your Privy EOA. Fund commitments use this
-              address.
+            <p className="text-primary/50 mt-1 text-sm">
+              Fund commitments use this address, not your Privy EOA.
             </p>
-            <div className="mt-2 space-y-1 text-xs">
+            <div className="mt-2 space-y-1 text-sm">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-primary/50">Address</span>
                 {info ? (
@@ -209,73 +276,51 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                 )}
               </div>
               <div className="flex items-center justify-between gap-2">
-                <span className="text-primary/50">Status</span>
-                <span
-                  className={
-                    info?.depositDeployed
-                      ? "text-emerald-400"
-                      : "text-amber-400"
-                  }
-                >
-                  {loading
-                    ? "…"
-                    : info?.depositDeployed
-                      ? "Registered"
-                      : "Not registered"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-2">
                 <span className="text-primary/50">Balance</span>
                 <span className="text-primary font-mono tabular-nums">
-                  {loading
-                    ? "…"
-                    : formatUsdExact(info?.depositCollateral ?? 0)}
+                  {loading ? "…" : formatUsdExact(info?.depositCollateral ?? 0)}
                 </span>
               </div>
+            </div>
+
+            <div className="mt-3 flex flex-col gap-2">
+              {!info?.depositDeployed && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void registerWithPolymarket()}
+                  className="border-primary/15 text-primary hover:bg-primary/5 disabled:opacity-50 w-full rounded-lg border px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed"
+                >
+                  Register with Polymarket
+                </button>
+              )}
+              {canMovePusd && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void movePusdToDeposit()}
+                  className="border-primary/15 text-primary hover:bg-primary/5 disabled:opacity-50 w-full rounded-lg border px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed"
+                >
+                  Move pUSD to deposit wallet
+                </button>
+              )}
             </div>
           </div>
 
           {status && (
-            <p className="text-primary/60 mt-3 text-xs">{status}</p>
+            <p className="text-primary/60 mt-3 text-sm">{status}</p>
           )}
-          {error && (
-            <p className="text-red-400 mt-2 text-xs">{error}</p>
-          )}
-
-          <div className="mt-3 flex flex-col gap-2">
-            {!info?.depositDeployed && (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void registerWithPolymarket()}
-                className="bg-accent text-secondary hover:opacity-90 disabled:opacity-50 w-full rounded px-3 py-2 text-sm font-medium transition-opacity disabled:cursor-not-allowed"
-              >
-                Register with Polymarket
-              </button>
-            )}
-
-            {canMovePusd && (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void movePusdToDeposit()}
-                className="border-primary/15 text-primary hover:bg-primary/5 disabled:opacity-50 w-full rounded border px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed"
-              >
-                Move pUSD to deposit wallet
-              </button>
-            )}
-          </div>
+          {error && <p className="text-red-400 mt-2 text-sm">{error}</p>}
 
           <button
             type="button"
             role="menuitem"
             onClick={() => {
-              setOpen(false);
+              setExtrasOpen(false);
               onLogout();
             }}
-            className="text-primary hover:bg-primary/5 mt-3 flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors"
+            className="text-primary/60 hover:text-primary mt-4 w-full text-left text-sm"
           >
-            <SignOut size="sm" aria-hidden />
             Log out
           </button>
         </div>
