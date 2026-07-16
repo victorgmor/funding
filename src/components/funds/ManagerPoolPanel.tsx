@@ -40,7 +40,6 @@ export default function ManagerPoolPanel({ fund }: Props) {
   const [signing, setSigning] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const totalNotional = pool?.totalNotional ?? 0;
   const deployable = pool?.totalCash ?? 0;
 
   useEffect(() => {
@@ -196,70 +195,23 @@ export default function ManagerPoolPanel({ fund }: Props) {
   }, [dryRun]);
 
   if (!isOwner) return null;
+  if (fund.status !== "trading") return null;
 
   const inputClass =
     "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/60 w-full rounded border px-3 py-2 text-sm focus:border-primary/30 focus:outline-none";
 
   return (
     <div className="border-primary/10 border-b pb-4 pt-4">
-      <p className="text-primary text-sm font-medium">Fund pool</p>
-      <p className="text-primary/60 mt-1 text-xs">
-        Manager view — pooled AUM with per-investor fan-out from their wallets.
-      </p>
-
       {walletLoading ? (
-        <WalletPanelPlaceholder className="mt-3" label="Loading wallet…" />
+        <WalletPanelPlaceholder label="Loading wallet…" />
       ) : !isConnected || !address ? (
-        <div className="mt-3">
-          <ConnectWallet variant="panel" />
-        </div>
+        <ConnectWallet variant="panel" />
       ) : loading && !pool ? (
-        <p className="text-primary/50 mt-3 text-sm">Loading pool…</p>
+        <p className="text-primary/50 text-sm">Loading pool…</p>
       ) : (
-        <>
-          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <p className="text-primary/50 text-sm uppercase">AUM</p>
-              <p className="text-primary font-mono text-xl tabular-nums">
-                {formatUsdExact(totalNotional)}
-              </p>
-            </div>
-            <div>
-              <p className="text-primary/50 text-sm uppercase">Deployable</p>
-              <p className="text-primary font-mono text-xl tabular-nums">
-                {formatUsdExact(pool?.totalCash ?? 0)}
-              </p>
-            </div>
-            <div>
-              <p className="text-primary/50 text-sm uppercase">Investors</p>
-              <p className="text-primary font-mono text-xl tabular-nums">
-                {pool?.mandateCount ?? 0}
-              </p>
-            </div>
-          </div>
-
-          {pool && pool.mandates.length > 0 && (
-            <ul className="border-primary/10 mt-4 divide-y divide-primary/10 rounded border text-xs">
-              {pool.mandates.map((m) => (
-                <li
-                  key={m.id}
-                  className="flex items-center justify-between gap-2 px-3 py-2"
-                >
-                  <span className="text-primary/70 font-mono">{m.investorWallet}</span>
-                  <span className="text-primary font-mono tabular-nums">
-                    {formatUsdExact(m.notionalUsdc)}
-                    <span className="text-primary/40 ml-1">
-                      ({formatUsdExact(m.cashUsdc)} cash)
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {fund.status === "trading" && (
-            <div className="mt-4 space-y-3 border-t border-primary/10 pt-4">
-              <p className="text-primary text-sm font-medium">New trade</p>
+        fund.status === "trading" && (
+          <div className="space-y-3">
+            <p className="text-primary text-sm font-medium">New trade</p>
               <input
                 type="search"
                 value={query}
@@ -374,8 +326,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
                 </div>
               )}
             </div>
-          )}
-        </>
+        )
       )}
 
       {notice && <p className="text-emerald-400 mt-3 text-sm">{notice}</p>}
