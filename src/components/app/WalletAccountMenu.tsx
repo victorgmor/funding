@@ -293,9 +293,9 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        className="flex items-center gap-2 px-2 py-1 text-[var(--privy-color-foreground-2)] rounded-[var(--privy-border-radius-md)] border border-[var(--privy-color-foreground-4)] bg-[var(--privy-color-background)] transition-colors hover:text-[var(--privy-color-foreground)]"
+        className="flex items-center gap-2 px-2 py-2 text-[var(--privy-color-foreground-2)] rounded-[var(--privy-border-radius-md)] border-[var(--privy-color-foreground-4)] bg-[var(--privy-color-background)] transition-colors hover:text-[var(--privy-color-foreground)]"
       >
-        <CreatorAvatar address={address} name={label} size="xs" />
+        <CreatorAvatar address={address} name={label} size="6" />
         <span className="max-w-32 truncate text-sm">{label}</span>
       </button>
 
@@ -486,7 +486,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
             <p className="px-4 pb-3 text-sm text-red-400">{error}</p>
           )}
 
-          <div className="flex justify-center border-t border-[var(--privy-color-foreground-4)] px-4 py-3 text-[var(--privy-color-foreground-3)]">
+          <div className="flex justify-center px-4 py-3 text-[var(--privy-color-foreground-3)]">
             <a
               href="https://privy.io"
               target="_blank"
