@@ -1,6 +1,16 @@
-import type { Address, WalletClient } from "viem";
+import {
+  RelayClient,
+  type DepositWalletCall,
+} from "@polymarket/builder-relayer-client";
+import type { BuilderConfig } from "@polymarket/builder-signing-sdk";
+import { encodeFunctionData, type Address, type WalletClient } from "viem";
+import { polygon } from "wagmi/chains";
+import { getClientRelayBuilderConfig } from "@/lib/polymarket/builder";
 import { readPusdBalanceWei } from "@/lib/polymarket/deposit-balance";
+import { executeDepositWalletBatch } from "@/lib/polymarket/relay-batch";
 import { PUSD_ADDRESS } from "@/lib/polygon/usdc";
+
+const RELAYER_URL = "https://relayer-v2.polymarket.com";
 
 const transferAbi = [
   {
@@ -36,4 +46,56 @@ export async function transferPusdToDepositWallet(
     functionName: "transfer",
     args: [depositAddress, amount],
   });
+}
+
+async function submitDepositWalletPusdTransfer(
+  walletClient: WalletClient,
+  depositAddress: Address,
+  ownerAddress: Address,
+  builderConfig: BuilderConfig,
+): Promise<void> {
+  const amount = await readPusdBalanceWei(depositAddress);
+  if (amount <= 0n) {
+    throw new Error("No pUSD in your deposit wallet to move");
+  }
+
+  const call: DepositWalletCall = {
+    target: PUSD_ADDRESS,
+    value: "0",
+    data: encodeFunctionData({
+      abi: transferAbi,
+      functionName: "transfer",
+      args: [ownerAddress, amount],
+    }),
+  };
+
+  const relayer = new RelayClient(
+    RELAYER_URL,
+    polygon.id,
+    walletClient,
+    builderConfig,
+  );
+  const deadline = Math.floor(Date.now() / 1000 + 600).toString();
+  await executeDepositWalletBatch(relayer, [call], depositAddress, deadline);
+}
+
+/** Move all pUSD from the Polymarket deposit wallet back to the Privy EOA. */
+export async function transferPusdFromDepositWallet(
+  walletClient: WalletClient,
+  depositAddress: Address,
+  ownerAddress: Address,
+): Promise<void> {
+  const builderConfig = getClientRelayBuilderConfig();
+  if (!builderConfig) {
+    throw new Error(
+      "Polymarket builder keys not configured — deposit wallet transfers unavailable",
+    );
+  }
+
+  await submitDepositWalletPusdTransfer(
+    walletClient,
+    depositAddress,
+    ownerAddress,
+    builderConfig,
+  );
 }

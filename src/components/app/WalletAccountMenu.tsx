@@ -8,7 +8,7 @@ import CreatorAvatar from "@/components/creators/CreatorAvatar";
 import { formatUsdExact } from "@/lib/funds/format";
 import { ensureDepositWallet } from "@/lib/polymarket/depositWallet";
 import { buildPusdTransferRequest } from "@/lib/polymarket/send-pusd";
-import { transferPusdToDepositWallet } from "@/lib/polymarket/transfer-pusd";
+import { transferPusdFromDepositWallet, transferPusdToDepositWallet } from "@/lib/polymarket/transfer-pusd";
 import {
   fetchPolymarketWalletInfo,
   type PolymarketWalletInfo,
@@ -142,6 +142,39 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
     }
   }
 
+  async function movePusdFromDeposit() {
+    if (!info?.depositDeployed) {
+      setError("Register with Polymarket first");
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    setStatus("Moving pUSD to your Privy wallet…");
+
+    try {
+      const walletClient = await getWalletClient(wagmiConfig, {
+        chainId: polygon.id,
+        account: address,
+      });
+      if (!walletClient) throw new Error("Wallet not ready");
+
+      await transferPusdFromDepositWallet(
+        walletClient,
+        info.depositAddress,
+        address,
+      );
+      setStatus("pUSD moved to Privy wallet");
+      window.dispatchEvent(new Event(DEPOSIT_WALLET_UPDATED_EVENT));
+      await refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Transfer failed");
+      setStatus(null);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function sendPusd() {
     const amountUsdc = Number(sendAmount);
     if (!sendTo.trim()) {
@@ -182,20 +215,24 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
   }
 
   const canMovePusd = (info?.ownerPusd ?? 0) > 0 && info?.depositDeployed;
+  const canMoveFromDeposit =
+    (info?.depositCollateral ?? 0) > 0 && info?.depositDeployed;
   const inputClass =
     "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/60 w-full rounded-lg border px-3 py-2 text-sm focus:border-primary/30 focus:outline-none";
 
   return (
     <div className="relative flex items-center gap-2" ref={rootRef}>
-      <UserPill
-        label={
-          <span className="flex items-center gap-2">
-            <CreatorAvatar address={address} name={label} size="xs" />
-            <span className="max-w-32 truncate text-sm">{label}</span>
-          </span>
-        }
-        ui={{ background: "secondary" }}
-      />
+      <div className="[&_button]:text-primary [&_button:hover]:text-primary">
+        <UserPill
+          label={
+            <span className="text-primary flex items-center gap-2">
+              <CreatorAvatar address={address} name={label} size="xs" />
+              <span className="max-w-32 truncate text-sm">{label}</span>
+            </span>
+          }
+          ui={{ background: "secondary" }}
+        />
+      </div>
 
       <button
         type="button"
@@ -257,7 +294,8 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
               Polymarket deposit wallet
             </p>
             <p className="text-primary/50 mt-1 text-sm">
-              Fund commitments use this address, not your Privy EOA.
+              Fund commitments use this address. Move pUSD back here to send it
+              from your Privy wallet.
             </p>
             <div className="mt-2 space-y-1 text-sm">
               <div className="flex items-center justify-between gap-2">
@@ -292,6 +330,16 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                   className="border-primary/15 text-primary hover:bg-primary/5 disabled:opacity-50 w-full rounded-lg border px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed"
                 >
                   Register with Polymarket
+                </button>
+              )}
+              {canMoveFromDeposit && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void movePusdFromDeposit()}
+                  className="border-primary/15 text-primary hover:bg-primary/5 disabled:opacity-50 w-full rounded-lg border px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed"
+                >
+                  Move pUSD to Privy wallet
                 </button>
               )}
               {canMovePusd && (
