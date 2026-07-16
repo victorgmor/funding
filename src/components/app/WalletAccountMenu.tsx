@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSendTransaction } from "@privy-io/react-auth";
-import { UserPill } from "@privy-io/react-auth/ui";
+import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
 import { getAddress, isAddress } from "viem";
 import { getWalletClient } from "@wagmi/core";
 import { polygon } from "wagmi/chains";
@@ -8,7 +7,10 @@ import CreatorAvatar from "@/components/creators/CreatorAvatar";
 import { formatUsdExact } from "@/lib/funds/format";
 import { ensureDepositWallet } from "@/lib/polymarket/depositWallet";
 import { buildPusdTransferRequest } from "@/lib/polymarket/send-pusd";
-import { transferPusdFromDepositWallet, transferPusdToDepositWallet } from "@/lib/polymarket/transfer-pusd";
+import {
+  transferPusdFromDepositWallet,
+  transferPusdToDepositWallet,
+} from "@/lib/polymarket/transfer-pusd";
 import {
   fetchPolymarketWalletInfo,
   type PolymarketWalletInfo,
@@ -30,9 +32,27 @@ async function copyText(value: string) {
   await navigator.clipboard.writeText(value);
 }
 
+function primaryEmail(user: ReturnType<typeof usePrivy>["user"]) {
+  if (!user) return null;
+  if (user.email?.address) return user.email.address;
+  const google = user.linkedAccounts.find((a) => a.type === "google_oauth");
+  if (google && "email" in google && google.email) return google.email;
+  return null;
+}
+
+const panelClass =
+  "absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-[var(--privy-border-radius-lg)] border border-[var(--privy-color-foreground-4)] bg-[var(--privy-color-background)] shadow-lg";
+const rowBtnClass =
+  "flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-[var(--privy-color-foreground)] transition-colors hover:bg-[var(--privy-color-background-2)]";
+const sectionBtnClass =
+  "w-full rounded-[var(--privy-border-radius-md)] border border-[var(--privy-color-foreground-4)] px-3 py-2 text-sm text-[var(--privy-color-foreground)] transition-colors hover:bg-[var(--privy-color-background-2)] disabled:cursor-not-allowed disabled:opacity-50";
+const inputClass =
+  "w-full rounded-[var(--privy-border-radius-md)] border border-[var(--privy-color-foreground-4)] bg-[var(--privy-color-background-2)] px-3 py-2 text-sm text-[var(--privy-color-foreground)] placeholder:text-[var(--privy-color-foreground-3)] focus:border-[var(--privy-color-accent)] focus:outline-none";
+
 export default function WalletAccountMenu({ address, label, onLogout }: Props) {
+  const { user } = usePrivy();
   const { sendTransaction } = useSendTransaction();
-  const [extrasOpen, setExtrasOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const [info, setInfo] = useState<PolymarketWalletInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -41,6 +61,8 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
   const [sendTo, setSendTo] = useState("");
   const [sendAmount, setSendAmount] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
+
+  const email = primaryEmail(user);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -55,30 +77,30 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
   }, [address]);
 
   useEffect(() => {
-    if (!extrasOpen) return;
+    if (!open) return;
     void refresh();
-  }, [extrasOpen, refresh]);
+  }, [open, refresh]);
 
   useEffect(() => {
     const onUpdate = () => {
-      if (extrasOpen) void refresh();
+      if (open) void refresh();
     };
     window.addEventListener(DEPOSIT_WALLET_UPDATED_EVENT, onUpdate);
     return () =>
       window.removeEventListener(DEPOSIT_WALLET_UPDATED_EVENT, onUpdate);
-  }, [extrasOpen, refresh]);
+  }, [open, refresh]);
 
   useEffect(() => {
-    if (!extrasOpen) return;
+    if (!open) return;
 
     function onPointerDown(event: MouseEvent) {
       if (!rootRef.current?.contains(event.target as Node)) {
-        setExtrasOpen(false);
+        setOpen(false);
       }
     }
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setExtrasOpen(false);
+      if (event.key === "Escape") setOpen(false);
     }
 
     document.addEventListener("mousedown", onPointerDown);
@@ -87,7 +109,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
       document.removeEventListener("mousedown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [extrasOpen]);
+  }, [open]);
 
   async function registerWithPolymarket() {
     setBusy(true);
@@ -217,106 +239,151 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
   const canMovePusd = (info?.ownerPusd ?? 0) > 0 && info?.depositDeployed;
   const canMoveFromDeposit =
     (info?.depositCollateral ?? 0) > 0 && info?.depositDeployed;
-  const inputClass =
-    "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/60 w-full rounded-lg border px-3 py-2 text-sm focus:border-primary/30 focus:outline-none";
 
   return (
-    <div className="relative flex items-center gap-2" ref={rootRef}>
-      <div className="[&_button]:text-primary [&_button:hover]:text-primary">
-        <UserPill
-          label={
-            <span className="text-primary flex items-center gap-2">
-              <CreatorAvatar address={address} name={label} size="xs" />
-              <span className="max-w-32 truncate text-sm">{label}</span>
-            </span>
-          }
-          ui={{ background: "secondary" }}
-        />
-      </div>
-
+    <div className="relative" ref={rootRef}>
       <button
         type="button"
-        onClick={() => setExtrasOpen((open) => !open)}
-        aria-expanded={extrasOpen}
-        className="text-primary/60 hover:text-primary rounded-full px-2 py-1 text-sm transition-colors"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        className="flex items-center gap-2 rounded-full bg-[var(--privy-color-background-2)] px-2 py-1 text-[var(--privy-color-foreground-2)] transition-colors hover:text-[var(--privy-color-foreground)]"
       >
-        pUSD
+        <CreatorAvatar address={address} name={label} size="xs" />
+        <span className="max-w-32 truncate text-sm">{label}</span>
       </button>
 
-      {extrasOpen && (
-        <div
-          role="menu"
-          className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-primary/10 bg-secondary p-4 shadow-lg"
-        >
-          <p className="text-primary text-sm font-medium">Send pUSD</p>
-          <p className="text-primary/50 mt-1 text-sm">
-            Transfers from your Privy wallet on Polygon. Privy will ask you to
-            confirm.
-          </p>
-
-          <div className="mt-3 space-y-2">
-            <input
-              type="text"
-              value={sendTo}
-              onChange={(e) => setSendTo(e.target.value)}
-              placeholder="Recipient address (0x…)"
-              className={inputClass}
-            />
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={sendAmount}
-                onChange={(e) => setSendAmount(e.target.value)}
-                placeholder="Amount"
-                className={inputClass}
-              />
-              <span className="text-primary/50 shrink-0 text-sm">pUSD</span>
-            </div>
-            {info != null && (
-              <p className="text-primary/50 text-sm tabular-nums">
-                Available {formatUsdExact(info.ownerPusd)} on EOA
-              </p>
-            )}
+      {open && (
+        <div role="dialog" aria-label="Account" className={panelClass}>
+          <div className="flex items-center justify-between border-b border-[var(--privy-color-foreground-4)] px-4 py-3">
+            <p className="text-base font-medium text-[var(--privy-color-foreground)]">
+              Account
+            </p>
             <button
               type="button"
-              disabled={busy}
-              onClick={() => void sendPusd()}
-              className="bg-accent text-secondary hover:opacity-90 disabled:opacity-50 w-full rounded-lg px-3 py-2 text-sm font-medium transition-opacity disabled:cursor-not-allowed"
+              onClick={() => setOpen(false)}
+              aria-label="Close"
+              className="rounded-full p-1 text-[var(--privy-color-foreground-3)] hover:bg-[var(--privy-color-background-2)] hover:text-[var(--privy-color-foreground)]"
             >
-              Send pUSD
+              ✕
             </button>
           </div>
 
-          <div className="border-primary/10 mt-4 border-t pt-4">
-            <p className="text-primary text-sm font-medium">
+          {email && (
+            <p className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--privy-color-foreground)]">
+              <span aria-hidden>✉</span>
+              {email}
+            </p>
+          )}
+
+          <button
+            type="button"
+            role="menuitem"
+            className={rowBtnClass}
+            onClick={() => {
+              setOpen(false);
+              onLogout();
+            }}
+          >
+            <span aria-hidden>↪</span>
+            Log out
+          </button>
+
+          <div className="border-t border-[var(--privy-color-foreground-4)] px-4 py-3">
+            <p className="text-sm text-[var(--privy-color-foreground-3)]">
+              Your wallet
+            </p>
+            <p className="mt-2 font-mono text-sm font-medium text-[var(--privy-color-foreground)]">
+              {shortAddress(address)}
+            </p>
+            <p className="mt-1 font-mono text-sm tabular-nums text-[var(--privy-color-foreground-3)]">
+              {loading ? "…" : `${formatUsdExact(info?.ownerPusd ?? 0)} pUSD`}
+            </p>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void copyText(address)}
+              className={`${sectionBtnClass} mt-3`}
+            >
+              Copy wallet address
+            </button>
+          </div>
+
+          <div className="border-t border-[var(--privy-color-foreground-4)] px-4 py-3">
+            <p className="text-sm font-medium text-[var(--privy-color-foreground)]">
+              Send pUSD
+            </p>
+            <p className="mt-1 text-sm text-[var(--privy-color-foreground-3)]">
+              From your Privy wallet on Polygon.
+            </p>
+            <div className="mt-3 space-y-2">
+              <input
+                type="text"
+                value={sendTo}
+                onChange={(e) => setSendTo(e.target.value)}
+                placeholder="Recipient address (0x…)"
+                className={inputClass}
+              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={sendAmount}
+                  onChange={(e) => setSendAmount(e.target.value)}
+                  placeholder="Amount"
+                  className={inputClass}
+                />
+                <span className="shrink-0 text-sm text-[var(--privy-color-foreground-3)]">
+                  pUSD
+                </span>
+              </div>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void sendPusd()}
+                className="w-full rounded-[var(--privy-border-radius-md)] bg-[var(--privy-color-accent)] px-3 py-2 text-sm font-medium text-[var(--privy-color-foreground-accent)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Send pUSD
+              </button>
+            </div>
+          </div>
+
+          <div className="border-t border-[var(--privy-color-foreground-4)] px-4 py-3">
+            <p className="text-sm font-medium text-[var(--privy-color-foreground)]">
               Polymarket deposit wallet
             </p>
-            <p className="text-primary/50 mt-1 text-sm">
-              Fund commitments use this address. Move pUSD back here to send it
-              from your Privy wallet.
+            <p className="mt-1 text-sm text-[var(--privy-color-foreground-3)]">
+              Fund commitments use this address. Move pUSD here to send from your
+              Privy wallet.
             </p>
             <div className="mt-2 space-y-1 text-sm">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-primary/50">Address</span>
+                <span className="text-[var(--privy-color-foreground-3)]">
+                  Address
+                </span>
                 {info ? (
                   <button
                     type="button"
-                    className="text-primary font-mono hover:underline"
+                    className="font-mono text-[var(--privy-color-foreground)] hover:underline"
                     onClick={() => copyText(info.depositAddress)}
                     title={info.depositAddress}
                   >
                     {shortAddress(info.depositAddress)}
                   </button>
                 ) : (
-                  <span className="text-primary/40">…</span>
+                  <span className="text-[var(--privy-color-foreground-4)]">
+                    …
+                  </span>
                 )}
               </div>
               <div className="flex items-center justify-between gap-2">
-                <span className="text-primary/50">Balance</span>
-                <span className="text-primary font-mono tabular-nums">
-                  {loading ? "…" : formatUsdExact(info?.depositCollateral ?? 0)}
+                <span className="text-[var(--privy-color-foreground-3)]">
+                  Balance
+                </span>
+                <span className="font-mono tabular-nums text-[var(--privy-color-foreground)]">
+                  {loading
+                    ? "…"
+                    : formatUsdExact(info?.depositCollateral ?? 0)}
                 </span>
               </div>
             </div>
@@ -327,7 +394,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                   type="button"
                   disabled={busy}
                   onClick={() => void registerWithPolymarket()}
-                  className="border-primary/15 text-primary hover:bg-primary/5 disabled:opacity-50 w-full rounded-lg border px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed"
+                  className={sectionBtnClass}
                 >
                   Register with Polymarket
                 </button>
@@ -337,7 +404,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                   type="button"
                   disabled={busy}
                   onClick={() => void movePusdFromDeposit()}
-                  className="border-primary/15 text-primary hover:bg-primary/5 disabled:opacity-50 w-full rounded-lg border px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed"
+                  className={sectionBtnClass}
                 >
                   Move pUSD to Privy wallet
                 </button>
@@ -347,7 +414,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                   type="button"
                   disabled={busy}
                   onClick={() => void movePusdToDeposit()}
-                  className="border-primary/15 text-primary hover:bg-primary/5 disabled:opacity-50 w-full rounded-lg border px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed"
+                  className={sectionBtnClass}
                 >
                   Move pUSD to deposit wallet
                 </button>
@@ -356,21 +423,17 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
           </div>
 
           {status && (
-            <p className="text-primary/60 mt-3 text-sm">{status}</p>
+            <p className="px-4 pb-2 text-sm text-[var(--privy-color-foreground-3)]">
+              {status}
+            </p>
           )}
-          {error && <p className="text-red-400 mt-2 text-sm">{error}</p>}
+          {error && (
+            <p className="px-4 pb-3 text-sm text-red-400">{error}</p>
+          )}
 
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setExtrasOpen(false);
-              onLogout();
-            }}
-            className="text-primary/60 hover:text-primary mt-4 w-full text-left text-sm"
-          >
-            Log out
-          </button>
+          <p className="border-t border-[var(--privy-color-foreground-4)] px-4 py-3 text-center text-xs text-[var(--privy-color-foreground-3)]">
+            Protected by privy
+          </p>
         </div>
       )}
     </div>

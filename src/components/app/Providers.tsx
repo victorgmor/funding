@@ -7,7 +7,6 @@ import { getAccount, watchAccount } from "@wagmi/core";
 import ConnectWallet from "@/components/app/ConnectWallet";
 import InvestorTradeAutopilot from "@/components/app/InvestorTradeAutopilot";
 import PolymarketDepositSetup from "@/components/app/PolymarketDepositSetup";
-import PrivyWalletShell from "@/components/app/PrivyWalletShell";
 import { privyAppId, privyConfig } from "@/lib/privy/config";
 import { embeddedWalletForWagmi } from "@/lib/privy/wallet";
 import { wagmiConfig } from "@/lib/wagmi/config";
@@ -90,7 +89,6 @@ export default function Providers({
           setActiveWalletForWagmi={embeddedWalletForWagmi}
         >
           <WalletSessionSync />
-          <PrivyWalletShell />
           {syncSession && <PolymarketDepositSetup />}
           {syncSession && <InvestorTradeAutopilot />}
           {portalNavLogin && <NavLoginPortals />}
