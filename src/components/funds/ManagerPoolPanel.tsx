@@ -201,7 +201,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
     "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/60 w-full rounded border px-3 py-2 text-sm focus:border-primary/30 focus:outline-none";
 
   return (
-    <div className="border-primary/10 border-b pb-4">
+    <div className="border-primary/10 border-b pb-4 pt-4">
       <p className="text-primary text-sm font-medium">Fund pool</p>
       <p className="text-primary/60 mt-1 text-xs">
         Manager view — pooled AUM with per-investor fan-out from their wallets.
@@ -219,19 +219,19 @@ export default function ManagerPoolPanel({ fund }: Props) {
         <>
           <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="text-primary/50 text-[0.65rem] uppercase">AUM</p>
+              <p className="text-primary/50 text-sm uppercase">AUM</p>
               <p className="text-primary font-mono text-xl tabular-nums">
                 {formatUsdExact(totalNotional)}
               </p>
             </div>
             <div>
-              <p className="text-primary/50 text-[0.65rem] uppercase">Deployable</p>
+              <p className="text-primary/50 text-sm uppercase">Deployable</p>
               <p className="text-primary font-mono text-xl tabular-nums">
                 {formatUsdExact(pool?.totalCash ?? 0)}
               </p>
             </div>
             <div>
-              <p className="text-primary/50 text-[0.65rem] uppercase">Investors</p>
+              <p className="text-primary/50 text-sm uppercase">Investors</p>
               <p className="text-primary font-mono text-xl tabular-nums">
                 {pool?.mandateCount ?? 0}
               </p>
@@ -259,9 +259,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
 
           {fund.status === "trading" && (
             <div className="mt-4 space-y-3 border-t border-primary/10 pt-4">
-              <p className="text-primary/50 text-[0.65rem] font-medium uppercase">
-                New trade
-              </p>
+              <p className="text-primary text-sm font-medium">New trade</p>
               <input
                 type="search"
                 value={query}
@@ -352,7 +350,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
 
               {dryRun && (
                 <div className="border-primary/10 rounded border text-xs">
-                  <p className="border-primary/10 border-b px-3 py-2 text-[0.65rem] uppercase text-primary/50">
+                  <p className="border-primary/10 border-b px-3 py-2 text-sm uppercase text-primary/50">
                     Fan-out preview · {formatUsdExact(sliceSummary ?? 0)}
                   </p>
                   <ul className="divide-y divide-primary/10">

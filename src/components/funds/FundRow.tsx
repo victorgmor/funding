@@ -30,7 +30,7 @@ export default function FundRow({ fund, deposited = 0, performance }: Props) {
       </div>
 
       <div className="min-w-0">
-        <p className="text-primary/50 mb-1 text-[0.65rem] font-medium uppercase lg:hidden">
+        <p className="text-primary/50 mb-1 text-sm font-medium uppercase lg:hidden">
           Creator
         </p>
         <div className="flex items-center gap-2">
@@ -47,7 +47,7 @@ export default function FundRow({ fund, deposited = 0, performance }: Props) {
       </div>
 
       <div className="min-w-0">
-        <p className="text-primary/50 mb-1 text-[0.65rem] font-medium uppercase lg:hidden">
+        <p className="text-primary/50 mb-1 text-sm font-medium uppercase lg:hidden">
           Pool
         </p>
         <PoolCapBar
@@ -58,7 +58,7 @@ export default function FundRow({ fund, deposited = 0, performance }: Props) {
       </div>
 
       <div className="min-w-0 lg:text-right">
-        <p className="text-primary/50 mb-1 text-[0.65rem] font-medium uppercase lg:hidden">
+        <p className="text-primary/50 mb-1 text-sm font-medium uppercase lg:hidden">
           Performance
         </p>
         <FundPerformanceCell

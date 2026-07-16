@@ -152,9 +152,7 @@ export default function FundPoolOverview({ fund }: Props) {
 
         return (
           <div className="border-primary/10 mt-4 border-t pt-4">
-            <p className="text-primary/45 text-xs uppercase tracking-wide">
-              Recent trades
-            </p>
+            <p className="text-primary text-sm font-medium">Recent trades</p>
             <ul className="mt-2">
               {tradeRows.map((trade, index) => {
                 const failed = trade.status === "failed";

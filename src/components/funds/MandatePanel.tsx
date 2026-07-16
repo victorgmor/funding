@@ -20,6 +20,7 @@ import type {
 } from "@/lib/funds/types";
 import type { MandateSettlement } from "@/lib/funds/settlement";
 import { notifyPoolUpdated } from "@/lib/funds/pool-events";
+import { isFundOwner } from "@/lib/funds/editable";
 import { formatUsdExact } from "@/lib/funds/format";
 import {
   createTradingClient,
@@ -44,12 +45,13 @@ type MandateSummary = {
 };
 
 const headerClass =
-  "text-primary/50 text-[0.65rem] font-medium leading-none tracking-wide uppercase";
+  "text-primary/50 text-sm font-medium leading-none tracking-wide uppercase";
 
 export default function MandatePanel({ fund }: Props) {
   const { user } = useUser();
   const { addSigners } = useSigners();
-  const { address, isConnected, loading: walletLoading } = useWalletGate();
+  const { address, walletAddress, isConnected, loading: walletLoading } = useWalletGate();
+  const isOwner = isFundOwner(fund, walletAddress);
   const { onPolygon, switching } = useEnsurePolygon();
   const [summary, setSummary] = useState<MandateSummary | null>(null);
   const [pendingTrades, setPendingTrades] = useState<MandateTrade[]>([]);
@@ -269,8 +271,10 @@ export default function MandatePanel({ fund }: Props) {
 
   const depositBalance = summary?.depositBalanceUsdc;
 
+  if (isOwner) return null;
+
   return (
-    <div className="border-primary/10 border-b pb-4 lg:sticky lg:top-24 lg:self-start">
+    <div className="border-primary/10 border-b pb-4 pt-4 lg:sticky lg:top-24 lg:self-start">
       {address && onPolygon && serverSignerActive && (
         <FundTradeAutopilot
           fundSlug={fund.slug}
@@ -281,7 +285,7 @@ export default function MandatePanel({ fund }: Props) {
         />
       )}
 
-      <h2 className="text-primary/45 text-xs uppercase tracking-wide">
+      <h2 className="text-primary text-sm font-medium">
         {hasMandate ? "Your mandate" : "Join fund"}
       </h2>
 
@@ -336,7 +340,7 @@ export default function MandatePanel({ fund }: Props) {
                   {hasMandate ? "Add capital" : "Commit"}
                 </label>
                 {depositBalance != null && (
-                  <span className="text-primary/50 text-[0.65rem] tabular-nums">
+                  <span className="text-primary/50 text-sm tabular-nums">
                     {formatUsdExact(depositBalance)} deposit wallet
                   </span>
                 )}

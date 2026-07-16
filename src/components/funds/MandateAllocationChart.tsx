@@ -162,7 +162,7 @@ export default function MandateAllocationChart({ entries }: Props) {
         </svg>
 
         <div className="pointer-events-none absolute inset-[26%] flex flex-col items-center justify-center rounded-full px-3 text-center">
-          <p className="text-primary/50 line-clamp-2 text-[0.65rem] uppercase tracking-wide">
+          <p className="text-primary/50 line-clamp-2 text-sm uppercase tracking-wide">
             {activeSlice ? activeSlice.name : "Invested"}
           </p>
           <p className="text-primary mt-0.5 font-mono text-base font-semibold leading-tight tabular-nums sm:text-lg">

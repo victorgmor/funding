@@ -159,7 +159,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
           role="menu"
           className="border-primary/10 bg-secondary absolute right-0 z-50 mt-2 w-80 rounded-lg border p-3 shadow-lg"
         >
-          <p className="text-primary/45 text-[0.65rem] font-medium uppercase tracking-wide">
+          <p className="text-primary/45 text-sm font-medium uppercase tracking-wide">
             Privy wallet
           </p>
           <div className="mt-2 space-y-1 text-xs">
@@ -185,10 +185,10 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
           </div>
 
           <div className="border-primary/10 mt-3 border-t pt-3">
-            <p className="text-primary/45 text-[0.65rem] font-medium uppercase tracking-wide">
+            <p className="text-primary/45 text-sm font-medium uppercase tracking-wide">
               Polymarket deposit wallet
             </p>
-            <p className="text-primary/45 mt-1 text-[0.65rem] leading-relaxed">
+            <p className="text-primary/45 mt-1 text-sm leading-relaxed">
               Send pUSD here — not your Privy EOA. Fund commitments use this
               address.
             </p>

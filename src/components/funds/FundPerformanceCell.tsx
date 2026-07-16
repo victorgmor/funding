@@ -41,7 +41,7 @@ function ThesisRoi({
         {formatPercent(roi)}
       </p>
       {since && (
-        <p className="text-primary/50 mt-0.5 text-[0.65rem]">
+        <p className="text-primary/50 mt-0.5 text-sm">
           since {formatSinceDate(since)}
         </p>
       )}

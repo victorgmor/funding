@@ -1,7 +1,7 @@
 import { fundListGridClass } from "@/components/funds/fund-list-layout";
 
 const headerClass =
-  "text-primary/50 py-0 text-[0.65rem] font-medium leading-none tracking-wide uppercase";
+  "text-primary/50 py-0 text-sm font-medium leading-none tracking-wide uppercase";
 
 export default function FundListColumnHeaders() {
   return (

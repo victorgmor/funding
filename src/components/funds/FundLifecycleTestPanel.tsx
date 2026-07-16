@@ -44,7 +44,7 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
   if (loading) {
     return (
       <div className="border-primary/10 bg-primary/5 mt-3 rounded-lg border border-dashed px-4 py-3">
-        <p className="text-primary/50 text-[0.65rem] font-medium uppercase">
+        <p className="text-primary/50 text-sm font-medium uppercase">
           Test lifecycle
         </p>
         <WalletPanelPlaceholder className="mt-2" label="Loading wallet…" />
@@ -55,7 +55,7 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
   if (!isConnected || !address) {
     return (
       <div className="border-primary/10 bg-primary/5 mt-3 rounded-lg border border-dashed px-4 py-3">
-        <p className="text-primary/50 text-[0.65rem] font-medium uppercase">
+        <p className="text-primary/50 text-sm font-medium uppercase">
           Test lifecycle
         </p>
         <div className="mt-2">
@@ -114,7 +114,7 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
 
   return (
     <div className="border-primary/10 bg-primary/5 mt-3 rounded-lg border border-dashed px-4 py-3">
-      <p className="text-primary/50 text-[0.65rem] font-medium uppercase">
+      <p className="text-primary/50 text-sm font-medium uppercase">
         Test lifecycle
       </p>
       <>

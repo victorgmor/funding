@@ -11,10 +11,10 @@ type Props = {
 };
 
 const headerClass =
-  "text-primary/50 py-0 text-[0.65rem] font-medium leading-none tracking-wide uppercase";
+  "text-primary/50 py-0 text-sm font-medium leading-none tracking-wide uppercase";
 
 const cellLabelClass =
-  "text-primary/50 mb-1 text-[0.65rem] font-medium uppercase lg:hidden";
+  "text-primary/50 mb-1 text-sm font-medium uppercase lg:hidden";
 
 export default function TopManagersList({ managers }: Props) {
   if (managers.length === 0) {
