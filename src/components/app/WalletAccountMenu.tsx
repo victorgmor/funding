@@ -295,7 +295,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
         aria-expanded={open}
         className="flex items-center gap-2 px-2 py-2 text-[var(--privy-color-foreground-2)] rounded-[var(--privy-border-radius-md)] border-[var(--privy-color-foreground-4)] bg-[var(--privy-color-background)] transition-colors hover:text-[var(--privy-color-foreground)]"
       >
-        <CreatorAvatar address={address} name={label} size="6" />
+        <CreatorAvatar address={address} name={label} size="2xs" />
         <span className="max-w-32 truncate text-sm">{label}</span>
       </button>
 
