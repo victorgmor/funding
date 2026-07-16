@@ -28,6 +28,53 @@ function shortAddress(value: string) {
   return `${value.slice(0, 6)}…${value.slice(-4)}`;
 }
 
+function PrivyWalletSection({
+  address,
+  balance,
+  loading,
+}: {
+  address: string;
+  balance: string;
+  loading: boolean;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 3000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  async function copyAddress() {
+    await copyText(address);
+    setCopied(true);
+  }
+
+  return (
+    <div className="mt-4 px-4">
+      <p className="mb-2 text-left text-xs font-medium leading-[1.125rem] text-[var(--privy-color-foreground-3)]">
+        Your wallet
+      </p>
+      <p
+        className="text-sm font-medium text-[var(--privy-color-foreground)]"
+        title={address}
+      >
+        {shortAddress(address)}
+      </p>
+      <p className="text-xs leading-4 text-[var(--privy-color-foreground-3)]">
+        {loading ? "…" : balance}
+      </p>
+      <button
+        type="button"
+        onClick={() => void copyAddress()}
+        className="mt-3 flex h-10 w-full items-center justify-center rounded-[var(--privy-border-radius-md)] bg-[var(--privy-color-background-2)] text-sm font-medium text-[var(--privy-color-foreground)] transition-opacity hover:opacity-90"
+      >
+        {copied ? "Copied" : "Copy wallet address"}
+      </button>
+    </div>
+  );
+}
+
 async function copyText(value: string) {
   await navigator.clipboard.writeText(value);
 }
@@ -43,7 +90,7 @@ function primaryEmail(user: ReturnType<typeof usePrivy>["user"]) {
 const panelClass =
   "absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-[var(--privy-border-radius-lg)] border border-[var(--privy-color-foreground-4)] bg-[var(--privy-color-background)] shadow-lg";
 const rowBtnClass =
-  "flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-[var(--privy-color-foreground)] transition-colors hover:bg-[var(--privy-color-background-2)]";
+  "flex h-[34px] w-full items-center gap-2 px-6 text-left text-sm text-[var(--privy-color-foreground)] transition-colors hover:bg-[var(--privy-color-background-2)]";
 const sectionBtnClass =
   "w-full rounded-[var(--privy-border-radius-md)] border border-[var(--privy-color-foreground-4)] px-3 py-2 text-sm text-[var(--privy-color-foreground)] transition-colors hover:bg-[var(--privy-color-background-2)] disabled:cursor-not-allowed disabled:opacity-50";
 const inputClass =
@@ -288,25 +335,11 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
             Log out
           </button>
 
-          <div className="border-t border-[var(--privy-color-foreground-4)] px-4 py-3">
-            <p className="text-sm text-[var(--privy-color-foreground-3)]">
-              Your wallet
-            </p>
-            <p className="mt-2 font-mono text-sm font-medium text-[var(--privy-color-foreground)]">
-              {shortAddress(address)}
-            </p>
-            <p className="mt-1 font-mono text-sm tabular-nums text-[var(--privy-color-foreground-3)]">
-              {loading ? "…" : `${formatUsdExact(info?.ownerPusd ?? 0)} pUSD`}
-            </p>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void copyText(address)}
-              className={`${sectionBtnClass} mt-3`}
-            >
-              Copy wallet address
-            </button>
-          </div>
+          <PrivyWalletSection
+            address={address}
+            loading={loading}
+            balance={`${formatUsdExact(info?.ownerPusd ?? 0)} pUSD`}
+          />
 
           <div className="border-t border-[var(--privy-color-foreground-4)] px-4 py-3">
             <p className="text-sm font-medium text-[var(--privy-color-foreground)]">
