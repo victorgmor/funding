@@ -146,8 +146,10 @@ function primaryEmail(user: ReturnType<typeof usePrivy>["user"]) {
   return null;
 }
 
+const PANEL_TRANSITION_MS = 250;
+
 const panelClass =
-  "absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-[var(--privy-border-radius-md)] border border-[var(--privy-color-foreground-4)] bg-[var(--privy-color-background)] shadow-lg";
+  "absolute right-0 top-full z-50 mt-[5px] w-80 origin-top-right overflow-hidden rounded-[var(--privy-border-radius-md)] bg-[var(--privy-color-background)] shadow-[0px_0px_20px_-3px_rgba(0,0,0,0.1),0px_4px_10px_-3px_rgba(0,0,0,0.08)] transition-[opacity,transform] duration-[250ms] ease-out";
 const rowBtnClass =
   "flex h-[34px] w-full items-center gap-2 px-6 text-left text-sm text-[var(--privy-color-foreground)] transition-colors hover:bg-[var(--privy-color-background-2)]";
 const sectionBtnClass =
@@ -159,6 +161,8 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
   const { user } = usePrivy();
   const { sendTransaction } = useSendTransaction();
   const [open, setOpen] = useState(false);
+  const [renderPanel, setRenderPanel] = useState(false);
+  const [panelVisible, setPanelVisible] = useState(false);
   const [info, setInfo] = useState<PolymarketWalletInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -181,6 +185,23 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
       setLoading(false);
     }
   }, [address]);
+
+  useEffect(() => {
+    if (open) {
+      setRenderPanel(true);
+      const raf = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setPanelVisible(true));
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+
+    setPanelVisible(false);
+    const timer = window.setTimeout(
+      () => setRenderPanel(false),
+      PANEL_TRANSITION_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -358,8 +379,17 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
         <span className="max-w-32 truncate text-sm">{label}</span>
       </button>
 
-      {open && (
-        <div role="dialog" aria-label="Account" className={panelClass}>
+      {renderPanel && (
+        <div
+          role="dialog"
+          aria-label="Account"
+          aria-hidden={!panelVisible}
+          className={`${panelClass} ${
+            panelVisible
+              ? "pointer-events-auto scale-100 opacity-100"
+              : "pointer-events-none scale-90 opacity-0"
+          }`}
+        >
           <div className="flex items-center justify-between border-b border-[var(--privy-color-foreground-4)] px-4 py-3">
             <p className="text-base font-medium text-[var(--privy-color-foreground)]">
               Account
