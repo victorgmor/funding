@@ -97,7 +97,7 @@ function PrivyWalletSection({
 
   return (
     <div className="mt-4 px-4">
-      <p className="mb-2 text-left text-xs font-medium leading-[1.125rem] text-[var(--privy-color-foreground-3)]">
+      <p className="mb-2 text-left text-sm font-medium text-[var(--privy-color-foreground)]">
         Your wallet
       </p>
       <div className="flex h-14 w-full items-center justify-between rounded-[var(--privy-border-radius-md)] border border-[var(--privy-color-foreground-4)] px-4 py-3">
@@ -400,7 +400,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
             balance={`${formatUsdExact(info?.ownerPusd ?? 0)} pUSD`}
           />
 
-          <div className="border-t border-[var(--privy-color-foreground-4)] px-4 py-3">
+          <div className="px-4 py-3">
             <p className="text-sm font-medium text-[var(--privy-color-foreground)]">
               Withdraw pUSD
             </p>
