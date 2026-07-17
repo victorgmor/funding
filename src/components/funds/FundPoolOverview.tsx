@@ -161,28 +161,27 @@ export default function FundPoolOverview({ fund }: Props) {
                 return (
                   <li
                     key={trade.id}
-                    className={`border-primary/10 space-y-1 py-3 text-sm ${
+                    className={`border-primary/10 flex items-center justify-between gap-3 py-2 text-sm ${
                       index > 0 ? "border-t" : ""
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <span
-                        className={`line-clamp-1 ${
-                          failed ? "text-red-400" : "text-primary/60"
-                        }`}
-                      >
-                        {trade.question}
-                      </span>
-                      <span
-                        className={`shrink-0 text-right font-mono text-xs tabular-nums uppercase ${
-                          failed ? "text-red-400" : "text-primary/70"
-                        }`}
-                      >
-                        <span className="block">
-                          {formatUsdExact(trade.usdcAmount)}{" "}
-                          {failed ? "FAILED" : trade.side}
-                        </span>
-                        {showPnl && (
+                    <span
+                      className={`min-w-0 truncate ${
+                        failed ? "text-red-400" : "text-primary/60"
+                      }`}
+                    >
+                      {trade.question}
+                    </span>
+                    <span
+                      className={`shrink-0 whitespace-nowrap font-mono text-xs tabular-nums uppercase ${
+                        failed ? "text-red-400" : "text-primary/70"
+                      }`}
+                    >
+                      {formatUsdExact(trade.usdcAmount)}{" "}
+                      {failed ? "FAILED" : trade.side}
+                      {showPnl && (
+                        <>
+                          {" · "}
                           <span
                             className={
                               pnl >= 0 ? "text-emerald-400" : "text-red-400"
@@ -190,12 +189,9 @@ export default function FundPoolOverview({ fund }: Props) {
                           >
                             {formatUsdExact(pnl, true)} PnL
                           </span>
-                        )}
-                      </span>
-                    </div>
-                    {failed && trade.detail && (
-                      <p className="text-red-400/80 text-xs">{trade.detail}</p>
-                    )}
+                        </>
+                      )}
+                    </span>
                   </li>
                 );
               })}
