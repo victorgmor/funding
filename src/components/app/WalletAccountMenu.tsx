@@ -55,21 +55,16 @@ function PrivyWalletSection({
       <p className="mb-2 text-left text-xs font-medium leading-[1.125rem] text-[var(--privy-color-foreground-3)]">
         Your wallet
       </p>
-      <p
-        className="text-sm font-medium text-[var(--privy-color-foreground)]"
-        title={address}
-      >
-        {shortAddress(address)}
-      </p>
-      <p className="text-xs leading-4 text-[var(--privy-color-foreground-3)]">
+      <p className="mb-3 text-xs leading-4 text-[var(--privy-color-foreground-3)]">
         {loading ? "…" : balance}
       </p>
       <button
         type="button"
         onClick={() => void copyAddress()}
-        className="mt-3 flex h-10 w-full items-center justify-center rounded-[var(--privy-border-radius-md)] bg-[var(--privy-color-background-2)] text-sm font-medium text-[var(--privy-color-foreground)] transition-opacity hover:opacity-90"
+        title={address}
+        className="flex h-10 w-full items-center justify-center rounded-[var(--privy-border-radius-md)] bg-[var(--privy-color-background-2)] font-mono text-sm font-medium text-[var(--privy-color-foreground)] transition-opacity hover:opacity-90"
       >
-        {copied ? "Copied" : "Copy wallet address"}
+        {copied ? "Copied" : shortAddress(address)}
       </button>
     </div>
   );
@@ -343,7 +338,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
 
           <div className="border-t border-[var(--privy-color-foreground-4)] px-4 py-3">
             <p className="text-sm font-medium text-[var(--privy-color-foreground)]">
-              Send pUSD
+              Withdraw pUSD
             </p>
             <p className="mt-1 text-sm text-[var(--privy-color-foreground-3)]">
               From your Privy wallet on Polygon.
@@ -376,7 +371,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                 onClick={() => void sendPusd()}
                 className="w-full rounded-[var(--privy-border-radius-md)] bg-[var(--privy-color-accent)] px-3 py-2 text-sm font-medium text-[var(--privy-color-foreground-accent)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Send pUSD
+                Withdraw pUSD
               </button>
             </div>
           </div>
