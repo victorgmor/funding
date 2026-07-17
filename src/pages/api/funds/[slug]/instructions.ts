@@ -1,23 +1,52 @@
 import type { APIRoute } from "astro";
 import { verifyBundleSignature } from "@/lib/auth/bundle-auth";
 import { isFundOwnerWallet } from "@/lib/funds/access";
-import { fanoutTrade } from "@/lib/funds/fanout";
+import { beginInstructionExecution } from "@/lib/funds/execute-trades";
 import {
   createInstruction,
   listInstructionsByFund,
 } from "@/lib/funds/instructions";
+import { planTradeBatch, type TradeDraft } from "@/lib/funds/instruction-plan";
 import { adjustMandateCash } from "@/lib/funds/mandates";
 import { reconcileFundMandates } from "@/lib/funds/mandate-reconcile";
 import { recordFanoutTrades } from "@/lib/funds/mandate-trades";
-import { beginInstructionExecution } from "@/lib/funds/execute-trades";
-import { runPendingTradesForFund, type PendingTradeRun } from "@/lib/funds/run-pending-trades";
 import { buildVirtualPool, poolTradingOpen } from "@/lib/funds/pool";
-import type { MarketSide } from "@/lib/funds/types";
-import { fetchGammaMarket, midPrice, parseOutcomes, outcomeIndex, tokenIdForSide } from "@/lib/polymarket/gamma";
+import {
+  runPendingTradesForFund,
+  type PendingTradeRun,
+} from "@/lib/funds/run-pending-trades";
+import type { ExecutionSummary } from "@/lib/funds/execute-trades";
 import { getFund } from "@/lib/funds/store";
 import { serverSigningEnabled } from "@/lib/privy/server";
 
 export const prerender = false;
+
+function normalizeDrafts(body: {
+  gammaMarketId?: string;
+  side?: string;
+  totalUsdc?: number;
+  trades?: TradeDraft[];
+}): TradeDraft[] {
+  if (body.trades?.length) {
+    return body.trades.map((trade) => ({
+      gammaMarketId: trade.gammaMarketId,
+      side: trade.side,
+      totalUsdc: Number(trade.totalUsdc),
+    }));
+  }
+
+  if (body.gammaMarketId) {
+    return [
+      {
+        gammaMarketId: body.gammaMarketId,
+        side: body.side ?? "",
+        totalUsdc: Number(body.totalUsdc),
+      },
+    ];
+  }
+
+  return [];
+}
 
 export const GET: APIRoute = async ({ params }) => {
   const fund = await getFund(params.slug!);
@@ -47,8 +76,9 @@ export const POST: APIRoute = async ({ params, request }) => {
     message?: string;
     signature?: `0x${string}`;
     gammaMarketId?: string;
-    side?: MarketSide;
+    side?: string;
     totalUsdc?: number;
+    trades?: TradeDraft[];
     dryRun?: boolean;
     execute?: boolean;
   };
@@ -69,99 +99,81 @@ export const POST: APIRoute = async ({ params, request }) => {
       });
     }
 
-    const authError = await verifyBundleSignature({
-      message: body.message ?? "",
-      signature: body.signature ?? "0x",
-      managerAddress,
-      action: "instruct",
-      slug: fund.slug,
-    });
-    if (authError) {
-      return new Response(JSON.stringify({ error: authError }), { status: 401 });
-    }
-
-    const totalUsdc = Number(body.totalUsdc);
-    if (!totalUsdc || totalUsdc < 1) {
-      return new Response(JSON.stringify({ error: "Trade amount required" }), {
+    const drafts = normalizeDrafts(body);
+    if (drafts.length === 0) {
+      return new Response(JSON.stringify({ error: "At least one trade required" }), {
         status: 400,
       });
     }
 
-    if (!body.gammaMarketId) {
-      return new Response(JSON.stringify({ error: "Market required" }), {
-        status: 400,
+    const dryRunOnly = Boolean(body.dryRun && !body.execute);
+    if (!dryRunOnly) {
+      const authError = await verifyBundleSignature({
+        message: body.message ?? "",
+        signature: body.signature ?? "0x",
+        managerAddress,
+        action: "instruct",
+        slug: fund.slug,
       });
+      if (authError) {
+        return new Response(JSON.stringify({ error: authError }), { status: 401 });
+      }
     }
-
-    const gamma = await fetchGammaMarket(body.gammaMarketId);
-    const outcomes = parseOutcomes(gamma.outcomes);
-    const side = body.side?.trim() ?? "";
-    if (!side || outcomeIndex(outcomes, side) === -1) {
-      return new Response(
-        JSON.stringify({
-          error: `Outcome must be one of: ${outcomes.join(", ")}`,
-        }),
-        { status: 400 },
-      );
-    }
-
-    const canonicalSide = outcomes[outcomeIndex(outcomes, side)]!;
-    const price = Math.min(0.99, Math.max(0.01, midPrice(gamma, canonicalSide)));
-    const tokenId = tokenIdForSide(gamma.clobTokenIds, gamma.outcomes, canonicalSide);
 
     const mandates = await reconcileFundMandates(fund.slug);
-    const slices = fanoutTrade(totalUsdc, price, mandates);
+    const planned = await planTradeBatch(drafts, mandates);
 
-    if (body.dryRun || !body.execute) {
+    if (dryRunOnly) {
       return new Response(
         JSON.stringify({
           dryRun: true,
-          totalUsdc,
-          price,
-          tokenId,
-          question: gamma.question,
-          side: canonicalSide,
-          slices,
+          trades: planned,
         }),
         { headers: { "Content-Type": "application/json" } },
       );
     }
 
-    const instruction = await createInstruction({
-      fundSlug: fund.slug,
-      managerWallet: managerAddress,
-      tokenId,
-      question: gamma.question,
-      side: canonicalSide,
-      totalUsdc,
-      price,
-    });
+    const instructions = [];
+    const allTrades = [];
+    const summaries: ExecutionSummary[] = [];
 
-    const trades = await recordFanoutTrades({
-      fundSlug: fund.slug,
-      instructionId: instruction.id,
-      tokenId,
-      question: gamma.question,
-      side: canonicalSide,
-      price,
-      slices,
-    });
+    for (const trade of planned) {
+      const instruction = await createInstruction({
+        fundSlug: fund.slug,
+        managerWallet: managerAddress,
+        tokenId: trade.tokenId,
+        question: trade.question,
+        side: trade.side,
+        totalUsdc: trade.totalUsdc,
+        price: trade.price,
+      });
 
-    for (const slice of slices) {
-      await adjustMandateCash(slice.mandateId, fund.slug, -slice.usdcAmount);
+      const trades = await recordFanoutTrades({
+        fundSlug: fund.slug,
+        instructionId: instruction.id,
+        tokenId: trade.tokenId,
+        question: trade.question,
+        side: trade.side,
+        price: trade.price,
+        slices: trade.slices,
+      });
+
+      for (const slice of trade.slices) {
+        await adjustMandateCash(slice.mandateId, fund.slug, -slice.usdcAmount);
+      }
+
+      const summary = await beginInstructionExecution(fund.slug, instruction.id);
+      instructions.push({ ...instruction, status: "executing" });
+      allTrades.push(...trades);
+      summaries.push(summary);
     }
 
-    const summary = await beginInstructionExecution(fund.slug, instruction.id);
     let serverRuns: PendingTradeRun[] = [];
     let serverSigningError: string | undefined;
 
     if (serverSigningEnabled()) {
       try {
-        const batch = await runPendingTradesForFund(
-          fund.slug,
-          undefined,
-          instruction.id,
-        );
+        const batch = await runPendingTradesForFund(fund.slug);
         serverRuns = batch.results;
       } catch (e) {
         serverSigningError =
@@ -171,12 +183,19 @@ export const POST: APIRoute = async ({ params, request }) => {
       serverSigningError = "Server signing not configured";
     }
 
+    const pending = summaries.reduce((sum, s) => sum + s.pending, 0);
+    const withoutSession = summaries.reduce((sum, s) => sum + s.withoutSession, 0);
+
     return new Response(
       JSON.stringify({
-        instruction: { ...instruction, status: "executing" },
-        trades,
-        slices,
-        summary,
+        instructions,
+        trades: allTrades,
+        summaries,
+        summary: {
+          count: instructions.length,
+          pending,
+          withoutSession,
+        },
         serverRuns,
         serverSigningError,
       }),

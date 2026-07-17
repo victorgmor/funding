@@ -1,4 +1,18 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useState, type MouseEvent } from "react";
+import {
+  FloatingFocusManager,
+  FloatingPortal,
+  autoUpdate,
+  flip,
+  offset,
+  shift,
+  useClick,
+  useDismiss,
+  useFloating,
+  useInteractions,
+  useRole,
+  useTransitionStyles,
+} from "@floating-ui/react";
 import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
 import { getAddress, isAddress } from "viem";
 import { getWalletClient } from "@wagmi/core";
@@ -146,10 +160,8 @@ function primaryEmail(user: ReturnType<typeof usePrivy>["user"]) {
   return null;
 }
 
-const PANEL_TRANSITION_MS = 250;
-
-const panelClass =
-  "absolute right-0 top-full z-50 mt-[5px] w-80 origin-top-right overflow-hidden rounded-[var(--privy-border-radius-md)] bg-[var(--privy-color-background)] shadow-[0px_0px_20px_-3px_rgba(0,0,0,0.1),0px_4px_10px_-3px_rgba(0,0,0,0.08)] transition-[opacity,transform] duration-[250ms] ease-out";
+const panelShellClass =
+  "w-80 overflow-hidden rounded-[var(--privy-border-radius-md)] bg-[var(--privy-color-background)] shadow-[0px_0px_20px_-3px_rgba(0,0,0,0.1),0px_4px_10px_-3px_rgba(0,0,0,0.08)]";
 const rowBtnClass =
   "flex h-[34px] w-full items-center gap-2 px-6 text-left text-sm text-[var(--privy-color-foreground)] transition-colors hover:bg-[var(--privy-color-background-2)]";
 const sectionBtnClass =
@@ -161,8 +173,6 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
   const { user } = usePrivy();
   const { sendTransaction } = useSendTransaction();
   const [open, setOpen] = useState(false);
-  const [renderPanel, setRenderPanel] = useState(false);
-  const [panelVisible, setPanelVisible] = useState(false);
   const [info, setInfo] = useState<PolymarketWalletInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -170,7 +180,39 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [sendTo, setSendTo] = useState("");
   const [sendAmount, setSendAmount] = useState("");
-  const rootRef = useRef<HTMLDivElement>(null);
+
+  const { refs, floatingStyles, context } = useFloating({
+    open,
+    onOpenChange: setOpen,
+    placement: "bottom-end",
+    whileElementsMounted: autoUpdate,
+    middleware: [
+      offset(5),
+      flip({
+        crossAxis: true,
+        fallbackAxisSideDirection: "end",
+        padding: 5,
+      }),
+      shift({ padding: 5 }),
+    ],
+  });
+
+  const click = useClick(context);
+  const dismiss = useDismiss(context);
+  const role = useRole(context, { role: "dialog" });
+  const { getReferenceProps, getFloatingProps } = useInteractions([
+    click,
+    dismiss,
+    role,
+  ]);
+
+  const { isMounted, styles: transitionStyles } = useTransitionStyles(context, {
+    initial: {
+      opacity: 0,
+      transform: "scale(0.9)",
+      transformOrigin: "top right",
+    },
+  });
 
   const email = primaryEmail(user);
 
@@ -187,23 +229,6 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
   }, [address]);
 
   useEffect(() => {
-    if (open) {
-      setRenderPanel(true);
-      const raf = requestAnimationFrame(() => {
-        requestAnimationFrame(() => setPanelVisible(true));
-      });
-      return () => cancelAnimationFrame(raf);
-    }
-
-    setPanelVisible(false);
-    const timer = window.setTimeout(
-      () => setRenderPanel(false),
-      PANEL_TRANSITION_MS,
-    );
-    return () => window.clearTimeout(timer);
-  }, [open]);
-
-  useEffect(() => {
     if (!open) return;
     void refresh();
   }, [open, refresh]);
@@ -216,27 +241,6 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
     return () =>
       window.removeEventListener(DEPOSIT_WALLET_UPDATED_EVENT, onUpdate);
   }, [open, refresh]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    function onPointerDown(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    }
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
-    }
-
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
 
   async function registerWithPolymarket() {
     setBusy(true);
@@ -368,28 +372,29 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
     (info?.withdrawableUsdc ?? 0) > 0 && info?.depositDeployed;
 
   return (
-    <div className="relative" ref={rootRef}>
+    <>
       <button
         type="button"
-        onClick={() => setOpen((value) => !value)}
+        ref={refs.setReference}
+        {...getReferenceProps()}
         aria-expanded={open}
+        data-state={open ? "open" : "closed"}
         className="flex items-center gap-2 px-2 py-2 text-[var(--privy-color-foreground-2)] rounded-[var(--privy-border-radius-md)] border-[var(--privy-color-foreground-4)] bg-[var(--privy-color-background)] transition-colors hover:text-[var(--privy-color-foreground)]"
       >
         <CreatorAvatar address={address} name={label} size="2xs" />
         <span className="max-w-32 truncate text-sm">{label}</span>
       </button>
 
-      {renderPanel && (
-        <div
-          role="dialog"
-          aria-label="Account"
-          aria-hidden={!panelVisible}
-          className={`${panelClass} ${
-            panelVisible
-              ? "pointer-events-auto scale-100 opacity-100"
-              : "pointer-events-none scale-90 opacity-0"
-          }`}
-        >
+      {isMounted && (
+        <FloatingPortal>
+          <FloatingFocusManager context={context} modal={false}>
+            <div
+              ref={refs.setFloating}
+              style={{ ...floatingStyles, zIndex: 50 }}
+              aria-label="Account"
+              {...getFloatingProps()}
+            >
+              <div style={transitionStyles} className={panelShellClass}>
           <div className="flex items-center justify-between border-b border-[var(--privy-color-foreground-4)] px-4 py-3">
             <p className="text-base font-medium text-[var(--privy-color-foreground)]">
               Account
@@ -597,8 +602,11 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
             </svg>
             </a>
           </div>
-        </div>
+              </div>
+            </div>
+          </FloatingFocusManager>
+        </FloatingPortal>
       )}
-    </div>
+    </>
   );
 }

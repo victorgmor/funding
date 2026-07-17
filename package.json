@@ -21,6 +21,7 @@
     "@astrojs/sitemap": "^3.6.1-beta.3",
     "@aws-sdk/client-dynamodb": "^3.1081.0",
     "@aws-sdk/lib-dynamodb": "^3.1081.0",
+    "@floating-ui/react": "^0.26.28",
     "@lexingtonthemes/seo": "^0.3.0",
     "@phosphor-icons/react": "^2.1.10",
     "@polymarket/builder-relayer-client": "^0.0.10",
