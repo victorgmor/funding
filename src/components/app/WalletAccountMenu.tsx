@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
 import { getAddress, isAddress } from "viem";
 import { getWalletClient } from "@wagmi/core";
@@ -24,8 +24,52 @@ type Props = {
   onLogout: () => void;
 };
 
+function privyShortAddress(value: string) {
+  if (value.length <= 12) return value;
+  return `${value.slice(0, 5)}…${value.slice(-4)}`;
+}
+
 function shortAddress(value: string) {
   return `${value.slice(0, 6)}…${value.slice(-4)}`;
+}
+
+function CopyIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
 }
 
 function PrivyWalletSection({
@@ -45,7 +89,8 @@ function PrivyWalletSection({
     return () => clearTimeout(timer);
   }, [copied]);
 
-  async function copyAddress() {
+  async function copyAddress(event: MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
     await copyText(address);
     setCopied(true);
   }
@@ -55,17 +100,36 @@ function PrivyWalletSection({
       <p className="mb-2 text-left text-xs font-medium leading-[1.125rem] text-[var(--privy-color-foreground-3)]">
         Your wallet
       </p>
-      <p className="mb-3 text-xs leading-4 text-[var(--privy-color-foreground-3)]">
-        {loading ? "…" : balance}
-      </p>
-      <button
-        type="button"
-        onClick={() => void copyAddress()}
-        title={address}
-        className="flex h-10 w-full items-center justify-center rounded-[var(--privy-border-radius-md)] bg-[var(--privy-color-background-2)] font-mono text-sm font-medium text-[var(--privy-color-foreground)] transition-opacity hover:opacity-90"
-      >
-        {copied ? "Copied" : shortAddress(address)}
-      </button>
+      <div className="flex h-14 w-full items-center justify-between rounded-[var(--privy-border-radius-md)] border border-[var(--privy-color-foreground-4)] px-4 py-3">
+        <div className="flex min-w-0 flex-col gap-0">
+          <p
+            className="truncate text-sm font-medium text-[var(--privy-color-foreground)]"
+            title={address}
+          >
+            {privyShortAddress(address)}
+          </p>
+          <p className="text-xs leading-4 text-[var(--privy-color-foreground-3)]">
+            {loading ? "…" : balance}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={(event) => void copyAddress(event)}
+          className="ml-3 flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-[var(--privy-color-accent)] bg-[var(--privy-color-background)] px-2.5 text-sm font-medium text-[var(--privy-color-accent)] transition-colors hover:bg-[var(--privy-color-info-bg-hover)]"
+        >
+          {copied ? (
+            <>
+              Copied
+              <CheckIcon />
+            </>
+          ) : (
+            <>
+              Copy
+              <CopyIcon />
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 }
