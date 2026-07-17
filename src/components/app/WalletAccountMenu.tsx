@@ -83,7 +83,7 @@ function primaryEmail(user: ReturnType<typeof usePrivy>["user"]) {
 }
 
 const panelClass =
-  "absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-[var(--privy-border-radius-lg)] border border-[var(--privy-color-foreground-4)] bg-[var(--privy-color-background)] shadow-lg";
+  "absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-[var(--privy-border-radius-md)] border border-[var(--privy-color-foreground-4)] bg-[var(--privy-color-background)] shadow-lg";
 const rowBtnClass =
   "flex h-[34px] w-full items-center gap-2 px-6 text-left text-sm text-[var(--privy-color-foreground)] transition-colors hover:bg-[var(--privy-color-background-2)]";
 const sectionBtnClass =
