@@ -1,40 +1,27 @@
 import type { APIRoute } from "astro";
-import { totalPoolNotional } from "@/lib/funds/fanout";
-import { computeFundPoolPerformance } from "@/lib/funds/performance";
-import { listMandatesByFund } from "@/lib/funds/mandates";
+import { createTtlCache } from "@/lib/cache/ttl";
+import { computePoolTotalsBySlug } from "@/lib/funds/performance";
 import { getAllFunds } from "@/lib/funds/store";
 
 export const prerender = false;
 
-export type PoolTotalEntry = {
-  deposited: number;
-  profitUsdc: number | null;
-  roiPct: number | null;
-};
+export type { PoolTotalEntry } from "@/lib/funds/performance";
+
+const RESPONSE_TTL_MS = 30_000;
+const responseCache = createTtlCache<string>(RESPONSE_TTL_MS);
 
 export const GET: APIRoute = async () => {
   try {
-    const funds = await getAllFunds();
-    const entries = await Promise.all(
-      funds.map(async (fund) => {
-        const mandates = await listMandatesByFund(fund.slug);
-        const deposited = totalPoolNotional(mandates);
-        const performance = await computeFundPoolPerformance(fund);
-        return [
-          fund.slug,
-          {
-            deposited,
-            profitUsdc: performance?.profitUsdc ?? null,
-            roiPct: performance?.roi ?? null,
-          },
-        ] as const;
-      }),
-    );
+    const body = await responseCache.getOrSet("all", async () => {
+      const funds = await getAllFunds();
+      const totals = await computePoolTotalsBySlug(funds);
+      return JSON.stringify(totals);
+    });
 
-    return new Response(JSON.stringify(Object.fromEntries(entries)), {
+    return new Response(body, {
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "no-store",
+        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
       },
     });
   } catch (e) {

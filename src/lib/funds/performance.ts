@@ -1,3 +1,4 @@
+import { createTtlCache } from "@/lib/cache/ttl";
 import { resolveLifecycleStage } from "@/lib/funds/lifecycle";
 import { listPositionsByFund } from "@/lib/funds/mandate-positions";
 import { listTradesByFund } from "@/lib/funds/mandate-trades";
@@ -21,13 +22,21 @@ export type FundPerformance = {
 
 export type FundPoolPerformance = FundPerformance;
 
+export type PoolTotalEntry = {
+  deposited: number;
+  profitUsdc: number | null;
+  roiPct: number | null;
+};
+
+const PERF_TTL_MS = 30_000;
+const perfCache = createTtlCache<FundPoolPerformance | null>(PERF_TTL_MS);
+
 function round(n: number, d: number) {
   const f = 10 ** d;
   return Math.round(n * f) / f;
 }
 
-/** Mark-to-market pool P&L — null with no commitments. */
-export async function computeFundPoolPerformance(
+async function computeFundPoolPerformanceUncached(
   fund: Fund,
 ): Promise<FundPoolPerformance | null> {
   const stage = resolveLifecycleStage(fund);
@@ -78,6 +87,36 @@ export async function computeFundPoolPerformance(
   const roi = round((profitUsdc / depositedUsdc) * 100, 2);
 
   return { roi, profitUsdc, aumUsdc, depositedUsdc };
+}
+
+/** Mark-to-market pool P&L — null with no commitments. */
+export async function computeFundPoolPerformance(
+  fund: Fund,
+): Promise<FundPoolPerformance | null> {
+  return perfCache.getOrSet(fund.slug, () =>
+    computeFundPoolPerformanceUncached(fund),
+  );
+}
+
+/** Homepage / API pool totals (deposited + P&L + ROI). */
+export async function computePoolTotalsBySlug(
+  funds: Fund[],
+): Promise<Record<string, PoolTotalEntry>> {
+  return Object.fromEntries(
+    await Promise.all(
+      funds.map(async (fund) => {
+        const performance = await computeFundPoolPerformance(fund);
+        return [
+          fund.slug,
+          {
+            deposited: performance?.depositedUsdc ?? 0,
+            profitUsdc: performance?.profitUsdc ?? null,
+            roiPct: performance?.roi ?? null,
+          },
+        ] as const;
+      }),
+    ),
+  );
 }
 
 /** Committed capital per fund slug (sum of mandate notionals). */

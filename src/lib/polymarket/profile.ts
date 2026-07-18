@@ -1,3 +1,5 @@
+import { createTtlCache } from "@/lib/cache/ttl";
+
 export type PolymarketProfile = {
   name?: string;
   pseudonym?: string;
@@ -6,6 +8,9 @@ export type PolymarketProfile = {
   proxyWallet?: string;
   profileImage?: string;
 };
+
+const PROFILE_TTL_MS = 60_000;
+const profileCache = createTtlCache<PolymarketProfile | null>(PROFILE_TTL_MS);
 
 async function fetchProfileByAddress(
   address: string,
@@ -17,7 +22,7 @@ async function fetchProfileByAddress(
   return res.json();
 }
 
-export async function fetchPolymarketProfile(
+async function fetchPolymarketProfileUncached(
   address: string,
 ): Promise<PolymarketProfile | null> {
   try {
@@ -36,6 +41,13 @@ export async function fetchPolymarketProfile(
   } catch {
     return null;
   }
+}
+
+export async function fetchPolymarketProfile(
+  address: string,
+): Promise<PolymarketProfile | null> {
+  const key = address.toLowerCase();
+  return profileCache.getOrSet(key, () => fetchPolymarketProfileUncached(address));
 }
 
 export function polymarketProfileImage(

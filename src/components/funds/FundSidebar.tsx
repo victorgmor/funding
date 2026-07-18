@@ -1,7 +1,7 @@
+import LazyProviders from "@/components/app/LazyProviders";
 import { FundOwnerControlsInner } from "@/components/funds/FundOwnerControls";
 import ManagerPoolPanel from "@/components/funds/ManagerPoolPanel";
 import MandatePanel from "@/components/funds/MandatePanel";
-import Providers from "@/components/app/Providers";
 import type { Fund } from "@/lib/funds/types";
 
 type Props = {
@@ -10,10 +10,10 @@ type Props = {
 
 export default function FundSidebar({ fund }: Props) {
   return (
-    <Providers>
+    <LazyProviders>
       <FundOwnerControlsInner fund={fund} />
       <ManagerPoolPanel fund={fund} />
       <MandatePanel fund={fund} />
-    </Providers>
+    </LazyProviders>
   );
 }

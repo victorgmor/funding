@@ -1,4 +1,11 @@
+import { createTtlCache } from "@/lib/cache/ttl";
 import { fetchErrorMessage } from "@/lib/fetch-error";
+
+const MARKET_TTL_MS = 30_000;
+const PRICE_TTL_MS = 30_000;
+const gammaMarketCache = createTtlCache<ResolvedMarketMeta | null>(MARKET_TTL_MS);
+const markPriceCache = createTtlCache<number | null>(PRICE_TTL_MS);
+const dataApiCache = createTtlCache<DataApiPosition[]>(MARKET_TTL_MS);
 
 /** Parse gamma `outcomes` JSON to outcome labels (e.g. Yes/No, Up/Down). */
 export function parseOutcomes(outcomes: string): string[] {
@@ -306,63 +313,129 @@ function settlementPriceForToken(
   }
 }
 
+function metaFromGammaRow(
+  market: GammaMarketRow,
+  tokenId: string,
+): ResolvedMarketMeta | null {
+  if (!market?.conditionId) return null;
+
+  const conditionId = market.conditionId.startsWith("0x")
+    ? market.conditionId
+    : `0x${market.conditionId}`;
+
+  const resolved = isMarketResolved(market);
+
+  return {
+    conditionId: conditionId as `0x${string}`,
+    negRisk: market.negRisk === true,
+    resolved,
+    settlementPrice: resolved
+      ? settlementPriceForToken(market, tokenId)
+      : undefined,
+  };
+}
+
+/** Warm gamma cache for many tokens in one HTTP call. */
+export async function warmGammaMarketsByTokenIds(
+  tokenIds: string[],
+): Promise<void> {
+  const missing = [
+    ...new Set(tokenIds.filter((id) => gammaMarketCache.get(id) === undefined)),
+  ];
+  if (missing.length === 0) return;
+
+  // ponytail: chunk if gamma URL length becomes an issue
+  try {
+    const res = await fetch(
+      `https://gamma-api.polymarket.com/markets?clob_token_ids=${missing
+        .map(encodeURIComponent)
+        .join(",")}`,
+    );
+    if (!res.ok) return;
+
+    const rows = (await res.json()) as GammaMarketRow[];
+    const seen = new Set<string>();
+
+    for (const market of rows) {
+      let tokens: string[] = [];
+      try {
+        tokens = JSON.parse(market.clobTokenIds ?? "[]") as string[];
+      } catch {
+        continue;
+      }
+      for (const tokenId of tokens) {
+        if (!missing.includes(tokenId)) continue;
+        seen.add(tokenId);
+        gammaMarketCache.set(tokenId, metaFromGammaRow(market, tokenId));
+      }
+    }
+
+    for (const tokenId of missing) {
+      if (!seen.has(tokenId)) gammaMarketCache.set(tokenId, null);
+    }
+  } catch {
+    /* per-token fetch still works */
+  }
+}
+
 async function fetchGammaMarketByTokenId(
   tokenId: string,
 ): Promise<ResolvedMarketMeta | null> {
-  try {
-    const res = await fetch(
-      `https://gamma-api.polymarket.com/markets?clob_token_ids=${encodeURIComponent(tokenId)}`,
-    );
-    if (!res.ok) return null;
+  return gammaMarketCache.getOrSet(tokenId, async () => {
+    try {
+      const res = await fetch(
+        `https://gamma-api.polymarket.com/markets?clob_token_ids=${encodeURIComponent(tokenId)}`,
+      );
+      if (!res.ok) return null;
 
-    const rows = (await res.json()) as GammaMarketRow[];
-    const market = rows[0];
-    if (!market?.conditionId) return null;
+      const rows = (await res.json()) as GammaMarketRow[];
+      const market = rows[0];
+      if (!market) return null;
+      return metaFromGammaRow(market, tokenId);
+    } catch {
+      return null;
+    }
+  });
+}
 
-    const conditionId = market.conditionId.startsWith("0x")
-      ? market.conditionId
-      : `0x${market.conditionId}`;
-
-    const resolved = isMarketResolved(market);
-
-    return {
-      conditionId: conditionId as `0x${string}`,
-      negRisk: market.negRisk === true,
-      resolved,
-      settlementPrice: resolved
-        ? settlementPriceForToken(market, tokenId)
-        : undefined,
-    };
-  } catch {
-    return null;
-  }
+async function fetchDataApiPositions(
+  depositAddress: string,
+): Promise<DataApiPosition[]> {
+  const key = depositAddress.toLowerCase();
+  return dataApiCache.getOrSet(key, async () => {
+    try {
+      const res = await fetch(
+        `https://data-api.polymarket.com/positions?user=${key}`,
+      );
+      if (!res.ok) return [];
+      return (await res.json()) as DataApiPosition[];
+    } catch {
+      return [];
+    }
+  });
 }
 
 async function fetchDataApiPosition(
   depositAddress: string,
   tokenId: string,
 ): Promise<DataApiPosition | null> {
-  try {
-    const res = await fetch(
-      `https://data-api.polymarket.com/positions?user=${depositAddress.toLowerCase()}`,
-    );
-    if (!res.ok) return null;
-    const rows = (await res.json()) as DataApiPosition[];
-    return rows.find((row) => row.asset === tokenId) ?? null;
-  } catch {
-    return null;
-  }
+  const rows = await fetchDataApiPositions(depositAddress);
+  return rows.find((row) => row.asset === tokenId) ?? null;
 }
 
+const clobMarketCache = createTtlCache<ClobMarket | null>(MARKET_TTL_MS);
+
 async function fetchClobMarket(conditionId: string): Promise<ClobMarket | null> {
-  try {
-    const id = conditionId.startsWith("0x") ? conditionId : `0x${conditionId}`;
-    const res = await fetch(`https://clob.polymarket.com/markets/${id}`);
-    if (!res.ok) return null;
-    return res.json() as Promise<ClobMarket>;
-  } catch {
-    return null;
-  }
+  const id = conditionId.startsWith("0x") ? conditionId : `0x${conditionId}`;
+  return clobMarketCache.getOrSet(id, async () => {
+    try {
+      const res = await fetch(`https://clob.polymarket.com/markets/${id}`);
+      if (!res.ok) return null;
+      return res.json() as Promise<ClobMarket>;
+    } catch {
+      return null;
+    }
+  });
 }
 
 function metaFromClobMarket(
@@ -503,6 +576,7 @@ export async function fetchMarkPriceByTokenId(
   tokenId: string,
   opts?: TokenPriceOpts,
 ): Promise<number | null> {
+  // Deposit-scoped prices skip the shared cache (position-specific).
   if (opts?.depositAddress) {
     const dataPos = await fetchDataApiPosition(opts.depositAddress, tokenId);
     if (dataPos?.curPrice != null && Number.isFinite(dataPos.curPrice)) {
@@ -510,8 +584,12 @@ export async function fetchMarkPriceByTokenId(
     }
   }
 
+  const cached = markPriceCache.get(tokenId);
+  if (cached !== undefined) return cached;
+
   const market = await fetchMarketByTokenId(tokenId, opts);
   if (market?.settlementPrice != null) {
+    markPriceCache.set(tokenId, market.settlementPrice);
     return market.settlementPrice;
   }
 
@@ -521,9 +599,14 @@ export async function fetchMarkPriceByTokenId(
       tokenId,
       opts.side,
     );
-    if (fromQuestion != null) return fromQuestion;
+    if (fromQuestion != null) {
+      markPriceCache.set(tokenId, fromQuestion);
+      return fromQuestion;
+    }
   }
 
   const { fetchTokenMidPrice } = await import("@/lib/polymarket/clob-prices");
-  return fetchTokenMidPrice(tokenId);
+  const mid = await fetchTokenMidPrice(tokenId);
+  markPriceCache.set(tokenId, mid);
+  return mid;
 }

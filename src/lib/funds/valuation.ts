@@ -1,4 +1,7 @@
-import { fetchMarkPriceByTokenId } from "@/lib/polymarket/gamma";
+import {
+  fetchMarkPriceByTokenId,
+  warmGammaMarketsByTokenIds,
+} from "@/lib/polymarket/gamma";
 import { getTradingSession } from "@/lib/funds/trading-sessions";
 import { isDepositWalletDeployed } from "@/lib/polymarket/depositWallet";
 import { deriveDepositWalletAddress } from "@/lib/polymarket/positions";
@@ -100,8 +103,11 @@ export async function fetchTokenValuations(
     depositsByToken.set(trade.tokenId, list);
   }
 
+  const tokenIds = [...unique];
+  await warmGammaMarketsByTokenIds(tokenIds);
+
   await Promise.all(
-    [...unique].map(async (tokenId) => {
+    tokenIds.map(async (tokenId) => {
       const meta = metaByToken.get(tokenId);
       for (const depositAddress of depositsByToken.get(tokenId) ?? []) {
         const price = await fetchMarkPriceByTokenId(tokenId, {

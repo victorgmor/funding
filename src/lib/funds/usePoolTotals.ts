@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { POOL_UPDATED_EVENT } from "@/lib/funds/pool-events";
+import type { PoolTotalEntry } from "@/lib/funds/performance";
 
-export type PoolTotalEntry = {
-  deposited: number;
-  profitUsdc: number | null;
-  roiPct: number | null;
-};
+export type { PoolTotalEntry };
 
-export function usePoolTotals() {
-  const [totals, setTotals] = useState<Record<string, PoolTotalEntry>>({});
-  const [loading, setLoading] = useState(true);
+export function usePoolTotals(
+  initial?: Record<string, PoolTotalEntry>,
+) {
+  const [totals, setTotals] = useState<Record<string, PoolTotalEntry>>(
+    () => initial ?? {},
+  );
+  const [loading, setLoading] = useState(!initial);
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/funds/pool-totals", { cache: "no-store" });
+      const res = await fetch("/api/funds/pool-totals");
       const data = await res.json();
       if (res.ok) {
         setTotals(data as Record<string, PoolTotalEntry>);
@@ -29,7 +30,8 @@ export function usePoolTotals() {
     let cancelled = false;
 
     async function run() {
-      await load();
+      // SSR seed is enough for first paint; refresh only on pool updates.
+      if (!initial) await load();
       if (cancelled) return;
     }
 
@@ -44,7 +46,7 @@ export function usePoolTotals() {
       cancelled = true;
       window.removeEventListener(POOL_UPDATED_EVENT, onUpdate);
     };
-  }, [load]);
+  }, [load, initial]);
 
   return { totals, loading, refresh: load };
 }

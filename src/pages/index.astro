@@ -10,11 +10,14 @@ import {
   getTopCreators,
   TOP_MANAGERS_CAROUSEL_LIMIT,
 } from "@/lib/funds/creators";
-import { computeProfitByFundSlug } from "@/lib/funds/performance";
+import { computePoolTotalsBySlug } from "@/lib/funds/performance";
 import { getAllFunds } from "@/lib/funds/store";
 
 const funds = await getAllFunds();
-const profitByFundSlug = await computeProfitByFundSlug(funds);
+const poolTotals = await computePoolTotalsBySlug(funds);
+const profitByFundSlug = Object.fromEntries(
+  Object.entries(poolTotals).map(([slug, row]) => [slug, row.profitUsdc ?? 0]),
+);
 const topCreators = getTopCreators(funds, {
   profitByFundSlug,
   limit: TOP_MANAGERS_CAROUSEL_LIMIT,
@@ -33,7 +36,7 @@ const topCreators = getTopCreators(funds, {
         )
       }
       <div class="mt-8">
-        <FundListPanel client:load funds={funds} />
+        <FundListPanel client:idle funds={funds} initialPoolTotals={poolTotals} />
       </div>
     </Wrapper>
   </section>

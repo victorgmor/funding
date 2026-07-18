@@ -1,12 +1,10 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { PrivyProvider, usePrivy } from "@privy-io/react-auth";
 import { WagmiProvider } from "@privy-io/wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getAccount, watchAccount } from "@wagmi/core";
 import ConnectWallet from "@/components/app/ConnectWallet";
-import InvestorTradeAutopilot from "@/components/app/InvestorTradeAutopilot";
-import PolymarketDepositSetup from "@/components/app/PolymarketDepositSetup";
 import { privyAppId, privyConfig } from "@/lib/privy/config";
 import { embeddedWalletForWagmi } from "@/lib/privy/wallet";
 import { wagmiConfig } from "@/lib/wagmi/config";
@@ -15,6 +13,13 @@ import {
   WAGMI_ACCOUNT_EVENT,
   writeWalletSession,
 } from "@/lib/wagmi/wallet-session";
+
+const PolymarketDepositSetup = lazy(
+  () => import("@/components/app/PolymarketDepositSetup"),
+);
+const InvestorTradeAutopilot = lazy(
+  () => import("@/components/app/InvestorTradeAutopilot"),
+);
 
 const queryClient = new QueryClient();
 
@@ -89,8 +94,12 @@ export default function Providers({
           setActiveWalletForWagmi={embeddedWalletForWagmi}
         >
           <WalletSessionSync />
-          {syncSession && <PolymarketDepositSetup />}
-          {syncSession && <InvestorTradeAutopilot />}
+          {syncSession && (
+            <Suspense fallback={null}>
+              <PolymarketDepositSetup />
+              <InvestorTradeAutopilot />
+            </Suspense>
+          )}
           {portalNavLogin && <NavLoginPortals />}
           {children}
         </WagmiProvider>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Providers from "@/components/app/Providers";
+import LazyProviders from "@/components/app/LazyProviders";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
 import ConnectWallet from "@/components/app/ConnectWallet";
 import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
@@ -10,9 +10,9 @@ import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 
 export default function CreateFundForm() {
   return (
-    <Providers>
+    <LazyProviders fallback={<WalletPanelPlaceholder />}>
       <CreateFundFormInner />
-    </Providers>
+    </LazyProviders>
   );
 }
 

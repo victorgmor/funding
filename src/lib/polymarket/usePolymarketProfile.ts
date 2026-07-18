@@ -29,7 +29,6 @@ export function usePolymarketProfile(
     try {
       const res = await fetch(
         `/api/polymarket/profile?address=${encodeURIComponent(address)}`,
-        { cache: "no-store" },
       );
       const data = await res.json();
       if (!res.ok) return;

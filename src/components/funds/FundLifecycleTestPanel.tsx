@@ -1,7 +1,7 @@
 import { useState } from "react";
 import ConnectWallet from "@/components/app/ConnectWallet";
+import LazyProviders from "@/components/app/LazyProviders";
 import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
-import Providers from "@/components/app/Providers";
 import { isFundOwner, isUserFund } from "@/lib/funds/editable";
 import {
   resolveLifecycleStage,
@@ -22,9 +22,9 @@ const STAGES: { id: LifecycleStage; label: string }[] = [
 
 export default function FundLifecycleTestPanel(props: Props) {
   return (
-    <Providers>
+    <LazyProviders>
       <FundLifecycleTestPanelInner {...props} />
-    </Providers>
+    </LazyProviders>
   );
 }
 

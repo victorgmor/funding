@@ -1,17 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
+import LazyProviders from "@/components/app/LazyProviders";
 import FundFeedCard from "@/components/funds/FundFeedCard";
 import FundTradeAutopilot from "@/components/funds/FundTradeAutopilot";
 import YourMandatesPanel from "@/components/funds/YourMandatesPanel";
-import Providers from "@/components/app/Providers";
 import GearIcon from "@/components/fundations/icons/GearIcon";
 import SearchIcon from "@/components/fundations/icons/SearchIcon";
-import { usePoolTotals } from "@/lib/funds/usePoolTotals";
+import {
+  usePoolTotals,
+  type PoolTotalEntry,
+} from "@/lib/funds/usePoolTotals";
 import type { Fund } from "@/lib/funds/types";
 import { notifyPoolUpdated } from "@/lib/funds/pool-events";
-import { useWalletGate } from "@/lib/wagmi/useWalletGate";
+import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 type Props = {
   funds: Fund[];
+  initialPoolTotals?: Record<string, PoolTotalEntry>;
 };
 
 type SortField = "published" | "creator" | "cap";
@@ -62,12 +66,12 @@ function sortFunds(
 }
 
 function useParticipatingSlugs(enabled: boolean) {
-  const { address, isConnected, loading: walletLoading } = useWalletGate();
+  const { address, isConnected, restoring } = useWalletSession();
   const [slugs, setSlugs] = useState<Set<string> | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!enabled || walletLoading || !isConnected || !address) {
+    if (!enabled || restoring || !isConnected || !address) {
       setSlugs(null);
       setLoading(false);
       return;
@@ -104,9 +108,9 @@ function useParticipatingSlugs(enabled: boolean) {
     return () => {
       cancelled = true;
     };
-  }, [enabled, address, isConnected, walletLoading]);
+  }, [enabled, address, isConnected, restoring]);
 
-  return { slugs, loading, walletLoading };
+  return { slugs, loading, walletLoading: restoring };
 }
 
 const defaultDirection = (field: SortField): SortDirection =>
@@ -127,9 +131,10 @@ function SortIndicator({
   );
 }
 
-function FundListPanelInner({ funds }: Props) {
-  const { address, isConnected, loading: walletLoading } = useWalletGate();
-  const { totals: poolTotals, refresh: refreshPoolTotals } = usePoolTotals();
+export default function FundListPanel({ funds, initialPoolTotals }: Props) {
+  const { address, isConnected, restoring: walletLoading } = useWalletSession();
+  const { totals: poolTotals, refresh: refreshPoolTotals } =
+    usePoolTotals(initialPoolTotals);
   const [query, setQuery] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [onlyParticipating, setOnlyParticipating] = useState(false);
@@ -320,16 +325,15 @@ function FundListPanelInner({ funds }: Props) {
       </div>
 
       <aside className="min-w-0">
-        <YourMandatesPanel />
+        <LazyProviders
+          when="session"
+          fallback={
+            <p className="text-primary/40 text-sm">Log in to see your mandates</p>
+          }
+        >
+          <YourMandatesPanel />
+        </LazyProviders>
       </aside>
     </div>
-  );
-}
-
-export default function FundListPanel(props: Props) {
-  return (
-    <Providers>
-      <FundListPanelInner {...props} />
-    </Providers>
   );
 }
