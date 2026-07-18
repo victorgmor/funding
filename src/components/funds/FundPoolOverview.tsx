@@ -4,10 +4,10 @@ import type { FundPoolPerformance } from "@/lib/funds/performance";
 import type { FundSettlement } from "@/lib/funds/settlement";
 import FundPnlChart from "@/components/funds/FundPnlChart";
 import FundStageMetricsRow from "@/components/funds/FundStageMetricsRow";
-import PnlAmount from "@/components/funds/PnlAmount";
 import PoolCapBar from "@/components/funds/PoolCapBar";
 import ProfitShareLabel from "@/components/funds/ProfitShareLabel";
 import { formatUsdExact } from "@/lib/funds/format";
+import { creatorPath } from "@/lib/funds/creator";
 import { POOL_UPDATED_EVENT } from "@/lib/funds/pool-events";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
@@ -15,23 +15,16 @@ type Props = { fund: Fund };
 
 type PoolState = VirtualPool & {
   performance?: FundPoolPerformance | null;
-  depositors?: Mandate[];
+  depositors?: (Mandate & { profileId: string })[];
 };
 
-type ActivityTab = "predictions" | "pnl" | "depositors";
-
-const headerClass =
-  "text-primary/45 text-xs font-medium uppercase tracking-wide";
+type ActivityTab = "performance" | "predictions" | "depositors";
 
 const sizeClass =
-  "text-primary/70 w-24 shrink-0 text-right font-mono text-sm tabular-nums uppercase sm:w-28";
+  "text-primary/70 shrink-0 text-right font-mono text-sm tabular-nums uppercase";
 
-const pnlClass = "w-28 shrink-0 text-right sm:w-32";
-
-const depositClass =
-  "text-primary/70 w-24 shrink-0 text-right font-mono text-sm tabular-nums sm:w-28";
-
-const shareClass = "w-16 shrink-0 text-right font-mono text-sm tabular-nums";
+const depositSummaryClass =
+  "text-primary/70 shrink-0 text-right font-mono text-sm tabular-nums";
 
 function PredictionsList({ trades }: { trades: MandateTrade[] }) {
   if (trades.length === 0) {
@@ -44,18 +37,8 @@ function PredictionsList({ trades }: { trades: MandateTrade[] }) {
 
   return (
     <>
-      <div className="border-primary/10 flex items-center justify-between gap-4 border-b pb-2">
-        <p className={`${headerClass} min-w-0 flex-1`}>Market</p>
-        <div className="flex shrink-0 items-center gap-4 sm:gap-6">
-          <p className={`${headerClass} ${sizeClass}`}>Size</p>
-          <p className={`${headerClass} ${pnlClass}`}>PnL</p>
-        </div>
-      </div>
-
       {trades.map((trade) => {
         const failed = trade.status === "failed";
-        const pnl = trade.pnlUsdc;
-        const showPnl = !failed && pnl != null;
 
         return (
           <article
@@ -72,23 +55,14 @@ function PredictionsList({ trades }: { trades: MandateTrade[] }) {
                 {trade.question}
               </p>
 
-              <div className="flex shrink-0 items-center gap-4 sm:gap-6">
-                <p
-                  className={`${sizeClass} ${
-                    failed ? "text-red-400" : "text-primary/70"
-                  }`}
-                >
-                  {formatUsdExact(trade.usdcAmount)}{" "}
-                  {failed ? "FAILED" : trade.side}
-                </p>
-                <div className={pnlClass}>
-                  {showPnl ? (
-                    <PnlAmount amount={pnl} />
-                  ) : (
-                    <span className="text-primary/30 font-mono text-sm">—</span>
-                  )}
-                </div>
-              </div>
+              <p
+                className={`${sizeClass} ${
+                  failed ? "text-red-400" : "text-primary/70"
+                }`}
+              >
+                {formatUsdExact(trade.usdcAmount)}{" "}
+                {failed ? "FAILED" : trade.side}
+              </p>
             </div>
           </article>
         );
@@ -101,7 +75,7 @@ function DepositorsList({
   depositors,
   totalNotional,
 }: {
-  depositors: Mandate[];
+  depositors: (Mandate & { profileId: string })[];
   totalNotional: number;
 }) {
   if (depositors.length === 0) {
@@ -114,14 +88,6 @@ function DepositorsList({
 
   return (
     <>
-      <div className="border-primary/10 flex items-center justify-between gap-4 border-b pb-2">
-        <p className={`${headerClass} min-w-0 flex-1`}>Depositor</p>
-        <div className="flex shrink-0 items-center gap-4 sm:gap-6">
-          <p className={`${headerClass} ${depositClass}`}>Deposited</p>
-          <p className={`${headerClass} ${shareClass}`}>Share</p>
-        </div>
-      </div>
-
       {depositors.map((mandate) => {
         const share =
           totalNotional > 0
@@ -134,15 +100,16 @@ function DepositorsList({
             className="border-primary/10 border-b py-3.5 last:border-b-0"
           >
             <div className="flex items-center justify-between gap-4">
-              <p className="text-primary/80 min-w-0 flex-1 truncate font-mono text-sm">
+              <a
+                href={creatorPath(mandate.profileId)}
+                className="text-primary/80 hover:text-primary min-w-0 flex-1 truncate font-mono text-sm transition-colors"
+              >
                 {mandate.investorWallet}
+              </a>
+              <p className={depositSummaryClass}>
+                {formatUsdExact(mandate.notionalUsdc)}
+                <span className="text-primary/45 ml-2">{share}%</span>
               </p>
-              <div className="text-primary/70 flex shrink-0 items-center gap-4 sm:gap-6">
-                <p className={depositClass}>
-                  {formatUsdExact(mandate.notionalUsdc)}
-                </p>
-                <p className={`${shareClass} text-primary/70`}>{share}%</p>
-              </div>
             </div>
           </article>
         );
@@ -168,7 +135,7 @@ function FundActivityTabs({
   const depositors = pool.depositors ?? [];
   const hasChart = chartTrades.length > 0;
 
-  const [tab, setTab] = useState<ActivityTab>("predictions");
+  const [tab, setTab] = useState<ActivityTab>("performance");
 
   if (
     predictions.length === 0 &&
@@ -195,17 +162,17 @@ function FundActivityTabs({
       <div className="flex flex-wrap gap-x-5 gap-y-2">
         <button
           type="button"
+          onClick={() => setTab("performance")}
+          className={tabClass("performance")}
+        >
+          Performance
+        </button>
+        <button
+          type="button"
           onClick={() => setTab("predictions")}
           className={tabClass("predictions")}
         >
           Predictions
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("pnl")}
-          className={tabClass("pnl")}
-        >
-          P&L
         </button>
         <button
           type="button"
@@ -217,8 +184,7 @@ function FundActivityTabs({
       </div>
 
       <div className="pt-3">
-        {tab === "predictions" && <PredictionsList trades={predictions} />}
-        {tab === "pnl" &&
+        {tab === "performance" &&
           (hasChart ? (
             <FundPnlChart
               embedded
@@ -227,9 +193,10 @@ function FundActivityTabs({
             />
           ) : (
             <p className="text-primary/45 py-8 text-center text-sm">
-              Not enough trade history for a P&L chart yet.
+              Not enough trade history for a performance chart yet.
             </p>
           ))}
+        {tab === "predictions" && <PredictionsList trades={predictions} />}
         {tab === "depositors" && (
           <DepositorsList
             depositors={depositors}

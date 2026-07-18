@@ -25,7 +25,10 @@ export const GET: APIRoute = async ({ params, url }) => {
     let pool = await buildVirtualPool(fund);
     const depositors = pool.mandates
       .filter((mandate) => mandate.status === "active" && mandate.notionalUsdc > 0)
-      .map(maskMandateWallet)
+      .map((mandate) => ({
+        ...maskMandateWallet(mandate),
+        profileId: mandate.investorWallet,
+      }))
       .sort((a, b) => b.notionalUsdc - a.notionalUsdc);
 
     if (isOwner) {
