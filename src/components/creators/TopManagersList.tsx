@@ -10,10 +10,12 @@ type Props = {
 };
 
 const headerClass =
-  "text-primary/45 text-xs font-medium uppercase tracking-wide";
+  "border-primary text-primary inline-block border-b-2 pb-2 text-sm font-medium";
 
 const metricClass =
   "text-primary/70 w-14 shrink-0 text-right font-mono text-sm tabular-nums sm:w-16";
+
+const headerMetricClass = "w-14 shrink-0 text-right sm:w-16";
 
 export default function TopManagersList({ managers }: Props) {
   if (managers.length === 0) {
@@ -26,14 +28,20 @@ export default function TopManagersList({ managers }: Props) {
 
   return (
     <div>
-      <div className="border-primary/10 flex items-center justify-between gap-4 border-b pb-2">
-        <p className={`${headerClass} min-w-0 flex-1`}>Manager</p>
+      <div className="flex items-center justify-between gap-4">
+        <p className="min-w-0 flex-1">
+          <span className={headerClass}>Manager</span>
+        </p>
         <div className="flex shrink-0 items-center gap-4 sm:gap-6">
-          <p className={`${headerClass} ${metricClass}`}>Funds</p>
-          <p className={`${headerClass} hidden sm:block ${metricClass} sm:w-20`}>
-            Deposits
+          <p className={headerMetricClass}>
+            <span className={headerClass}>Funds</span>
           </p>
-          <p className={`${headerClass} w-24 text-right sm:w-28`}>PnL</p>
+          <p className={`${headerMetricClass} hidden sm:block sm:w-20`}>
+            <span className={headerClass}>Deposits</span>
+          </p>
+          <p className="w-24 text-right sm:w-28">
+            <span className={headerClass}>PnL</span>
+          </p>
         </div>
       </div>
 
