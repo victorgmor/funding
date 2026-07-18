@@ -374,7 +374,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
         {...getReferenceProps()}
         aria-expanded={open}
         data-state={open ? "open" : "closed"}
-        className="border-primary text-primary flex items-center gap-2 border-b-2 pb-2 text-sm font-medium transition-colors"
+        className="text-primary flex items-center gap-2 text-sm font-medium transition-colors"
       >
         <CreatorAvatar address={address} name={label} size="2xs" />
         <span className="max-w-32 truncate">{label}</span>

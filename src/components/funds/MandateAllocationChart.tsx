@@ -11,7 +11,7 @@ type Entry = {
 type Slice = {
   slug: string;
   name: string;
-  notional: number;
+  weight: number;
   profit: number;
 };
 
@@ -34,11 +34,11 @@ function layoutTreemap(
     return [{ ...items[0]!, x, y, w, h }];
   }
 
-  const total = items.reduce((sum, item) => sum + item.notional, 0);
+  const total = items.reduce((sum, item) => sum + item.weight, 0);
   let acc = 0;
   let split = 1;
   for (let i = 0; i < items.length - 1; i++) {
-    acc += items[i]!.notional;
+    acc += items[i]!.weight;
     if (acc >= total / 2) {
       split = i + 1;
       break;
@@ -47,7 +47,7 @@ function layoutTreemap(
 
   const left = items.slice(0, split);
   const right = items.slice(split);
-  const leftWeight = left.reduce((sum, item) => sum + item.notional, 0);
+  const leftWeight = left.reduce((sum, item) => sum + item.weight, 0);
   const ratio = leftWeight / total;
 
   if (w >= h) {
@@ -79,15 +79,26 @@ function pnlFill(profit: number, maxAbs: number): string {
 
 export default function MandateAllocationChart({ entries }: Props) {
   const slices = useMemo(() => {
-    return entries
+    const mapped = entries
+      .filter((entry) => entry.mandate.notionalUsdc > 0)
       .map((entry) => ({
         slug: entry.fund.slug,
         name: entry.fund.name,
-        notional: entry.mandate.notionalUsdc,
         profit: entry.profitUsdc ?? 0,
+        notional: entry.mandate.notionalUsdc,
+      }));
+    // Size by |P&L|; fall back to notional when everything is flat.
+    const usePnl = mapped.some((slice) => Math.abs(slice.profit) >= 0.005);
+    return mapped
+      .map((slice) => ({
+        slug: slice.slug,
+        name: slice.name,
+        profit: slice.profit,
+        weight: usePnl
+          ? Math.max(Math.abs(slice.profit), 0.01)
+          : slice.notional,
       }))
-      .filter((slice) => slice.notional > 0)
-      .sort((a, b) => b.notional - a.notional);
+      .sort((a, b) => b.weight - a.weight);
   }, [entries]);
 
   const maxAbs = useMemo(
@@ -105,7 +116,7 @@ export default function MandateAllocationChart({ entries }: Props) {
   return (
     <div className="border-primary/10 border-b px-2 pb-6 pt-5">
       <div
-        className="relative h-56 w-full overflow-hidden rounded-md bg-[#0c1a12] sm:h-64"
+        className="relative h-56 w-full overflow-hidden border border-white bg-[#0c1a12] sm:h-64"
         role="img"
         aria-label={
           empty
@@ -126,7 +137,7 @@ export default function MandateAllocationChart({ entries }: Props) {
                 key={rect.slug}
                 href={`/funds/${rect.slug}`}
                 title={`${rect.name}: ${formatUsdExact(rect.profit, true)}`}
-                className="absolute flex flex-col items-center justify-center overflow-hidden border border-[#0c1a12] px-1 text-center transition-opacity hover:opacity-90"
+                className="absolute flex flex-col items-center justify-center overflow-hidden border border-white px-1 text-center transition-opacity hover:opacity-90"
                 style={{
                   left: `${rect.x}%`,
                   top: `${rect.y}%`,
