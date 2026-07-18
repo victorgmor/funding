@@ -23,6 +23,10 @@ export const GET: APIRoute = async ({ params, url }) => {
 
   try {
     let pool = await buildVirtualPool(fund);
+    const depositors = pool.mandates
+      .filter((mandate) => mandate.status === "active" && mandate.notionalUsdc > 0)
+      .map(maskMandateWallet)
+      .sort((a, b) => b.notionalUsdc - a.notionalUsdc);
 
     if (isOwner) {
       pool = {
@@ -47,7 +51,7 @@ export const GET: APIRoute = async ({ params, url }) => {
     );
 
     return new Response(
-      JSON.stringify({ ...pool, recentTrades, performance }),
+      JSON.stringify({ ...pool, depositors, recentTrades, performance }),
       { headers: { "Content-Type": "application/json" } },
     );
   } catch (e) {

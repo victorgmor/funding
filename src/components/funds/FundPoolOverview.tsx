@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import type { Fund, MandateTrade, VirtualPool } from "@/lib/funds/types";
+import type { Fund, Mandate, MandateTrade, VirtualPool } from "@/lib/funds/types";
 import type { FundPoolPerformance } from "@/lib/funds/performance";
 import type { FundSettlement } from "@/lib/funds/settlement";
+import FundPnlChart from "@/components/funds/FundPnlChart";
 import FundStageMetricsRow from "@/components/funds/FundStageMetricsRow";
 import PnlAmount from "@/components/funds/PnlAmount";
 import PoolCapBar from "@/components/funds/PoolCapBar";
@@ -12,6 +13,13 @@ import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 type Props = { fund: Fund };
 
+type PoolState = VirtualPool & {
+  performance?: FundPoolPerformance | null;
+  depositors?: Mandate[];
+};
+
+type ActivityTab = "predictions" | "pnl" | "depositors";
+
 const headerClass =
   "text-primary/45 text-xs font-medium uppercase tracking-wide";
 
@@ -20,11 +28,22 @@ const sizeClass =
 
 const pnlClass = "w-28 shrink-0 text-right sm:w-32";
 
-function RecentTradesList({ trades }: { trades: MandateTrade[] }) {
-  return (
-    <div className="border-primary/10 mt-6 border-t pt-4">
-      <p className="text-primary mb-3 text-sm font-medium">Recent trades</p>
+const depositClass =
+  "text-primary/70 w-24 shrink-0 text-right font-mono text-sm tabular-nums sm:w-28";
 
+const shareClass = "w-16 shrink-0 text-right font-mono text-sm tabular-nums";
+
+function PredictionsList({ trades }: { trades: MandateTrade[] }) {
+  if (trades.length === 0) {
+    return (
+      <p className="text-primary/45 py-8 text-center text-sm">
+        No predictions yet.
+      </p>
+    );
+  }
+
+  return (
+    <>
       <div className="border-primary/10 flex items-center justify-between gap-4 border-b pb-2">
         <p className={`${headerClass} min-w-0 flex-1`}>Market</p>
         <div className="flex shrink-0 items-center gap-4 sm:gap-6">
@@ -74,15 +93,157 @@ function RecentTradesList({ trades }: { trades: MandateTrade[] }) {
           </article>
         );
       })}
+    </>
+  );
+}
+
+function DepositorsList({
+  depositors,
+  totalNotional,
+}: {
+  depositors: Mandate[];
+  totalNotional: number;
+}) {
+  if (depositors.length === 0) {
+    return (
+      <p className="text-primary/45 py-8 text-center text-sm">
+        No depositors yet.
+      </p>
+    );
+  }
+
+  return (
+    <>
+      <div className="border-primary/10 flex items-center justify-between gap-4 border-b pb-2">
+        <p className={`${headerClass} min-w-0 flex-1`}>Depositor</p>
+        <div className="flex shrink-0 items-center gap-4 sm:gap-6">
+          <p className={`${headerClass} ${depositClass}`}>Deposited</p>
+          <p className={`${headerClass} ${shareClass}`}>Share</p>
+        </div>
+      </div>
+
+      {depositors.map((mandate) => {
+        const share =
+          totalNotional > 0
+            ? Math.round((mandate.notionalUsdc / totalNotional) * 100)
+            : 0;
+
+        return (
+          <article
+            key={mandate.id}
+            className="border-primary/10 border-b py-3.5 last:border-b-0"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-primary/80 min-w-0 flex-1 truncate font-mono text-sm">
+                {mandate.investorWallet}
+              </p>
+              <div className="text-primary/70 flex shrink-0 items-center gap-4 sm:gap-6">
+                <p className={depositClass}>
+                  {formatUsdExact(mandate.notionalUsdc)}
+                </p>
+                <p className={`${shareClass} text-primary/70`}>{share}%</p>
+              </div>
+            </div>
+          </article>
+        );
+      })}
+    </>
+  );
+}
+
+function FundActivityTabs({
+  fund,
+  pool,
+  closed,
+}: {
+  fund: Fund;
+  pool: PoolState;
+  closed: boolean;
+}) {
+  const allTrades = pool.recentTrades ?? [];
+  const chartTrades = allTrades.filter((trade) => trade.status === "filled");
+  const predictions = allTrades
+    .filter((trade) => trade.status === "filled" || trade.status === "failed")
+    .slice(0, 8);
+  const depositors = pool.depositors ?? [];
+  const hasChart = chartTrades.length > 0;
+
+  const [tab, setTab] = useState<ActivityTab>("predictions");
+
+  if (
+    predictions.length === 0 &&
+    !hasChart &&
+    depositors.length === 0
+  ) {
+    if (closed) return null;
+    return (
+      <p className="text-primary/45 mt-6 border-t border-primary/10 pt-4 text-sm">
+        No manager trades yet. Commit capital in the sidebar to join the fund.
+      </p>
+    );
+  }
+
+  const tabClass = (value: ActivityTab) =>
+    `border-b-2 pb-2 text-sm transition-colors ${
+      tab === value
+        ? "border-primary text-primary font-medium"
+        : "border-transparent text-primary/45 hover:text-primary/70"
+    }`;
+
+  return (
+    <div className="border-primary/10 mt-6 border-t pt-4">
+      <div className="flex flex-wrap gap-x-5 gap-y-2">
+        <button
+          type="button"
+          onClick={() => setTab("predictions")}
+          className={tabClass("predictions")}
+        >
+          Predictions
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("pnl")}
+          className={tabClass("pnl")}
+        >
+          P&L
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("depositors")}
+          className={tabClass("depositors")}
+        >
+          Depositors
+        </button>
+      </div>
+
+      <div className="pt-3">
+        {tab === "predictions" && <PredictionsList trades={predictions} />}
+        {tab === "pnl" &&
+          (hasChart ? (
+            <FundPnlChart
+              embedded
+              trades={chartTrades}
+              fundCreatedAt={fund.createdAt}
+            />
+          ) : (
+            <p className="text-primary/45 py-8 text-center text-sm">
+              Not enough trade history for a P&L chart yet.
+            </p>
+          ))}
+        {tab === "depositors" && (
+          <DepositorsList
+            depositors={depositors}
+            totalNotional={pool.totalNotional}
+          />
+        )}
+      </div>
     </div>
   );
 }
 
 export default function FundPoolOverview({ fund }: Props) {
   const { address } = useWalletSession();
-  const [pool, setPool] = useState<
-    (VirtualPool & { performance?: FundPoolPerformance | null }) | null
-  >(null);
+  const [pool, setPool] = useState<PoolState | null>(null);
   const [settlement, setSettlement] = useState<FundSettlement | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -203,22 +364,7 @@ export default function FundPoolOverview({ fund }: Props) {
         </div>
       )}
 
-      {(() => {
-        const tradeRows = (pool.recentTrades ?? [])
-          .filter((trade) => trade.status === "filled" || trade.status === "failed")
-          .slice(0, 8);
-
-        if (tradeRows.length === 0) {
-          if (closed) return null;
-          return (
-            <p className="text-primary/45 mt-6 border-t border-primary/10 pt-4 text-sm">
-              No manager trades yet. Commit capital in the sidebar to join the fund.
-            </p>
-          );
-        }
-
-        return <RecentTradesList trades={tradeRows} />;
-      })()}
+      <FundActivityTabs fund={fund} pool={pool} closed={closed} />
     </div>
   );
 }
