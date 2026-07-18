@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import type { Fund, VirtualPool } from "@/lib/funds/types";
+import type { Fund, MandateTrade, VirtualPool } from "@/lib/funds/types";
 import type { FundPoolPerformance } from "@/lib/funds/performance";
 import type { FundSettlement } from "@/lib/funds/settlement";
 import FundStageMetricsRow from "@/components/funds/FundStageMetricsRow";
+import PnlAmount from "@/components/funds/PnlAmount";
 import PoolCapBar from "@/components/funds/PoolCapBar";
 import ProfitShareLabel from "@/components/funds/ProfitShareLabel";
 import { formatUsdExact } from "@/lib/funds/format";
@@ -10,6 +11,72 @@ import { POOL_UPDATED_EVENT } from "@/lib/funds/pool-events";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 type Props = { fund: Fund };
+
+const headerClass =
+  "text-primary/45 text-xs font-medium uppercase tracking-wide";
+
+const sizeClass =
+  "text-primary/70 w-24 shrink-0 text-right font-mono text-sm tabular-nums uppercase sm:w-28";
+
+const pnlClass = "w-28 shrink-0 text-right sm:w-32";
+
+function RecentTradesList({ trades }: { trades: MandateTrade[] }) {
+  return (
+    <div className="border-primary/10 mt-6 border-t pt-4">
+      <p className="text-primary mb-3 text-sm font-medium">Recent trades</p>
+
+      <div className="border-primary/10 flex items-center justify-between gap-4 border-b pb-2">
+        <p className={`${headerClass} min-w-0 flex-1`}>Market</p>
+        <div className="flex shrink-0 items-center gap-4 sm:gap-6">
+          <p className={`${headerClass} ${sizeClass}`}>Size</p>
+          <p className={`${headerClass} ${pnlClass}`}>PnL</p>
+        </div>
+      </div>
+
+      {trades.map((trade) => {
+        const failed = trade.status === "failed";
+        const pnl = trade.pnlUsdc;
+        const showPnl = !failed && pnl != null;
+
+        return (
+          <article
+            key={trade.id}
+            className="border-primary/10 border-b py-3.5 last:border-b-0"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <p
+                className={`min-w-0 flex-1 truncate text-sm ${
+                  failed ? "text-red-400" : "text-primary/80"
+                }`}
+                title={trade.question}
+              >
+                {trade.question}
+              </p>
+
+              <div className="flex shrink-0 items-center gap-4 sm:gap-6">
+                <p
+                  className={`${sizeClass} ${
+                    failed ? "text-red-400" : "text-primary/70"
+                  }`}
+                >
+                  {formatUsdExact(trade.usdcAmount)}{" "}
+                  {failed ? "FAILED" : trade.side}
+                </p>
+                <div className={pnlClass}>
+                  {showPnl ? (
+                    <PnlAmount amount={pnl} />
+                  ) : (
+                    <span className="text-primary/30 font-mono text-sm">—</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function FundPoolOverview({ fund }: Props) {
   const { address } = useWalletSession();
@@ -144,60 +211,13 @@ export default function FundPoolOverview({ fund }: Props) {
         if (tradeRows.length === 0) {
           if (closed) return null;
           return (
-            <p className="text-primary/45 mt-4 border-t border-primary/10 pt-4 text-sm">
+            <p className="text-primary/45 mt-6 border-t border-primary/10 pt-4 text-sm">
               No manager trades yet. Commit capital in the sidebar to join the fund.
             </p>
           );
         }
 
-        return (
-          <div className="border-primary/10 mt-4 border-t pt-4">
-            <p className="text-primary text-sm font-medium">Recent trades</p>
-            <ul className="mt-2">
-              {tradeRows.map((trade, index) => {
-                const failed = trade.status === "failed";
-                const pnl = trade.pnlUsdc;
-                const showPnl = !failed && pnl != null;
-                return (
-                  <li
-                    key={trade.id}
-                    className={`border-primary/10 flex items-center justify-between gap-3 py-2 text-sm ${
-                      index > 0 ? "border-t" : ""
-                    }`}
-                  >
-                    <span
-                      className={`min-w-0 truncate ${
-                        failed ? "text-red-400" : "text-primary/60"
-                      }`}
-                    >
-                      {trade.question}
-                    </span>
-                    <span
-                      className={`shrink-0 whitespace-nowrap font-mono text-xs tabular-nums uppercase ${
-                        failed ? "text-red-400" : "text-primary/70"
-                      }`}
-                    >
-                      {formatUsdExact(trade.usdcAmount)}{" "}
-                      {failed ? "FAILED" : trade.side}
-                      {showPnl && (
-                        <>
-                          {" · "}
-                          <span
-                            className={
-                              pnl >= 0 ? "text-emerald-400" : "text-red-400"
-                            }
-                          >
-                            {formatUsdExact(pnl, true)} PnL
-                          </span>
-                        </>
-                      )}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        );
+        return <RecentTradesList trades={tradeRows} />;
       })()}
     </div>
   );
