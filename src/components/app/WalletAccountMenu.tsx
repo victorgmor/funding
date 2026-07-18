@@ -114,7 +114,7 @@ function PrivyWalletSection({
       <p className="text-primary mb-2 text-left text-sm font-medium">
         Your wallet
       </p>
-      <div className="border-primary/10 flex h-14 w-full items-center justify-between rounded-xl border px-4 py-3">
+      <div className="border-primary/10 flex h-14 w-full items-center justify-between border px-4 py-3">
         <div className="flex min-w-0 flex-col gap-0">
           <p
             className="text-primary truncate text-sm font-medium"
@@ -129,7 +129,7 @@ function PrivyWalletSection({
         <button
           type="button"
           onClick={(event) => void copyAddress(event)}
-          className="border-accent/40 text-accent hover:bg-accent/10 ml-3 flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-sm font-medium transition-colors"
+          className="border-accent/40 text-accent hover:bg-accent/10 ml-3 flex h-7 shrink-0 items-center gap-1.5 border px-2.5 text-sm font-medium transition-colors"
         >
           {copied ? (
             <>
@@ -153,15 +153,15 @@ async function copyText(value: string) {
 }
 
 const panelShellClass =
-  "border-primary/10 bg-secondary text-primary w-80 overflow-hidden rounded-xl border shadow-lg";
+  "border-primary/10 bg-secondary text-primary w-80 overflow-hidden border";
 const rowBtnClass =
   "text-primary hover:bg-primary/5 flex h-9 w-full items-center gap-2 px-4 text-left text-sm transition-colors";
 const sectionBtnClass =
-  "border-primary/15 text-primary hover:bg-primary/5 w-full rounded-full border px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+  "border-primary/15 text-primary hover:bg-primary/5 w-full border px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 const inputClass =
-  "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/40 focus:border-primary/30 w-full rounded-full border px-3 py-2 text-sm focus:outline-none";
+  "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/40 focus:border-primary/30 w-full border px-3 py-2 text-sm focus:outline-none";
 const primaryBtnClass =
-  "bg-accent hover:opacity-90 w-full rounded-full px-3 py-2 text-sm font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50";
+  "bg-accent hover:opacity-90 w-full px-3 py-2 text-sm font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50";
 const mutedClass = "text-primary/50 text-sm";
 const labelClass = "text-primary text-sm font-medium";
 const monoClass = "text-primary font-mono text-sm tabular-nums";
@@ -374,7 +374,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
         {...getReferenceProps()}
         aria-expanded={open}
         data-state={open ? "open" : "closed"}
-        className="border-primary/15 bg-primary/10 text-primary hover:bg-primary/15 flex items-center gap-2 rounded-full border px-2.5 py-1.5 transition-colors"
+        className="border-primary/15 bg-primary/10 text-primary hover:bg-primary/15 flex items-center gap-2 border px-2.5 py-1.5 transition-colors"
       >
         <CreatorAvatar address={address} name={label} size="2xs" />
         <span className="max-w-32 truncate text-sm">{label}</span>
@@ -396,7 +396,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Close"
-              className="text-primary/40 hover:bg-primary/10 hover:text-primary rounded-full p-1"
+              className="text-primary/40 hover:bg-primary/10 hover:text-primary p-1"
             >
               ✕
             </button>
