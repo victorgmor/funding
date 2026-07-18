@@ -1,4 +1,4 @@
-export type FundStatus = "trading" | "closed";
+export type FundStatus = "trading" | "closed" | "archived";
 export type MandateStatus = "active" | "redeeming" | "closed";
 export type InstructionStatus =
   | "pending"
@@ -35,6 +35,8 @@ export type Fund = {
   raiseEndsAt?: string | null;
   /** ISO — when the fund was closed (manual or effective) */
   closedAt?: string | null;
+  /** ISO — when the fund was auto-archived (e.g. reached trading with $0 raised) */
+  archivedAt?: string | null;
   /** Max virtual pool size in USDC */
   capUsdc?: number | null;
   /** Manager share of mandate profits on close (0–50) */

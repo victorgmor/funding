@@ -158,6 +158,34 @@ export async function deleteFund(
   throw new Error(PUBLISHED_FUND_CANNOT_DELETE);
 }
 
+/** Auto-archive a fund that reached trading with $0 raised (called by cron). */
+export async function archiveFund(slug: string): Promise<Fund> {
+  const fund = await getFund(slug);
+  if (!fund) throw new Error("Fund not found");
+  if (fund.status === "archived") return fund;
+
+  const archivedAt = new Date().toISOString();
+  const archived: Fund = {
+    ...fund,
+    status: "archived",
+    archivedAt,
+    closedAt: fund.closedAt ?? archivedAt,
+  };
+  await replaceUserFund(archived);
+  return archived;
+}
+
+/** Restore an archived fund to trading (manager-initiated). */
+export async function unarchiveFund(slug: string): Promise<Fund> {
+  const fund = await getFund(slug);
+  if (!fund) throw new Error("Fund not found");
+  if (fund.status !== "archived") return fund;
+
+  const restored: Fund = { ...fund, status: "trading" };
+  await replaceUserFund(restored);
+  return restored;
+}
+
 export async function getAllFunds(): Promise<Fund[]> {
   return listUserFunds();
 }

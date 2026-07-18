@@ -15,7 +15,8 @@ export type BundleAuthAction =
   | "close"
   | "commit"
   | "instruct"
-  | "authorize";
+  | "authorize"
+  | "unarchive";
 
 const ACTION_TEXT: Record<BundleAuthAction, string> = {
   publish: "publish a fund",
@@ -24,6 +25,7 @@ const ACTION_TEXT: Record<BundleAuthAction, string> = {
   commit: "commit capital to a fund",
   instruct: "publish a fund trade instruction",
   authorize: "authorize automated fund trading",
+  unarchive: "restore an archived fund",
 };
 
 function randomNonce(): string {

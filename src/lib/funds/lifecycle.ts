@@ -13,12 +13,26 @@ export type LifecycleStageView = {
 
 const DAY_MS = 86_400_000;
 
+const dateFormatter = new Intl.DateTimeFormat(undefined, {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+
+/** Local-TZ short date (dd.mm.yyyy). SSR falls back to the host tz (UTC by default);
+ *  client islands render the visitor's timezone. */
 export function formatFundDate(iso: string): string {
-  const d = new Date(iso);
-  const dd = String(d.getUTCDate()).padStart(2, "0");
-  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const yyyy = d.getUTCFullYear();
-  return `${dd}.${mm}.${yyyy}`;
+  return dateFormatter.format(new Date(iso));
+}
+
+/** True when the fund is closed or archived — no longer accepting deposits or trades. */
+export function isFundInactive(fund: Fund): boolean {
+  return (
+    fund.status === "closed" ||
+    fund.status === "archived" ||
+    Boolean(fund.closedAt) ||
+    Boolean(fund.archivedAt)
+  );
 }
 
 export function daysUntil(iso: string, now = Date.now()): number {
@@ -42,6 +56,7 @@ export function formatDaysAgo(iso: string, now = Date.now()): string {
 }
 
 export function effectiveClosedAt(fund: Fund, now = Date.now()): string | null {
+  if (fund.archivedAt) return fund.archivedAt;
   if (fund.closedAt) return fund.closedAt;
   if (fund.status === "closed" && fund.tradingEndsAt) return fund.tradingEndsAt;
   if (fund.tradingEndsAt && Date.parse(fund.tradingEndsAt) < now) {
@@ -66,7 +81,7 @@ export function depositPhaseActive(
   totalNotional = 0,
   now = Date.now(),
 ): boolean {
-  if (fund.status === "closed" || fund.closedAt) return false;
+  if (isFundInactive(fund)) return false;
   if (fund.tradingEndsAt && Date.parse(fund.tradingEndsAt) < now) return false;
   if (!raiseWindowOpen(fund, now)) return false;
   if (poolCapReached(fund, totalNotional)) return false;
@@ -78,7 +93,7 @@ export function resolveLifecycleStage(
   now = Date.now(),
   totalNotional = 0,
 ): LifecycleStage {
-  if (fund.status === "closed" || fund.closedAt) return "closed";
+  if (isFundInactive(fund)) return "closed";
   if (fund.tradingEndsAt && Date.parse(fund.tradingEndsAt) < now) {
     return "closed";
   }

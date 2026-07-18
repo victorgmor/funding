@@ -39,6 +39,7 @@ export function getTopCreators(funds: Fund[], options: Options = {}): TopCreator
   const byId = new Map<string, TopCreator>();
 
   for (const fund of funds) {
+    if (fund.status === "archived") continue;
     const profit = profitByFundSlug[fund.slug] ?? 0;
     const deposited = depositedByFundSlug[fund.slug] ?? 0;
     const existing = byId.get(fund.manager.id);

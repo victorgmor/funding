@@ -13,6 +13,7 @@ const ACTIONS = new Set<BundleAuthAction>([
   "commit",
   "instruct",
   "authorize",
+  "unarchive",
 ]);
 
 export const GET: APIRoute = async ({ request, url }) => {

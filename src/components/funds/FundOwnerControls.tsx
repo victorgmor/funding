@@ -149,6 +149,46 @@ export function FundOwnerControlsInner({ fund }: Props) {
     }
   }
 
+  async function restoreFund() {
+    if (!isOwner || !address || busy || fund.status !== "archived") return;
+    if (
+      !window.confirm(
+        "Restore this archived fund? It will reappear in public discovery.",
+      )
+    ) {
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+
+    try {
+      const message = await requestChallenge("unarchive");
+      setSigning(true);
+      const { signature } = await signBundleAction(message).finally(() =>
+        setSigning(false),
+      );
+
+      const res = await fetch(`/api/funds/${fund.slug}/unarchive`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          managerAddress: address,
+          message,
+          signature,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Could not restore fund");
+
+      window.location.reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not restore fund");
+      setBusy(false);
+    }
+  }
+
   const inputClass =
     "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/60 w-full rounded border px-3 py-2 text-sm focus:border-primary/30 focus:outline-none";
 
@@ -179,7 +219,12 @@ export function FundOwnerControlsInner({ fund }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-primary text-sm font-medium">Creator controls</p>
-          {fund.status === "closed" ? (
+          {fund.status === "archived" ? (
+            <p className="text-primary/60 mt-1 text-xs">
+              Auto-archived after the raise window closed with $0 committed.
+              Hidden from public discovery — restore to make it visible again.
+            </p>
+          ) : fund.status === "closed" ? (
             <p className="text-primary/60 mt-1 text-xs">
               This fund is closed. New commitments are disabled.
             </p>
@@ -208,6 +253,22 @@ export function FundOwnerControlsInner({ fund }: Props) {
               className="border-red-500/30 text-red-300 hover:bg-red-500/10 rounded-full border px-4 py-1.5 text-xs font-medium uppercase"
             >
               {signing ? "Sign…" : busy ? "Closing…" : "Close"}
+            </button>
+          </div>
+        )}
+
+        {fund.status === "archived" && (
+          <div className="flex flex-wrap gap-2">
+            <span className="border-primary/15 text-primary/60 rounded-full border px-3 py-1.5 text-xs font-medium uppercase">
+              Archived
+            </span>
+            <button
+              type="button"
+              onClick={restoreFund}
+              disabled={busy || signing}
+              className="bg-accent hover:bg-accent/80 disabled:bg-accent/40 rounded-full px-4 py-1.5 text-xs font-medium uppercase text-white"
+            >
+              {signing ? "Sign…" : busy ? "Restoring…" : "Restore"}
             </button>
           </div>
         )}

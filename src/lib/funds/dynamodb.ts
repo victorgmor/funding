@@ -50,7 +50,8 @@ export async function dbListFunds(): Promise<Fund[]> {
   );
   return (rows.Items ?? [])
     .map((item) => fromItem(item as Record<string, unknown>))
-    .filter((fund): fund is Fund => fund != null);
+    .filter((fund): fund is Fund => fund != null)
+    .filter((fund) => fund.status !== "archived");
 }
 
 export async function dbGetFund(slug: string): Promise<Fund | undefined> {

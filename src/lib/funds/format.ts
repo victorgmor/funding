@@ -28,11 +28,15 @@ export function formatPercent(value: number): string {
   return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
 }
 
+const sinceDateFormatter = new Intl.DateTimeFormat(undefined, {
+  day: "2-digit",
+  month: "2-digit",
+});
+
+/** Local-TZ short date (dd/mm). SSR falls back to the host tz (UTC by default);
+ *  client islands render the visitor's timezone. */
 export function formatSinceDate(iso: string): string {
-  const date = new Date(iso);
-  const day = String(date.getUTCDate()).padStart(2, "0");
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-  return `${day}/${month}`;
+  return sinceDateFormatter.format(new Date(iso));
 }
 
 export function formatPublishedAgo(iso?: string): string | null {
