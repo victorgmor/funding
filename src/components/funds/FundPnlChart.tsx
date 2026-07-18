@@ -18,7 +18,7 @@ type Props = {
 
 const W = 640;
 const H = 200;
-const PAD = { top: 12, right: 0, bottom: 22, left: 0 };
+const PAD = { top: 10, right: 0, bottom: 28, left: 0 };
 
 function formatTooltipDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -222,7 +222,7 @@ export default function FundPnlChart({
             </span>
           )}
           <p
-            className={`font-mono text-sm tabular-nums ${
+            className={`font-mono text-base tabular-nums ${
               displayPoint.pnl >= 0 ? "text-emerald-400" : "text-red-400"
             }`}
           >
@@ -260,8 +260,8 @@ export default function FundPnlChart({
         >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={lineColor} stopOpacity="0.35" />
-              <stop offset="100%" stopColor={lineColor} stopOpacity="0.02" />
+              <stop offset="0%" stopColor={lineColor} stopOpacity="0.22" />
+              <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
             </linearGradient>
           </defs>
 
@@ -275,15 +275,15 @@ export default function FundPnlChart({
                   y1={tick.y}
                   y2={tick.y}
                   stroke="currentColor"
-                  strokeOpacity={isZero ? 0.22 : 0.06}
+                  strokeOpacity={isZero ? 0.14 : 0.04}
                   vectorEffect="non-scaling-stroke"
                 />
                 <text
-                  x={0}
-                  y={tick.y - 3}
+                  x={2}
+                  y={tick.y - 4}
                   textAnchor="start"
-                  className={`font-mono text-[10px] tabular-nums ${
-                    isZero ? "fill-primary/55" : "fill-primary/40"
+                  className={`font-mono text-sm tabular-nums ${
+                    isZero ? "fill-primary/45" : "fill-primary/30"
                   }`}
                 >
                   {formatAxisUsd(tick.value)}
@@ -300,54 +300,52 @@ export default function FundPnlChart({
             d={stepPath(points, xScale, yScale)}
             fill="none"
             stroke={lineColor}
-            strokeWidth={2.5}
+            strokeWidth={2}
             strokeLinejoin="round"
             strokeLinecap="round"
           />
 
-          {points.map((point, index) => (
-            <circle
-              key={`${point.t}-${index}`}
-              cx={xScale(point.t)}
-              cy={yScale(point.pnl)}
-              r={activeIndex === index ? 4 : 2.5}
-              fill={lineColor}
-              stroke="#0f2918"
-              strokeWidth={activeIndex === index ? 2 : 1}
-              opacity={activeIndex == null || activeIndex === index ? 1 : 0.35}
-            />
-          ))}
+          {activePoint && activeIndex != null && (
+            <>
+              <line
+                x1={xScale(activePoint.t)}
+                x2={xScale(activePoint.t)}
+                y1={PAD.top}
+                y2={PAD.top + plotH}
+                stroke="#32BCFF"
+                strokeOpacity={0.4}
+                strokeDasharray="3 4"
+                vectorEffect="non-scaling-stroke"
+              />
+              <circle
+                cx={xScale(activePoint.t)}
+                cy={yScale(activePoint.pnl)}
+                r={3.5}
+                fill={lineColor}
+                stroke="#0f2918"
+                strokeWidth={2}
+              />
+            </>
+          )}
 
           {xTicks.map((tick, index) => {
             const isFirst = index === 0;
             const isLast = index === xTicks.length - 1;
-            const x = isFirst ? 0 : isLast ? W : tick.x;
+            const x = isFirst ? 2 : isLast ? W - 2 : tick.x;
             const anchor = isFirst ? "start" : isLast ? "end" : "middle";
 
             return (
               <text
                 key={tick.t}
                 x={x}
-                y={H - 4}
+                y={H - 6}
                 textAnchor={anchor}
-                className="fill-primary/40 font-mono text-[10px] tabular-nums"
+                className="fill-primary/30 font-mono text-sm tabular-nums"
               >
                 {tick.label}
               </text>
             );
           })}
-
-          {activePoint && activeIndex != null && (
-            <line
-              x1={xScale(activePoint.t)}
-              x2={xScale(activePoint.t)}
-              y1={PAD.top}
-              y2={PAD.top + plotH}
-              stroke="#32BCFF"
-              strokeOpacity={0.55}
-              strokeDasharray="4 4"
-            />
-          )}
         </svg>
 
         {activePoint && (
