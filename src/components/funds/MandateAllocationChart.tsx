@@ -118,7 +118,7 @@ export default function MandateAllocationChart({ entries }: Props) {
   const empty = rects.length === 0;
 
   return (
-    <div className="border-primary/10 border-b px-2 pb-6 pt-5">
+    <div className="border-primary/10 border-b pb-6 pt-5">
       <div
         className="relative h-56 w-full border border-white bg-transparent p-1.5 sm:h-64"
         role="img"
