@@ -63,8 +63,8 @@ export default function TopManagersList({ managers }: Props) {
                 name={manager.name}
                 size="2xs"
               />
-              <span className="text-primary group-hover:text-primary/85 truncate font-semibold tracking-tight">
-                {manager.name}
+              <span className="text-primary group-hover:text-primary/85 break-all font-mono text-sm font-semibold tracking-tight">
+                {manager.id}
               </span>
               {manager.verified && (
                 <SealCheck size="xs" className="text-[#32BCFF] shrink-0" />

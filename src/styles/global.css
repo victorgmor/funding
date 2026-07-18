@@ -13,8 +13,8 @@
 @theme {
   --font-sans: "Geist", sans-serif;
   --font-mono: "Geist Mono", monospace;
-  --color-primary: oklch(1 0 0);
-  --color-secondary: oklch(0.396 0.076 150.1);
+  --color-primary: oklch(66.7% 0 0);
+  --color-secondary: oklch(18.7% 0.015 266.77);
   --color-accent: oklch(0.717 0.157 53.0);
   --animate-marquee: marquee 40s linear infinite;
   --text-xs: 0.875rem;

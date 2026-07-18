@@ -147,19 +147,17 @@ export default function MandateAllocationChart({ entries }: Props) {
                   className="absolute flex flex-col items-center justify-center overflow-hidden px-1 text-center"
                   style={{
                     left: isHovered ? "0%" : `${rect.x + CELL_GAP}%`,
-                    top: isHovered ? "0%" : `${rect.y + CELL_GAP}%`,
+                    top: `${rect.y + CELL_GAP}%`,
                     width: isHovered
                       ? "100%"
                       : `${Math.max(0, rect.w - CELL_GAP * 2)}%`,
-                    height: isHovered
-                      ? "100%"
-                      : `${Math.max(0, rect.h - CELL_GAP * 2)}%`,
+                    height: `${Math.max(0, rect.h - CELL_GAP * 2)}%`,
                     backgroundColor: pnlFill(rect.profit, maxAbs),
                     zIndex: isHovered ? 2 : 1,
                     opacity: otherHovered ? 0 : 1,
                     pointerEvents: otherHovered ? "none" : "auto",
                     transition:
-                      "left 200ms ease, top 200ms ease, width 200ms ease, height 200ms ease, opacity 150ms ease",
+                      "left 200ms ease, width 200ms ease, opacity 150ms ease",
                   }}
                   onMouseEnter={() => setHovered(rect.slug)}
                   onMouseLeave={() => setHovered(null)}
