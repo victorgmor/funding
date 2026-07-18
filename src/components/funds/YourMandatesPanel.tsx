@@ -121,27 +121,33 @@ export default function YourMandatesPanel() {
         </div>
       </div>
 
-      {walletLoading ? (
-        <div className="border-primary/10 border-t pt-4">
-          <WalletPanelPlaceholder label="Loading wallet…" />
-        </div>
-      ) : !isConnected ? (
-        <div className="border-primary/10 border-t pt-4">
-          <p className="text-primary/55 text-sm leading-relaxed">
-            Connect your wallet to see the funds you're in.
-          </p>
-          <div className="mt-4 max-w-56">
-            <ConnectWallet variant="panel" />
+      {isConnected && address ? (
+        loading || entries === null ? (
+          <div className="border-primary/10 border-t">
+            <MandateAllocationChart entries={[]} />
           </div>
-        </div>
-      ) : loading || entries === null ? (
-        <div className="border-primary/10 border-t">
-          <MandateAllocationChart entries={[]} />
-        </div>
+        ) : (
+          <div className="border-primary/10 border-t">
+            <MandateAllocationChart entries={visibleEntries} />
+          </div>
+        )
       ) : (
-        <div className="border-primary/10 border-t">
-          <MandateAllocationChart entries={visibleEntries} />
-        </div>
+        <>
+          <div data-wallet-restoring className="border-primary/10 border-t pt-4">
+            <WalletPanelPlaceholder label="Loading wallet…" />
+          </div>
+          <div
+            className="border-primary/10 border-t pt-4"
+            data-wallet-connect-cta
+          >
+            <p className="text-primary/55 text-sm leading-relaxed">
+              Connect your wallet to see the funds you're in.
+            </p>
+            <div className="mt-4 max-w-56">
+              <ConnectWallet variant="panel" />
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

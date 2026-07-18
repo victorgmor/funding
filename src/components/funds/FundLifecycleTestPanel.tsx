@@ -47,7 +47,9 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
         <p className="text-primary/50 text-sm font-medium uppercase">
           Test lifecycle
         </p>
-        <WalletPanelPlaceholder className="mt-2" label="Loading wallet…" />
+        <div data-wallet-restoring>
+          <WalletPanelPlaceholder className="mt-2" label="Loading wallet…" />
+        </div>
       </div>
     );
   }
@@ -58,7 +60,7 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
         <p className="text-primary/50 text-sm font-medium uppercase">
           Test lifecycle
         </p>
-        <div className="mt-2">
+        <div className="mt-2" data-wallet-connect-cta>
           <p className="text-primary/60 mb-2 text-xs">
             Connect your creator wallet to switch stages.
           </p>

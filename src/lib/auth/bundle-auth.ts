@@ -14,6 +14,7 @@ export type BundleAuthAction =
   | "manage"
   | "close"
   | "commit"
+  | "withdraw"
   | "instruct"
   | "authorize"
   | "unarchive";
@@ -23,6 +24,7 @@ const ACTION_TEXT: Record<BundleAuthAction, string> = {
   manage: "update a fund",
   close: "close a fund",
   commit: "commit capital to a fund",
+  withdraw: "withdraw capital from a fund",
   instruct: "publish a fund trade instruction",
   authorize: "authorize automated fund trading",
   unarchive: "restore an archived fund",

@@ -1,6 +1,10 @@
 import type { APIRoute } from "astro";
 import { verifyBundleSignature } from "@/lib/auth/bundle-auth";
-import { upsertMandateCommitment, getMandate } from "@/lib/funds/mandates";
+import {
+  upsertMandateCommitment,
+  reduceMandateCommitment,
+  getMandate,
+} from "@/lib/funds/mandates";
 import {
   buildVirtualPool,
   poolCapRemaining,
@@ -122,10 +126,13 @@ export const POST: APIRoute = async ({ params, request }) => {
     amountUsdc?: number;
     message?: string;
     signature?: `0x${string}`;
+    withdraw?: boolean;
   };
 
+  const isWithdraw = body.withdraw === true;
+
   try {
-    if (fund.status === "closed") {
+    if (fund.status === "closed" || fund.status === "archived") {
       return new Response(JSON.stringify({ error: "Fund is closed" }), {
         status: 400,
       });
@@ -147,7 +154,14 @@ export const POST: APIRoute = async ({ params, request }) => {
     }
 
     const amountUsdc = Number(body.amountUsdc);
-    if (!amountUsdc || amountUsdc < 5) {
+    if (!amountUsdc || amountUsdc <= 0) {
+      return new Response(
+        JSON.stringify({ error: "Enter a positive amount" }),
+        { status: 400 },
+      );
+    }
+
+    if (!isWithdraw && amountUsdc < 5) {
       return new Response(
         JSON.stringify({ error: "Minimum $5 commitment" }),
         { status: 400 },
@@ -158,11 +172,22 @@ export const POST: APIRoute = async ({ params, request }) => {
       message: body.message ?? "",
       signature: body.signature ?? "0x",
       managerAddress: address,
-      action: "commit",
+      action: isWithdraw ? "withdraw" : "commit",
       slug: fund.slug,
     });
     if (authError) {
       return new Response(JSON.stringify({ error: authError }), { status: 401 });
+    }
+
+    if (isWithdraw) {
+      const mandate = await reduceMandateCommitment(
+        fund.slug,
+        address,
+        amountUsdc,
+      );
+      return new Response(JSON.stringify({ mandate }), {
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const session = await getTradingSession(fund.slug, address);

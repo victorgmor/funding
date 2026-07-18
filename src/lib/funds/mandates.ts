@@ -98,6 +98,36 @@ export async function upsertMandateCommitment(
   return mandate;
 }
 
+/** Reduce commitment by unused cash during the raise window. */
+export async function reduceMandateCommitment(
+  fundSlug: string,
+  wallet: string,
+  amountUsdc: number,
+): Promise<Mandate> {
+  if (amountUsdc <= 0) throw new Error("Amount must be positive");
+
+  const existing = await getMandate(fundSlug, wallet);
+  if (!existing) throw new Error("No mandate to withdraw from");
+  if (existing.status === "closed") throw new Error("Mandate is closed");
+
+  const maxWithdraw = round(Math.min(existing.cashUsdc, existing.notionalUsdc), 2);
+  if (amountUsdc > maxWithdraw) {
+    throw new Error(
+      `Only $${maxWithdraw.toFixed(2)} deployable — cannot withdraw $${amountUsdc.toFixed(2)}`,
+    );
+  }
+
+  const mandate: Mandate = {
+    ...existing,
+    notionalUsdc: round(existing.notionalUsdc - amountUsdc, 2),
+    cashUsdc: round(existing.cashUsdc - amountUsdc, 2),
+    updatedAt: new Date().toISOString(),
+  };
+
+  await saveMandate(mandate);
+  return mandate;
+}
+
 export async function adjustMandateCash(
   mandateId: string,
   fundSlug: string,

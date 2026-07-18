@@ -27,11 +27,16 @@ const {
     <style is:inline>
       /* Pre-hydration wallet slot: default shows the "Log in" button; flip to
          the placeholder pill when a saved session is detected. React's portal
-         replaces whichever is visible on mount. */
+         replaces whichever is visible once Providers mount. */
       [data-wallet-slot] [data-slot-when] { display: none; }
       [data-wallet-slot] [data-slot-when="anonymous"] { display: inline-flex; }
       html[data-wallet-session="1"] [data-wallet-slot] [data-slot-when="anonymous"] { display: none; }
       html[data-wallet-session="1"] [data-wallet-slot] [data-slot-when="connected"] { display: inline-flex; }
+
+      /* Panel connect CTAs: hide while a saved session is restoring. */
+      [data-wallet-restoring] { display: none; }
+      html[data-wallet-session="1"] [data-wallet-connect-cta] { display: none !important; }
+      html[data-wallet-session="1"] [data-wallet-restoring] { display: block; }
     </style>
     <script is:inline>
       // Reformat every [data-iso] element into the visitor's local timezone.
@@ -63,7 +68,7 @@ const {
     </script>
   </head>
   <body class="flex flex-col bg-secondary  min-h-svh">
-    <AppProviders client:idle />
+    <AppProviders client:load />
     <Navigation />
     <main class="grow">
       <slot />

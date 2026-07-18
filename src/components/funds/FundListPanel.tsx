@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import LazyProviders from "@/components/app/LazyProviders";
+import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import FundFeedCard from "@/components/funds/FundFeedCard";
 import FundTradeAutopilot from "@/components/funds/FundTradeAutopilot";
 import YourMandatesPanel from "@/components/funds/YourMandatesPanel";
@@ -328,7 +329,17 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
         <LazyProviders
           when="session"
           fallback={
-            <p className="text-primary/40 text-sm">Log in to see your mandates</p>
+            <>
+              <div data-wallet-restoring>
+                <WalletPanelPlaceholder label="Loading mandates…" />
+              </div>
+              <p
+                data-wallet-connect-cta
+                className="text-primary/40 text-sm"
+              >
+                Log in to see your mandates
+              </p>
+            </>
           }
         >
           <YourMandatesPanel />

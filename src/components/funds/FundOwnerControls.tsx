@@ -198,18 +198,17 @@ export function FundOwnerControlsInner({ fund }: Props) {
     return (
       <div className="border-primary/10 border-b pb-4">
         <p className="text-primary text-sm font-medium">Creator controls</p>
-        {loading ? (
+        <div data-wallet-restoring>
           <WalletPanelPlaceholder className="mt-3" label="Loading wallet…" />
-        ) : (
-          <>
-            <p className="text-primary/60 mt-1 text-xs">
-              Connect the wallet that created this fund to edit or close it.
-            </p>
-            <div className="mt-3">
-              <ConnectWallet variant="panel" />
-            </div>
-          </>
-        )}
+        </div>
+        <div data-wallet-connect-cta>
+          <p className="text-primary/60 mt-1 text-xs">
+            Connect the wallet that created this fund to edit or close it.
+          </p>
+          <div className="mt-3">
+            <ConnectWallet variant="panel" />
+          </div>
+        </div>
       </div>
     );
   }

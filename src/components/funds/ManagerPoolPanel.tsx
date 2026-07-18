@@ -308,10 +308,15 @@ export default function ManagerPoolPanel({ fund }: Props) {
 
   return (
     <div className="border-primary/10 border-b pb-4 pt-4">
-      {walletLoading ? (
-        <WalletPanelPlaceholder label="Loading wallet…" />
-      ) : !isConnected || !address ? (
-        <ConnectWallet variant="panel" />
+      {!isConnected || !address ? (
+        <>
+          <div data-wallet-restoring>
+            <WalletPanelPlaceholder label="Loading wallet…" />
+          </div>
+          <div data-wallet-connect-cta>
+            <ConnectWallet variant="panel" />
+          </div>
+        </>
       ) : loading && !pool ? (
         <p className="text-primary/50 text-sm">Loading pool…</p>
       ) : (

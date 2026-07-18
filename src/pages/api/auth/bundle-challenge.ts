@@ -11,6 +11,7 @@ const ACTIONS = new Set<BundleAuthAction>([
   "manage",
   "close",
   "commit",
+  "withdraw",
   "instruct",
   "authorize",
   "unarchive",

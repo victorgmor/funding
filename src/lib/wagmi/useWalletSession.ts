@@ -8,13 +8,20 @@ import {
 
 export { WAGMI_ACCOUNT_EVENT } from "@/lib/wagmi/wallet-session";
 
+function initialSessionAddress(): `0x${string}` | null {
+  if (typeof window === "undefined") return null;
+  return readWalletSession();
+}
+
 export function useWalletSession() {
-  const [sessionAddress, setSessionAddress] = useState(readWalletSession);
+  const [sessionAddress, setSessionAddress] = useState(initialSessionAddress);
   const [account, setAccount] = useState<GetAccountReturnType>(() =>
     getAccount(wagmiConfig),
   );
 
   useEffect(() => {
+    // Re-sync after mount in case SSR skipped localStorage.
+    setSessionAddress(readWalletSession());
     return watchAccount(wagmiConfig, { onChange: setAccount });
   }, []);
 

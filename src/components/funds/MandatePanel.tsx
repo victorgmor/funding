@@ -56,6 +56,7 @@ export default function MandatePanel({ fund }: Props) {
   const [summary, setSummary] = useState<MandateSummary | null>(null);
   const [pendingTrades, setPendingTrades] = useState<MandateTrade[]>([]);
   const [amount, setAmount] = useState("50");
+  const [mode, setMode] = useState<"add" | "withdraw">("add");
   const [loading, setLoading] = useState(false);
   const [committing, setCommitting] = useState(false);
   const [signing, setSigning] = useState(false);
@@ -64,6 +65,9 @@ export default function MandatePanel({ fund }: Props) {
 
   const closed = fund.status === "closed";
   const hasMandate = (summary?.mandate?.notionalUsdc ?? 0) > 0;
+  const deployable = summary?.mandate?.cashUsdc ?? 0;
+  const canWithdraw = hasMandate && deployable > 0;
+  const isWithdraw = mode === "withdraw" && canWithdraw;
   const serverSignerActive = summary?.session?.serverSigner === true;
   const ensuringSigner = useRef(false);
 
@@ -106,7 +110,7 @@ export default function MandatePanel({ fund }: Props) {
     }
   }
 
-  async function requestChallenge(action: "commit" | "authorize") {
+  async function requestChallenge(action: "commit" | "authorize" | "withdraw") {
     requirePrivyWallet();
     const params = new URLSearchParams({
       address,
@@ -224,7 +228,19 @@ export default function MandatePanel({ fund }: Props) {
   async function commit() {
     if (!address || committing || closed) return;
     const amountUsdc = Number(amount);
-    if (!amountUsdc || amountUsdc < 5) {
+    if (!amountUsdc || amountUsdc <= 0) {
+      setError("Enter a positive amount");
+      return;
+    }
+
+    if (isWithdraw) {
+      if (amountUsdc > deployable) {
+        setError(
+          `Only ${formatUsdExact(deployable)} deployable — cannot withdraw ${formatUsdExact(amountUsdc)}`,
+        );
+        return;
+      }
+    } else if (amountUsdc < 5) {
       setError("Minimum $5 commitment");
       return;
     }
@@ -233,13 +249,13 @@ export default function MandatePanel({ fund }: Props) {
     setError(null);
 
     try {
-      if (!serverSignerActive) {
+      if (!isWithdraw && !serverSignerActive) {
         setStatus("Authorize auto-trading…");
         await ensureServerSigner();
         setStatus(null);
       }
 
-      const message = await requestChallenge("commit");
+      const message = await requestChallenge(isWithdraw ? "withdraw" : "commit");
       setSigning(true);
       const signature = await signWalletMessage(message).finally(() =>
         setSigning(false),
@@ -253,16 +269,27 @@ export default function MandatePanel({ fund }: Props) {
           amountUsdc,
           message,
           signature,
+          ...(isWithdraw ? { withdraw: true } : {}),
         }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Commit failed");
+      if (!res.ok) {
+        throw new Error(
+          data.error ?? (isWithdraw ? "Withdraw failed" : "Commit failed"),
+        );
+      }
 
       await refresh();
       notifyPoolUpdated(fund.slug);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Commit failed");
+      setError(
+        e instanceof Error
+          ? e.message
+          : isWithdraw
+            ? "Withdraw failed"
+            : "Commit failed",
+      );
     } finally {
       setCommitting(false);
       setStatus(null);
@@ -274,7 +301,7 @@ export default function MandatePanel({ fund }: Props) {
   if (isOwner) return null;
 
   return (
-    <div className="border-primary/10 border-b pb-4 pt-4 lg:sticky lg:top-24 lg:self-start">
+    <div className="border-primary/10 border-b pb-4 pt-4">
       {address && onPolygon && serverSignerActive && (
         <FundTradeAutopilot
           fundSlug={fund.slug}
@@ -290,15 +317,18 @@ export default function MandatePanel({ fund }: Props) {
       </h2>
 
       <div className="mt-3">
-      {walletLoading ? (
-        <WalletPanelPlaceholder label="Loading wallet…" />
-      ) : !isConnected ? (
-        <div className="space-y-3">
-          <p className="text-primary/60 text-sm">
-            Connect to commit capital to this managed pool.
-          </p>
-          <ConnectWallet variant="panel" />
-        </div>
+      {!isConnected || !address ? (
+        <>
+          <div data-wallet-restoring>
+            <WalletPanelPlaceholder label="Loading wallet…" />
+          </div>
+          <div className="space-y-3" data-wallet-connect-cta>
+            <p className="text-primary/60 text-sm">
+              Connect to commit capital to this managed pool.
+            </p>
+            <ConnectWallet variant="panel" />
+          </div>
+        </>
       ) : !onPolygon ? (
         <p className="text-primary/60 text-sm">
           {switching ? "Switching to Polygon…" : "Connecting to Polygon…"}
@@ -336,13 +366,57 @@ export default function MandatePanel({ fund }: Props) {
                 </p>
               )}
               <div className="mb-2 flex items-center justify-between gap-2">
-                <label className={headerClass} htmlFor="mandate-amount">
-                  {hasMandate ? "Add capital" : "Commit"}
-                </label>
-                {depositBalance != null && (
-                  <span className="text-primary/50 text-sm tabular-nums">
-                    {formatUsdExact(depositBalance)} deposit wallet
-                  </span>
+                {hasMandate && canWithdraw ? (
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setMode("add")}
+                      className={
+                        mode === "add"
+                          ? headerClass + " text-primary"
+                          : "text-primary/40 text-sm font-medium uppercase tracking-wide"
+                      }
+                    >
+                      Add capital
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode("withdraw");
+                        if (Number(amount) > deployable) {
+                          setAmount(String(Math.floor(deployable * 100) / 100));
+                        }
+                      }}
+                      className={
+                        mode === "withdraw"
+                          ? headerClass + " text-primary"
+                          : "text-primary/40 text-sm font-medium uppercase tracking-wide"
+                      }
+                    >
+                      Withdraw
+                    </button>
+                  </div>
+                ) : (
+                  <label className={headerClass} htmlFor="mandate-amount">
+                    {hasMandate ? "Add capital" : "Commit"}
+                  </label>
+                )}
+                {isWithdraw ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setAmount(String(Math.floor(deployable * 100) / 100))
+                    }
+                    className="text-primary/50 hover:text-primary/70 text-sm tabular-nums"
+                  >
+                    {formatUsdExact(deployable)} available
+                  </button>
+                ) : (
+                  depositBalance != null && (
+                    <span className="text-primary/50 text-sm tabular-nums">
+                      {formatUsdExact(depositBalance)} deposit wallet
+                    </span>
+                  )
                 )}
               </div>
               <div className="border-primary/10 flex items-center gap-2 rounded-full border py-1 pl-3 pr-1">
@@ -350,7 +424,8 @@ export default function MandatePanel({ fund }: Props) {
                 <input
                   id="mandate-amount"
                   type="number"
-                  min={5}
+                  min={isWithdraw ? 0.01 : 5}
+                  max={isWithdraw ? deployable : undefined}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   className="text-primary w-full border-0 bg-transparent py-1.5 text-sm font-medium tabular-nums [appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -358,22 +433,30 @@ export default function MandatePanel({ fund }: Props) {
                 <span className="text-primary/40 pr-2 text-xs">pUSD</span>
               </div>
               <p className="text-primary/40 mt-2 text-xs">
-                Commitment is backed by pUSD in your Polymarket deposit wallet.
-                Auto-trading is enabled when you join.
+                {isWithdraw
+                  ? "Withdraw unused deployable capital back to your deposit wallet while the raise is open. Capital in open positions stays locked."
+                  : "Commitment is backed by pUSD in your Polymarket deposit wallet. Auto-trading is enabled when you join."}
               </p>
               <button
                 type="button"
-                disabled={committing || signing}
+                disabled={committing || signing || (isWithdraw && deployable <= 0)}
                 onClick={commit}
                 className="bg-accent hover:opacity-90 mt-3 w-full rounded-full py-2.5 text-sm font-medium text-white disabled:opacity-50"
               >
                 {signing
                   ? "Sign in wallet…"
                   : committing
-                    ? status ?? (hasMandate ? "Adding…" : "Joining…")
-                    : hasMandate
-                      ? "Add to mandate"
-                      : "Commit to fund"}
+                    ? status ??
+                      (isWithdraw
+                        ? "Withdrawing…"
+                        : hasMandate
+                          ? "Adding…"
+                          : "Joining…")
+                    : isWithdraw
+                      ? "Withdraw from mandate"
+                      : hasMandate
+                        ? "Add to mandate"
+                        : "Commit to fund"}
               </button>
             </div>
           )}
