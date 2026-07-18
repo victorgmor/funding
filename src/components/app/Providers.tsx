@@ -56,8 +56,14 @@ function NavLoginPortals() {
   const [mobileSlot, setMobileSlot] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    setNavSlot(document.getElementById("nav-login-slot"));
-    setMobileSlot(document.getElementById("mobile-login-slot"));
+    // createPortal appends into the slot without clearing SSR children.
+    // Wipe the pre-hydration placeholders so they don't linger as ghosts.
+    const nav = document.getElementById("nav-login-slot");
+    const mobile = document.getElementById("mobile-login-slot");
+    if (nav) nav.innerHTML = "";
+    if (mobile) mobile.innerHTML = "";
+    setNavSlot(nav);
+    setMobileSlot(mobile);
   }, []);
 
   return (

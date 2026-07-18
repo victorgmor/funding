@@ -19,7 +19,7 @@ const navButtonClass =
 
 function ConnectWalletInner({ variant = "panel" }: Props) {
   const { login, logout } = usePrivy();
-  const { address, displayAddress, isConnected, loading, hasSession } =
+  const { address, displayAddress, isConnected, hasSession } =
     useWalletGate();
   const { switching } = useEnsurePolygon();
   const { name: displayName } = usePolymarketProfile(address ?? displayAddress);
@@ -31,7 +31,8 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
 
   // We have a saved session but wagmi hasn't hydrated yet — render a
   // non-clickable placeholder so the user never sees a "Log in" flash.
-  if (loading || (hasSession && !isConnected)) {
+  // (Anonymous users fall through to the normal Log in button — matches SSR.)
+  if (hasSession && !isConnected) {
     if (variant === "nav") {
       return <WalletPanelPlaceholder variant="button" />;
     }
