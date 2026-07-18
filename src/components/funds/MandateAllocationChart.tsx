@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { formatUsdExact } from "@/lib/funds/format";
 import type { Fund, Mandate } from "@/lib/funds/types";
 
@@ -20,6 +20,8 @@ type Rect = Slice & { x: number; y: number; w: number; h: number };
 type Props = {
   entries: Entry[];
 };
+
+const CELL_GAP = 0.6; // % inset between cells
 
 /** Binary space-partition treemap — fine for a handful of funds. */
 function layoutTreemap(
@@ -78,6 +80,8 @@ function pnlFill(profit: number, maxAbs: number): string {
 }
 
 export default function MandateAllocationChart({ entries }: Props) {
+  const [hovered, setHovered] = useState<string | null>(null);
+
   const slices = useMemo(() => {
     const mapped = entries
       .filter((entry) => entry.mandate.notionalUsdc > 0)
@@ -116,7 +120,7 @@ export default function MandateAllocationChart({ entries }: Props) {
   return (
     <div className="border-primary/10 border-b px-2 pb-6 pt-5">
       <div
-        className="relative h-56 w-full overflow-hidden border border-white bg-[#0c1a12] sm:h-64"
+        className="relative h-56 w-full border border-white bg-transparent p-1.5 sm:h-64"
         role="img"
         aria-label={
           empty
@@ -129,37 +133,54 @@ export default function MandateAllocationChart({ entries }: Props) {
             No mandates yet
           </div>
         ) : (
-          rects.map((rect) => {
-            const showAmount = rect.w * rect.h > 120;
-            const showName = rect.w * rect.h > 40;
-            return (
-              <a
-                key={rect.slug}
-                href={`/funds/${rect.slug}`}
-                title={`${rect.name}: ${formatUsdExact(rect.profit, true)}`}
-                className="absolute flex flex-col items-center justify-center overflow-hidden border border-white px-1 text-center transition-opacity hover:opacity-90"
-                style={{
-                  left: `${rect.x}%`,
-                  top: `${rect.y}%`,
-                  width: `${rect.w}%`,
-                  height: `${rect.h}%`,
-                  backgroundColor: pnlFill(rect.profit, maxAbs),
-                }}
-                aria-label={`${rect.name}, ${formatUsdExact(rect.profit, true)}`}
-              >
-                {showName && (
-                  <span className="line-clamp-2 w-full text-[11px] font-semibold leading-tight text-white sm:text-xs">
-                    {rect.name}
-                  </span>
-                )}
-                {showAmount && (
-                  <span className="mt-0.5 font-mono text-[10px] tabular-nums text-white/90 sm:text-xs">
-                    {formatUsdExact(rect.profit, true)}
-                  </span>
-                )}
-              </a>
-            );
-          })
+          <div className="relative h-full w-full">
+            {rects.map((rect) => {
+              const isHovered = hovered === rect.slug;
+              const otherHovered = hovered !== null && !isHovered;
+              const showAmount = isHovered || rect.w * rect.h > 120;
+              const showName = isHovered || rect.w * rect.h > 40;
+              return (
+                <a
+                  key={rect.slug}
+                  href={`/funds/${rect.slug}`}
+                  title={`${rect.name}: ${formatUsdExact(rect.profit, true)}`}
+                  className="absolute flex flex-col items-center justify-center overflow-hidden border border-white px-1 text-center"
+                  style={{
+                    left: isHovered ? "0%" : `${rect.x + CELL_GAP}%`,
+                    top: isHovered ? "0%" : `${rect.y + CELL_GAP}%`,
+                    width: isHovered
+                      ? "100%"
+                      : `${Math.max(0, rect.w - CELL_GAP * 2)}%`,
+                    height: isHovered
+                      ? "100%"
+                      : `${Math.max(0, rect.h - CELL_GAP * 2)}%`,
+                    backgroundColor: pnlFill(rect.profit, maxAbs),
+                    zIndex: isHovered ? 2 : 1,
+                    opacity: otherHovered ? 0 : 1,
+                    pointerEvents: otherHovered ? "none" : "auto",
+                    transition:
+                      "left 200ms ease, top 200ms ease, width 200ms ease, height 200ms ease, opacity 150ms ease",
+                  }}
+                  onMouseEnter={() => setHovered(rect.slug)}
+                  onMouseLeave={() => setHovered(null)}
+                  onFocus={() => setHovered(rect.slug)}
+                  onBlur={() => setHovered(null)}
+                  aria-label={`${rect.name}, ${formatUsdExact(rect.profit, true)}`}
+                >
+                  {showName && (
+                    <span className="line-clamp-2 w-full text-[11px] font-semibold leading-tight text-white sm:text-xs">
+                      {rect.name}
+                    </span>
+                  )}
+                  {showAmount && (
+                    <span className="mt-0.5 font-mono text-[10px] tabular-nums text-white/90 sm:text-xs">
+                      {formatUsdExact(rect.profit, true)}
+                    </span>
+                  )}
+                </a>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>
