@@ -1,5 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import WalletAccountMenu from "@/components/app/WalletAccountMenu";
+import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import { privyAppId } from "@/lib/privy/config";
 import { WAGMI_DISCONNECT_EVENT } from "@/lib/wagmi/events";
 import { creatorPath } from "@/lib/funds/creator";
@@ -18,7 +19,8 @@ const navButtonClass =
 
 function ConnectWalletInner({ variant = "panel" }: Props) {
   const { login, logout } = usePrivy();
-  const { address, displayAddress, isConnected, loading } = useWalletGate();
+  const { address, displayAddress, isConnected, loading, hasSession } =
+    useWalletGate();
   const { switching } = useEnsurePolygon();
   const { name: displayName } = usePolymarketProfile(address ?? displayAddress);
 
@@ -27,19 +29,15 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
     window.dispatchEvent(new Event(WAGMI_DISCONNECT_EVENT));
   }
 
-  if (loading) {
+  // We have a saved session but wagmi hasn't hydrated yet — render a
+  // non-clickable placeholder so the user never sees a "Log in" flash.
+  if (loading || (hasSession && !isConnected)) {
     if (variant === "nav") {
-      return (
-        <button type="button" disabled className={navButtonClass}>
-          Log in
-        </button>
-      );
+      return <WalletPanelPlaceholder variant="button" />;
     }
-
     if (variant === "panel" || variant === "create") {
-      return <span className="text-primary/40 block min-h-9 text-sm" aria-hidden />;
+      return <WalletPanelPlaceholder />;
     }
-
     return null;
   }
 
