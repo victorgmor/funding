@@ -17,29 +17,35 @@ type Props = {
 const navButtonClass =
   "bg-accent text-secondary hover:opacity-90 rounded-full px-4 py-1.5 text-sm font-medium transition-opacity disabled:cursor-wait disabled:opacity-60";
 
+function restoringPlaceholder(variant: Props["variant"]) {
+  if (variant === "nav") {
+    return <WalletPanelPlaceholder variant="button" />;
+  }
+  if (variant === "panel" || variant === "create") {
+    return <WalletPanelPlaceholder />;
+  }
+  return null;
+}
+
 function ConnectWalletInner({ variant = "panel" }: Props) {
   const { login, logout } = usePrivy();
-  const { address, displayAddress, isConnected, hasSession } =
-    useWalletGate();
+  const { address, displayAddress, isConnected, hasSession } = useWalletGate();
   const { switching } = useEnsurePolygon();
   const { name: displayName } = usePolymarketProfile(address ?? displayAddress);
+
+  const sessionHint =
+    hasSession ||
+    (typeof document !== "undefined" &&
+      document.documentElement.dataset.walletSession === "1");
 
   function disconnectWallet() {
     void logout();
     window.dispatchEvent(new Event(WAGMI_DISCONNECT_EVENT));
   }
 
-  // We have a saved session but wagmi hasn't hydrated yet — render a
-  // non-clickable placeholder so the user never sees a "Log in" flash.
-  // (Anonymous users fall through to the normal Log in button — matches SSR.)
-  if (hasSession && !isConnected) {
-    if (variant === "nav") {
-      return <WalletPanelPlaceholder variant="button" />;
-    }
-    if (variant === "panel" || variant === "create") {
-      return <WalletPanelPlaceholder />;
-    }
-    return null;
+  // Saved session still reconnecting — never flash Log in.
+  if (sessionHint && !isConnected) {
+    return restoringPlaceholder(variant);
   }
 
   if (isConnected && address) {

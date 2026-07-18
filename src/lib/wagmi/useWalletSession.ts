@@ -20,7 +20,6 @@ export function useWalletSession() {
   );
 
   useEffect(() => {
-    // Re-sync after mount in case SSR skipped localStorage.
     setSessionAddress(readWalletSession());
     return watchAccount(wagmiConfig, { onChange: setAccount });
   }, []);
@@ -28,13 +27,18 @@ export function useWalletSession() {
   useEffect(() => {
     const onAccount = (event: Event) => {
       const detail = (
-        event as CustomEvent<{ address?: string; isConnected?: boolean }>
+        event as CustomEvent<{
+          address?: string;
+          isConnected?: boolean;
+          status?: string;
+        }>
       ).detail;
       if (detail?.isConnected && detail.address) {
         setSessionAddress(detail.address.toLowerCase() as `0x${string}`);
-      } else if (detail && !detail.isConnected) {
-        setSessionAddress(null);
+        return;
       }
+      // During reconnect, wagmi reports !isConnected — keep localStorage session.
+      setSessionAddress(readWalletSession());
     };
 
     window.addEventListener(WAGMI_ACCOUNT_EVENT, onAccount);

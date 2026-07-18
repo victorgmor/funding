@@ -24,8 +24,10 @@ export function writeWalletSession(address: string | undefined) {
   if (typeof window === "undefined") return;
   if (!address) {
     window.localStorage.removeItem(KEY);
+    delete document.documentElement.dataset.walletSession;
     return;
   }
   const normalized = address.toLowerCase();
   window.localStorage.setItem(KEY, JSON.stringify({ address: normalized }));
+  document.documentElement.dataset.walletSession = "1";
 }

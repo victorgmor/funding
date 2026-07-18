@@ -24,11 +24,21 @@ const InvestorTradeAutopilot = lazy(
 const queryClient = new QueryClient();
 
 function WalletSessionSync() {
-  const { logout } = usePrivy();
+  const { logout, ready, authenticated } = usePrivy();
 
   useEffect(() => {
     const sync = (account = getAccount(wagmiConfig)) => {
-      writeWalletSession(account.isConnected ? account.address : undefined);
+      // Only persist when connected. Never clear here during reconnect —
+      // that wiped the session and flashed "Log in" (see refresh recording).
+      if (account.isConnected && account.address) {
+        writeWalletSession(account.address);
+      } else if (
+        ready &&
+        !authenticated &&
+        account.status === "disconnected"
+      ) {
+        writeWalletSession(undefined);
+      }
       window.dispatchEvent(
         new CustomEvent(WAGMI_ACCOUNT_EVENT, { detail: account }),
       );
@@ -38,6 +48,7 @@ function WalletSessionSync() {
     const unwatch = watchAccount(wagmiConfig, { onChange: sync });
 
     const onDisconnect = () => {
+      writeWalletSession(undefined);
       void logout();
     };
     window.addEventListener(WAGMI_DISCONNECT_EVENT, onDisconnect);
@@ -46,7 +57,7 @@ function WalletSessionSync() {
       unwatch();
       window.removeEventListener(WAGMI_DISCONNECT_EVENT, onDisconnect);
     };
-  }, [logout]);
+  }, [logout, ready, authenticated]);
 
   return null;
 }
