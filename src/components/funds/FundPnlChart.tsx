@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { formatSinceDate, formatUsdExact } from "@/lib/funds/format";
 import {
   buildPnlSeries,
@@ -17,8 +17,8 @@ type Props = {
 };
 
 const W = 640;
-const H = 200;
-const PAD = { top: 12, right: 12, bottom: 28, left: 52 };
+const H = 220;
+const PAD = { top: 16, right: 16, bottom: 32, left: 48 };
 
 function formatTooltipDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -33,19 +33,39 @@ function formatAxisUsd(value: number) {
   if (abs >= 1000) {
     return `$${value < 0 ? "-" : ""}${(abs / 1000).toFixed(abs >= 10_000 ? 0 : 1)}k`;
   }
-  return `$${value.toFixed(0)}`;
+  return `$${Math.round(value)}`;
 }
 
-function yDomain(points: PnlPoint[]) {
+function niceStep(range: number, ticks = 4) {
+  if (range <= 0) return 1;
+  const rough = range / ticks;
+  const magnitude = 10 ** Math.floor(Math.log10(rough));
+  const normalized = rough / magnitude;
+  const step =
+    normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  return step * magnitude;
+}
+
+function buildYScale(points: PnlPoint[]) {
   const values = points.map((point) => point.pnl);
-  let min = Math.min(...values, 0);
-  let max = Math.max(...values, 0);
+  const dataMin = Math.min(...values);
+  const dataMax = Math.max(...values);
+  const step = niceStep(Math.max(dataMax - dataMin, Math.abs(dataMax), Math.abs(dataMin), 1));
+
+  let min = Math.floor(Math.min(dataMin, 0) / step) * step;
+  let max = Math.ceil(Math.max(dataMax, 0) / step) * step;
+
   if (min === max) {
-    min -= 100;
-    max += 100;
+    min -= step;
+    max += step;
   }
-  const pad = Math.max((max - min) * 0.12, 20);
-  return { min: min - pad, max: max + pad };
+
+  const ticks: number[] = [];
+  for (let value = min; value <= max + step * 0.001; value += step) {
+    ticks.push(Math.round(value * 100) / 100);
+  }
+
+  return { min, max, ticks };
 }
 
 function scaleLinear(
@@ -59,30 +79,72 @@ function scaleLinear(
   return r0 + ((value - d0) / (d1 - d0)) * (r1 - r0);
 }
 
-function linePath(
+/** Step-after path — PnL holds flat until the next trade settles. */
+function stepPath(
   points: PnlPoint[],
   xScale: (t: number) => number,
   yScale: (v: number) => number,
-) {
-  return points
-    .map((point, index) => {
-      const cmd = index === 0 ? "M" : "L";
-      return `${cmd} ${xScale(point.t).toFixed(2)} ${yScale(point.pnl).toFixed(2)}`;
-    })
-    .join(" ");
-}
-
-function areaPath(
-  points: PnlPoint[],
-  xScale: (t: number) => number,
-  yScale: (v: number) => number,
-  baseline: number,
 ) {
   if (points.length === 0) return "";
-  const head = linePath(points, xScale, yScale);
-  const last = points[points.length - 1]!;
   const first = points[0]!;
-  return `${head} L ${xScale(last.t).toFixed(2)} ${baseline.toFixed(2)} L ${xScale(first.t).toFixed(2)} ${baseline.toFixed(2)} Z`;
+  let path = `M ${xScale(first.t).toFixed(2)} ${yScale(first.pnl).toFixed(2)}`;
+
+  for (let index = 1; index < points.length; index++) {
+    const point = points[index]!;
+    path += ` H ${xScale(point.t).toFixed(2)} V ${yScale(point.pnl).toFixed(2)}`;
+  }
+
+  return path;
+}
+
+function stepAreaToZero(
+  points: PnlPoint[],
+  xScale: (t: number) => number,
+  yScale: (v: number) => number,
+  zeroY: number,
+) {
+  if (points.length === 0) return "";
+
+  const first = points[0]!;
+  const last = points[points.length - 1]!;
+  const x0 = xScale(first.t);
+  const y0 = yScale(first.pnl);
+
+  let path = `M ${x0.toFixed(2)} ${zeroY.toFixed(2)} L ${x0.toFixed(2)} ${y0.toFixed(2)}`;
+
+  for (let index = 1; index < points.length; index++) {
+    const point = points[index]!;
+    path += ` H ${xScale(point.t).toFixed(2)} V ${yScale(point.pnl).toFixed(2)}`;
+  }
+
+  path += ` L ${xScale(last.t).toFixed(2)} ${zeroY.toFixed(2)} Z`;
+  return path;
+}
+
+function buildXTicks(points: PnlPoint[], xScale: (t: number) => number) {
+  const byDay = new Map<string, number>();
+  for (const point of points) {
+    const label = formatSinceDate(new Date(point.t).toISOString());
+    if (!byDay.has(label)) byDay.set(label, point.t);
+  }
+
+  const times = [...byDay.values()].sort((a, b) => a - b);
+  if (times.length <= 6) {
+    return times.map((t) => ({
+      t,
+      x: xScale(t),
+      label: formatSinceDate(new Date(t).toISOString()),
+    }));
+  }
+
+  const step = Math.ceil(times.length / 6);
+  return times
+    .filter((_, index) => index % step === 0 || index === times.length - 1)
+    .map((t) => ({
+      t,
+      x: xScale(t),
+      label: formatSinceDate(new Date(t).toISOString()),
+    }));
 }
 
 export default function FundPnlChart({
@@ -90,6 +152,7 @@ export default function FundPnlChart({
   fundCreatedAt,
   embedded = false,
 }: Props) {
+  const gradientId = useId().replace(/:/g, "");
   const series = useMemo(
     () => buildPnlSeries(trades, fundCreatedAt),
     [trades, fundCreatedAt],
@@ -107,9 +170,10 @@ export default function FundPnlChart({
 
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
-  const { min: yMin, max: yMax } = yDomain(points);
+  const { min: yMin, max: yMax, ticks: yTickValues } = buildYScale(points);
   const xMin = points[0]!.t;
   const xMax = points[points.length - 1]!.t;
+  const latest = points[points.length - 1]!;
 
   const xScale = (t: number) =>
     scaleLinear(t, [xMin, xMax], [PAD.left, PAD.left + plotW]);
@@ -117,22 +181,16 @@ export default function FundPnlChart({
     scaleLinear(v, [yMin, yMax], [PAD.top + plotH, PAD.top]);
   const zeroY = yScale(0);
 
-  const yTicks = Array.from({ length: 5 }, (_, index) => {
-    const value = yMin + ((yMax - yMin) * index) / 4;
-    return { value, y: yScale(value) };
-  });
-
-  const xTickCount = Math.min(6, points.length);
-  const xTicks = Array.from({ length: xTickCount }, (_, index) => {
-    const t = xMin + ((xMax - xMin) * index) / Math.max(xTickCount - 1, 1);
-    return { t, x: xScale(t), label: formatSinceDate(new Date(t).toISOString()) };
-  });
+  const yTicks = yTickValues.map((value) => ({ value, y: yScale(value) }));
+  const xTicks = buildXTicks(points, xScale);
 
   const activeIndex =
     hoverIndex != null
       ? Math.max(0, Math.min(hoverIndex, points.length - 1))
       : null;
   const activePoint = activeIndex != null ? points[activeIndex] : null;
+  const displayPoint = activePoint ?? latest;
+  const lineColor = latest.pnl >= 0 ? "#34d399" : "#f87171";
 
   function onPointerMove(event: React.PointerEvent<SVGSVGElement>) {
     const svg = svgRef.current;
@@ -153,8 +211,6 @@ export default function FundPnlChart({
 
     setHoverIndex(nearest);
   }
-
-  const lineColor = "#34d399";
 
   const content = (
     <>
@@ -187,6 +243,14 @@ export default function FundPnlChart({
       </div>
 
       <div className="relative w-full">
+        <p
+          className={`absolute left-12 top-0 font-mono text-sm tabular-nums ${
+            displayPoint.pnl >= 0 ? "text-emerald-400" : "text-red-400"
+          }`}
+        >
+          {formatUsdExact(displayPoint.pnl, true)}
+        </p>
+
         <svg
           ref={svgRef}
           viewBox={`0 0 ${W} ${H}`}
@@ -197,63 +261,70 @@ export default function FundPnlChart({
           onPointerLeave={() => setHoverIndex(null)}
         >
           <defs>
-            <linearGradient id="fund-pnl-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={lineColor} stopOpacity="0.28" />
-              <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={lineColor} stopOpacity="0.35" />
+              <stop offset="100%" stopColor={lineColor} stopOpacity="0.02" />
             </linearGradient>
           </defs>
 
-          {yTicks.map((tick) => (
-            <g key={tick.value}>
-              <line
-                x1={PAD.left}
-                x2={PAD.left + plotW}
-                y1={tick.y}
-                y2={tick.y}
-                stroke="currentColor"
-                strokeOpacity={0.12}
-                strokeDasharray="3 4"
-              />
-              <text
-                x={PAD.left - 8}
-                y={tick.y + 4}
-                textAnchor="end"
-                className="fill-primary/45 font-mono text-[10px] tabular-nums"
-              >
-                {formatAxisUsd(tick.value)}
-              </text>
-            </g>
-          ))}
-
-          {yMin < 0 && yMax > 0 && (
-            <line
-              x1={PAD.left}
-              x2={PAD.left + plotW}
-              y1={zeroY}
-              y2={zeroY}
-              stroke="currentColor"
-              strokeOpacity={0.2}
-            />
-          )}
+          {yTicks.map((tick) => {
+            const isZero = Math.abs(tick.value) < 0.001;
+            return (
+              <g key={tick.value}>
+                <line
+                  x1={PAD.left}
+                  x2={PAD.left + plotW}
+                  y1={tick.y}
+                  y2={tick.y}
+                  stroke="currentColor"
+                  strokeOpacity={isZero ? 0.28 : 0.1}
+                  strokeDasharray={isZero ? undefined : "3 4"}
+                />
+                <text
+                  x={PAD.left - 8}
+                  y={tick.y + 4}
+                  textAnchor="end"
+                  className={`font-mono text-[10px] tabular-nums ${
+                    isZero ? "fill-primary/60" : "fill-primary/45"
+                  }`}
+                >
+                  {formatAxisUsd(tick.value)}
+                </text>
+              </g>
+            );
+          })}
 
           <path
-            d={areaPath(points, xScale, yScale, PAD.top + plotH)}
-            fill="url(#fund-pnl-fill)"
+            d={stepAreaToZero(points, xScale, yScale, zeroY)}
+            fill={`url(#${gradientId})`}
           />
           <path
-            d={linePath(points, xScale, yScale)}
+            d={stepPath(points, xScale, yScale)}
             fill="none"
             stroke={lineColor}
-            strokeWidth={2}
+            strokeWidth={2.5}
             strokeLinejoin="round"
             strokeLinecap="round"
           />
+
+          {points.map((point, index) => (
+            <circle
+              key={`${point.t}-${index}`}
+              cx={xScale(point.t)}
+              cy={yScale(point.pnl)}
+              r={activeIndex === index ? 4 : 2.5}
+              fill={lineColor}
+              stroke="#0f2918"
+              strokeWidth={activeIndex === index ? 2 : 1}
+              opacity={activeIndex == null || activeIndex === index ? 1 : 0.35}
+            />
+          ))}
 
           {xTicks.map((tick) => (
             <text
               key={tick.t}
               x={tick.x}
-              y={H - 8}
+              y={H - 10}
               textAnchor="middle"
               className="fill-primary/45 font-mono text-[10px] tabular-nums"
             >
@@ -262,25 +333,15 @@ export default function FundPnlChart({
           ))}
 
           {activePoint && activeIndex != null && (
-            <>
-              <line
-                x1={xScale(activePoint.t)}
-                x2={xScale(activePoint.t)}
-                y1={PAD.top}
-                y2={PAD.top + plotH}
-                stroke="#32BCFF"
-                strokeOpacity={0.55}
-                strokeDasharray="4 4"
-              />
-              <circle
-                cx={xScale(activePoint.t)}
-                cy={yScale(activePoint.pnl)}
-                r={4}
-                fill={lineColor}
-                stroke="#0f2918"
-                strokeWidth={2}
-              />
-            </>
+            <line
+              x1={xScale(activePoint.t)}
+              x2={xScale(activePoint.t)}
+              y1={PAD.top}
+              y2={PAD.top + plotH}
+              stroke="#32BCFF"
+              strokeOpacity={0.55}
+              strokeDasharray="4 4"
+            />
           )}
         </svg>
 
@@ -288,8 +349,8 @@ export default function FundPnlChart({
           <div
             className="border-primary/10 bg-secondary/90 pointer-events-none absolute z-10 rounded-md border px-2.5 py-1.5 text-xs shadow-sm backdrop-blur-sm"
             style={{
-              left: `${(xScale(activePoint.t) / W) * 100}%`,
-              top: 8,
+              left: `${Math.min(Math.max((xScale(activePoint.t) / W) * 100, 12), 88)}%`,
+              top: 28,
               transform: "translateX(-50%)",
             }}
           >

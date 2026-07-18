@@ -52,11 +52,21 @@ export function buildPnlSeries(
   let cumulative = 0;
   for (const trade of filled) {
     cumulative = round(cumulative + (trade.pnlUsdc ?? 0), 2);
-    points.push({
-      t: tradeTime(trade),
-      pnl: cumulative,
-      iso: trade.filledAt ?? trade.createdAt,
-    });
+    const t = tradeTime(trade);
+    const last = points[points.length - 1]!;
+    if (last.t === t) {
+      points[points.length - 1] = {
+        t,
+        pnl: cumulative,
+        iso: trade.filledAt ?? trade.createdAt,
+      };
+    } else {
+      points.push({
+        t,
+        pnl: cumulative,
+        iso: trade.filledAt ?? trade.createdAt,
+      });
+    }
   }
 
   const last = points[points.length - 1]!;
