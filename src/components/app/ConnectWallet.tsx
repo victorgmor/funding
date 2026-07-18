@@ -1,5 +1,5 @@
 import { usePrivy } from "@privy-io/react-auth";
-import WalletMenuCompare from "@/components/app/WalletMenuCompare";
+import WalletAccountMenu from "@/components/app/WalletAccountMenu";
 import { privyAppId } from "@/lib/privy/config";
 import { WAGMI_DISCONNECT_EVENT } from "@/lib/wagmi/events";
 import { creatorPath } from "@/lib/funds/creator";
@@ -58,7 +58,7 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
 
     if (variant === "nav") {
       return (
-        <WalletMenuCompare
+        <WalletAccountMenu
           address={address}
           label={label}
           onLogout={disconnectWallet}

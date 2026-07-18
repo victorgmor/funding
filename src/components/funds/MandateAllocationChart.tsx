@@ -1,155 +1,156 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { formatUsdExact } from "@/lib/funds/format";
 import type { Fund, Mandate } from "@/lib/funds/types";
-
-const PRIMARY_FILL = "var(--color-primary)";
-const DEFAULT_FILL = "color-mix(in oklch, var(--color-primary) 20%, transparent)";
 
 type Entry = {
   fund: Fund;
   mandate: Mandate;
+  profitUsdc: number | null;
 };
 
 type Slice = {
   slug: string;
   name: string;
-  value: number;
-  pct: number;
+  notional: number;
+  profit: number;
 };
+
+type Rect = Slice & { x: number; y: number; w: number; h: number };
 
 type Props = {
   entries: Entry[];
 };
 
-function buildSlices(entries: Entry[], total: number): Slice[] {
-  return entries.map((entry) => {
-    const value = entry.mandate.notionalUsdc;
-    return {
-      slug: entry.fund.slug,
-      name: entry.fund.name,
-      value,
-      pct: (value / total) * 100,
-    };
-  });
+/** Binary space-partition treemap — fine for a handful of funds. */
+function layoutTreemap(
+  items: Slice[],
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): Rect[] {
+  if (items.length === 0) return [];
+  if (items.length === 1) {
+    return [{ ...items[0]!, x, y, w, h }];
+  }
+
+  const total = items.reduce((sum, item) => sum + item.notional, 0);
+  let acc = 0;
+  let split = 1;
+  for (let i = 0; i < items.length - 1; i++) {
+    acc += items[i]!.notional;
+    if (acc >= total / 2) {
+      split = i + 1;
+      break;
+    }
+  }
+
+  const left = items.slice(0, split);
+  const right = items.slice(split);
+  const leftWeight = left.reduce((sum, item) => sum + item.notional, 0);
+  const ratio = leftWeight / total;
+
+  if (w >= h) {
+    return [
+      ...layoutTreemap(left, x, y, w * ratio, h),
+      ...layoutTreemap(right, x + w * ratio, y, w * (1 - ratio), h),
+    ];
+  }
+
+  return [
+    ...layoutTreemap(left, x, y, w, h * ratio),
+    ...layoutTreemap(right, x, y + h * ratio, w, h * (1 - ratio)),
+  ];
+}
+
+function pnlFill(profit: number, maxAbs: number): string {
+  if (maxAbs <= 0 || Math.abs(profit) < 0.005) {
+    return "#1a3324";
+  }
+  const t = Math.min(1, Math.abs(profit) / maxAbs);
+  // Dark → bright along the Finviz-style heat scale
+  if (profit > 0) {
+    const g = Math.round(40 + t * 140);
+    return `rgb(${Math.round(8 + t * 20)}, ${g}, ${Math.round(40 + t * 50)})`;
+  }
+  const r = Math.round(80 + t * 140);
+  return `rgb(${r}, ${Math.round(28 + t * 20)}, ${Math.round(28 + t * 20)})`;
 }
 
 export default function MandateAllocationChart({ entries }: Props) {
-  const [activeSlug, setActiveSlug] = useState<string | null>(null);
+  const slices = useMemo(() => {
+    return entries
+      .map((entry) => ({
+        slug: entry.fund.slug,
+        name: entry.fund.name,
+        notional: entry.mandate.notionalUsdc,
+        profit: entry.profitUsdc ?? 0,
+      }))
+      .filter((slice) => slice.notional > 0)
+      .sort((a, b) => b.notional - a.notional);
+  }, [entries]);
 
-  const total = entries.reduce((sum, entry) => sum + entry.mandate.notionalUsdc, 0);
-  const slices = useMemo(
-    () => (total > 0 ? buildSlices(entries, total) : []),
-    [entries, total],
+  const maxAbs = useMemo(
+    () => Math.max(...slices.map((slice) => Math.abs(slice.profit)), 0),
+    [slices],
   );
-  const empty = slices.length === 0;
 
-  const activeSlice = slices.find((slice) => slice.slug === activeSlug) ?? null;
+  const rects = useMemo(
+    () => (slices.length > 0 ? layoutTreemap(slices, 0, 0, 100, 100) : []),
+    [slices],
+  );
 
-  function sliceFill(isActive: boolean) {
-    return isActive ? PRIMARY_FILL : DEFAULT_FILL;
-  }
+  const empty = rects.length === 0;
 
   return (
     <div className="border-primary/10 border-b px-2 pb-6 pt-5">
       <div
-        className="relative h-28 w-full"
+        className="relative h-56 w-full overflow-hidden rounded-md bg-[#0c1a12] sm:h-64"
         role="img"
         aria-label={
           empty
             ? "No mandate allocation yet"
-            : `Mandate allocation across ${slices.length} funds`
+            : `Mandate P&L across ${rects.length} funds`
         }
       >
-        <div
-          className="grid h-full w-full gap-1"
-          style={
-            empty
-              ? undefined
-              : { gridTemplateColumns: slices.map((slice) => `${slice.pct}fr`).join(" ") }
-          }
-        >
-          {empty ? (
-            <div
-              className="bg-primary/20 h-full rounded-md"
-              aria-hidden
-            />
-          ) : (
-            slices.map((slice) => {
-              const isActive = activeSlug === slice.slug;
-              return (
-                <a
-                  key={slice.slug}
-                  href={`/funds/${slice.slug}`}
-                  onMouseEnter={() => setActiveSlug(slice.slug)}
-                  onMouseLeave={() => setActiveSlug(null)}
-                  onFocus={() => setActiveSlug(slice.slug)}
-                  onBlur={() => setActiveSlug(null)}
-                  className={`block h-full min-w-0 rounded-md transition-[transform,opacity] duration-200 outline-none ${
-                    isActive ? "scale-[1.02] opacity-100" : "opacity-90 hover:opacity-100"
-                  }`}
-                  style={{ backgroundColor: sliceFill(isActive) }}
-                  aria-label={`${slice.name}, ${formatUsdExact(slice.value)}, ${Math.round(slice.pct)} percent`}
-                />
-              );
-            })
-          )}
-        </div>
-
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-3 text-center">
-          <p className="text-primary/50 line-clamp-2 text-sm uppercase tracking-wide">
-            {activeSlice ? activeSlice.name : "Invested"}
-          </p>
-          <p className="text-primary mt-0.5 font-mono text-base font-semibold leading-tight tabular-nums sm:text-lg">
-            {formatUsdExact(activeSlice ? activeSlice.value : total)}
-          </p>
-        </div>
-      </div>
-
-      {empty ? (
-        <p className="text-primary/45 mt-5 text-center text-sm">
-          No mandates yet
-        </p>
-      ) : (
-        <ul className="mt-5 space-y-2">
-          {slices.map((slice) => {
-            const isActive = activeSlug === slice.slug;
+        {empty ? (
+          <div className="text-primary/45 flex h-full items-center justify-center text-sm">
+            No mandates yet
+          </div>
+        ) : (
+          rects.map((rect) => {
+            const showAmount = rect.w * rect.h > 120;
+            const showName = rect.w * rect.h > 40;
             return (
-              <li key={slice.slug}>
-                <a
-                  href={`/funds/${slice.slug}`}
-                  onMouseEnter={() => setActiveSlug(slice.slug)}
-                  onMouseLeave={() => setActiveSlug(null)}
-                  className={`group flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-sm transition-colors ${
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-primary/70 hover:bg-primary/5 hover:text-primary"
-                  }`}
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span
-                      className={`size-2.5 shrink-0 rounded-sm transition-all duration-200 ${
-                        isActive ? "scale-125" : ""
-                      }`}
-                      style={{
-                        backgroundColor: isActive ? PRIMARY_FILL : DEFAULT_FILL,
-                      }}
-                      aria-hidden
-                    />
-                    <span className="truncate">{slice.name}</span>
+              <a
+                key={rect.slug}
+                href={`/funds/${rect.slug}`}
+                title={`${rect.name}: ${formatUsdExact(rect.profit, true)}`}
+                className="absolute flex flex-col items-center justify-center overflow-hidden border border-[#0c1a12] px-1 text-center transition-opacity hover:opacity-90"
+                style={{
+                  left: `${rect.x}%`,
+                  top: `${rect.y}%`,
+                  width: `${rect.w}%`,
+                  height: `${rect.h}%`,
+                  backgroundColor: pnlFill(rect.profit, maxAbs),
+                }}
+                aria-label={`${rect.name}, ${formatUsdExact(rect.profit, true)}`}
+              >
+                {showName && (
+                  <span className="line-clamp-2 w-full text-[11px] font-semibold leading-tight text-white sm:text-xs">
+                    {rect.name}
                   </span>
-                  <span
-                    className={`shrink-0 font-mono text-xs tabular-nums ${
-                      isActive ? "text-primary/70" : "text-primary/45 group-hover:text-primary/70"
-                    }`}
-                  >
-                    {formatUsdExact(slice.value)} · {Math.round(slice.pct)}%
+                )}
+                {showAmount && (
+                  <span className="mt-0.5 font-mono text-[10px] tabular-nums text-white/90 sm:text-xs">
+                    {formatUsdExact(rect.profit, true)}
                   </span>
-                </a>
-              </li>
+                )}
+              </a>
             );
-          })}
-        </ul>
-      )}
+          })
+        )}
+      </div>
     </div>
   );
 }

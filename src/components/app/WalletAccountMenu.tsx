@@ -13,7 +13,7 @@ import {
   useRole,
   useTransitionStyles,
 } from "@floating-ui/react";
-import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
+import { useSendTransaction } from "@privy-io/react-auth";
 import { getAddress, isAddress } from "viem";
 import { getWalletClient } from "@wagmi/core";
 import { polygon } from "wagmi/chains";
@@ -152,14 +152,6 @@ async function copyText(value: string) {
   await navigator.clipboard.writeText(value);
 }
 
-function primaryEmail(user: ReturnType<typeof usePrivy>["user"]) {
-  if (!user) return null;
-  if (user.email?.address) return user.email.address;
-  const google = user.linkedAccounts.find((a) => a.type === "google_oauth");
-  if (google && "email" in google && google.email) return google.email;
-  return null;
-}
-
 const panelShellClass =
   "w-80 overflow-hidden rounded-[var(--privy-border-radius-md)] bg-[var(--privy-color-background)] shadow-[0px_0px_20px_-3px_rgba(0,0,0,0.1),0px_4px_10px_-3px_rgba(0,0,0,0.08)]";
 const rowBtnClass =
@@ -170,7 +162,6 @@ const inputClass =
   "w-full rounded-[var(--privy-border-radius-md)] border border-[var(--privy-color-foreground-4)] bg-[var(--privy-color-background-2)] px-3 py-2 text-sm text-[var(--privy-color-foreground)] placeholder:text-[var(--privy-color-foreground-3)] focus:border-[var(--privy-color-accent)] focus:outline-none";
 
 export default function WalletAccountMenu({ address, label, onLogout }: Props) {
-  const { user } = usePrivy();
   const { sendTransaction } = useSendTransaction();
   const [open, setOpen] = useState(false);
   const [info, setInfo] = useState<PolymarketWalletInfo | null>(null);
@@ -213,8 +204,6 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
       transformOrigin: "top right",
     },
   });
-
-  const email = primaryEmail(user);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -408,13 +397,6 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
               ✕
             </button>
           </div>
-
-          {email && (
-            <p className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--privy-color-foreground)]">
-              <span aria-hidden>✉</span>
-              {email}
-            </p>
-          )}
 
           <button
             type="button"
