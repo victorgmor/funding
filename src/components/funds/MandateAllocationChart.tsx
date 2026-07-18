@@ -120,7 +120,7 @@ export default function MandateAllocationChart({ entries }: Props) {
   return (
     <div className="border-primary/10 border-b pb-6 pt-5">
       <div
-        className="relative h-56 w-full border border-white bg-transparent p-1.5 sm:h-64"
+        className="relative h-56 w-full bg-transparent sm:h-64"
         role="img"
         aria-label={
           empty
@@ -144,7 +144,7 @@ export default function MandateAllocationChart({ entries }: Props) {
                   key={rect.slug}
                   href={`/funds/${rect.slug}`}
                   title={`${rect.name}: ${formatUsdExact(rect.profit, true)}`}
-                  className="absolute flex flex-col items-center justify-center overflow-hidden border border-white px-1 text-center"
+                  className="absolute flex flex-col items-center justify-center overflow-hidden px-1 text-center"
                   style={{
                     left: isHovered ? "0%" : `${rect.x + CELL_GAP}%`,
                     top: isHovered ? "0%" : `${rect.y + CELL_GAP}%`,
