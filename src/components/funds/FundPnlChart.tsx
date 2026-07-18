@@ -17,8 +17,8 @@ type Props = {
 };
 
 const W = 640;
-const H = 220;
-const PAD = { top: 16, right: 16, bottom: 32, left: 48 };
+const H = 200;
+const PAD = { top: 12, right: 0, bottom: 22, left: 0 };
 
 function formatTooltipDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -214,17 +214,23 @@ export default function FundPnlChart({
 
   const content = (
     <>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        {!embedded && (
-          <span className="bg-[#32BCFF]/15 text-[#32BCFF] rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide">
-            P&L
-          </span>
-        )}
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          {!embedded && (
+            <span className="bg-[#32BCFF]/15 text-[#32BCFF] shrink-0 rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide">
+              P&L
+            </span>
+          )}
+          <p
+            className={`font-mono text-sm tabular-nums ${
+              displayPoint.pnl >= 0 ? "text-emerald-400" : "text-red-400"
+            }`}
+          >
+            {formatUsdExact(displayPoint.pnl, true)}
+          </p>
+        </div>
 
-        <div
-          className={`text-primary/45 flex items-center gap-1 text-xs ${embedded ? "ml-auto" : ""}`}
-        >
-          <span className="mr-1">Time:</span>
+        <div className="text-primary/45 flex shrink-0 items-center gap-1 text-xs">
           {PNL_RANGES.map((option) => (
             <button
               key={option}
@@ -243,18 +249,10 @@ export default function FundPnlChart({
       </div>
 
       <div className="relative w-full">
-        <p
-          className={`absolute left-12 top-0 font-mono text-sm tabular-nums ${
-            displayPoint.pnl >= 0 ? "text-emerald-400" : "text-red-400"
-          }`}
-        >
-          {formatUsdExact(displayPoint.pnl, true)}
-        </p>
-
         <svg
           ref={svgRef}
           viewBox={`0 0 ${W} ${H}`}
-          className="h-auto w-full touch-none select-none"
+          className="block h-auto w-full touch-none select-none overflow-visible"
           role="img"
           aria-label="Fund PnL over time"
           onPointerMove={onPointerMove}
@@ -272,20 +270,20 @@ export default function FundPnlChart({
             return (
               <g key={tick.value}>
                 <line
-                  x1={PAD.left}
-                  x2={PAD.left + plotW}
+                  x1={0}
+                  x2={W}
                   y1={tick.y}
                   y2={tick.y}
                   stroke="currentColor"
-                  strokeOpacity={isZero ? 0.28 : 0.1}
-                  strokeDasharray={isZero ? undefined : "3 4"}
+                  strokeOpacity={isZero ? 0.22 : 0.06}
+                  vectorEffect="non-scaling-stroke"
                 />
                 <text
-                  x={PAD.left - 8}
-                  y={tick.y + 4}
-                  textAnchor="end"
+                  x={0}
+                  y={tick.y - 3}
+                  textAnchor="start"
                   className={`font-mono text-[10px] tabular-nums ${
-                    isZero ? "fill-primary/60" : "fill-primary/45"
+                    isZero ? "fill-primary/55" : "fill-primary/40"
                   }`}
                 >
                   {formatAxisUsd(tick.value)}
@@ -320,17 +318,24 @@ export default function FundPnlChart({
             />
           ))}
 
-          {xTicks.map((tick) => (
-            <text
-              key={tick.t}
-              x={tick.x}
-              y={H - 10}
-              textAnchor="middle"
-              className="fill-primary/45 font-mono text-[10px] tabular-nums"
-            >
-              {tick.label}
-            </text>
-          ))}
+          {xTicks.map((tick, index) => {
+            const isFirst = index === 0;
+            const isLast = index === xTicks.length - 1;
+            const x = isFirst ? 0 : isLast ? W : tick.x;
+            const anchor = isFirst ? "start" : isLast ? "end" : "middle";
+
+            return (
+              <text
+                key={tick.t}
+                x={x}
+                y={H - 4}
+                textAnchor={anchor}
+                className="fill-primary/40 font-mono text-[10px] tabular-nums"
+              >
+                {tick.label}
+              </text>
+            );
+          })}
 
           {activePoint && activeIndex != null && (
             <line
