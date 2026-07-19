@@ -161,7 +161,7 @@ const sectionBtnClass =
 const inputClass =
   "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/40 focus:border-primary/30 w-full border px-3 py-2 text-sm focus:outline-none";
 const primaryBtnClass =
-  "bg-accent hover:opacity-90 w-full px-3 py-2 text-sm font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50";
+  "bg-accent text-secondary hover:opacity-90 w-full px-3 py-2 text-sm font-medium transition-opacity disabled:cursor-not-allowed disabled:opacity-50";
 const mutedClass = "text-primary/50 text-sm";
 const labelClass = "text-primary text-sm font-medium";
 const monoClass = "text-primary font-mono text-sm tabular-nums";

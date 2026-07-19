@@ -265,7 +265,7 @@ export function FundOwnerControlsInner({ fund }: Props) {
               type="button"
               onClick={restoreFund}
               disabled={busy || signing}
-              className="bg-accent hover:bg-accent/80 disabled:bg-accent/40 rounded-full px-4 py-1.5 text-xs font-medium uppercase text-white"
+              className="bg-accent text-secondary hover:bg-accent/80 disabled:bg-accent/40 rounded-full px-4 py-1.5 text-xs font-medium uppercase"
             >
               {signing ? "Sign…" : busy ? "Restoring…" : "Restore"}
             </button>
@@ -310,7 +310,7 @@ export function FundOwnerControlsInner({ fund }: Props) {
                   type="button"
                   onClick={saveChanges}
                   disabled={!canSave || busy || signing}
-                  className="bg-accent hover:bg-accent/80 disabled:bg-accent/40 rounded-full px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed"
+                  className="bg-accent text-secondary hover:bg-accent/80 disabled:bg-accent/40 rounded-full px-4 py-2 text-sm font-medium disabled:cursor-not-allowed"
                 >
                   {signing
                     ? "Sign in wallet…"

@@ -238,7 +238,7 @@ function CreateFundFormInner() {
         type="button"
         onClick={publish}
         disabled={!canPublish || publishing || signing}
-        className="bg-accent hover:bg-accent/80 disabled:bg-accent/40 flex h-11 items-center justify-center rounded-full px-5 text-base font-medium text-white transition-all disabled:cursor-not-allowed"
+        className="bg-accent text-secondary hover:bg-accent/80 disabled:bg-accent/40 flex h-11 items-center justify-center rounded-full px-5 text-base font-medium transition-all disabled:cursor-not-allowed"
       >
         {signing
           ? "Sign in wallet…"

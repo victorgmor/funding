@@ -5,7 +5,11 @@ import { isFundOwner } from "@/lib/funds/editable";
 import { formatUsdExact } from "@/lib/funds/format";
 import type { Fund, FanoutSlice, VirtualPool } from "@/lib/funds/types";
 import type { MarketSide } from "@/lib/funds/types";
-import { parseOutcomes, type SearchMarket } from "@/lib/polymarket/gamma";
+import {
+  formatOutcomeCents,
+  parseOutcomes,
+  type SearchMarket,
+} from "@/lib/polymarket/gamma";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 
@@ -357,27 +361,41 @@ export default function ManagerPoolPanel({ fund }: Props) {
               <div className="space-y-2">
                 <p className="text-primary/80 truncate text-sm">{selected.question}</p>
                 <div className="flex flex-wrap items-center gap-2">
-                  {parseOutcomes(selected.outcomes).map((outcome) => (
-                    <button
-                      key={outcome}
-                      type="button"
-                      onClick={() => setSelected({ ...selected, side: outcome })}
-                      className={
-                        selected.side === outcome
-                          ? "rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs uppercase"
-                          : "text-primary/50 px-3 py-1 text-xs uppercase"
-                      }
-                    >
-                      {outcome}
-                    </button>
-                  ))}
+                  {parseOutcomes(selected.outcomes).map((outcome) => {
+                    const cents = formatOutcomeCents(
+                      selected.outcomes,
+                      selected.outcomePrices,
+                      outcome,
+                    );
+                    return (
+                      <button
+                        key={outcome}
+                        type="button"
+                        onClick={() =>
+                          setSelected({ ...selected, side: outcome })
+                        }
+                        className={
+                          selected.side === outcome
+                            ? "rounded-full border border-white bg-white/10 px-3 py-1 text-xs uppercase text-white"
+                            : "text-primary/50 hover:text-primary px-3 py-1 text-xs uppercase"
+                        }
+                      >
+                        {outcome}
+                        {cents ? (
+                          <span className="ml-1.5 font-mono tabular-nums normal-case">
+                            {cents}
+                          </span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
                   <input
                     type="number"
                     min={1}
                     max={remainingDeployable > 0 ? remainingDeployable : undefined}
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="border-primary/10 bg-primary/5 text-primary w-20 rounded border px-2 py-1.5 text-sm tabular-nums focus:border-primary/30 focus:outline-none"
+                    className="border-primary/10 bg-primary/5 text-primary w-20 rounded border px-2 py-1.5 text-sm tabular-nums focus:border-white focus:outline-none"
                     placeholder="$"
                     aria-label="Pool trade size"
                   />
@@ -385,7 +403,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
                     type="button"
                     disabled={busy || signing}
                     onClick={() => void addToPreview()}
-                    className="border-primary/10 text-primary hover:bg-primary/10 rounded-full border px-3 py-1.5 text-xs font-medium uppercase"
+                    className="border-white text-white hover:bg-white/10 rounded-full border px-3 py-1.5 text-xs font-medium uppercase disabled:opacity-40"
                   >
                     {busy ? "…" : "Add"}
                   </button>
@@ -465,7 +483,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
                     type="button"
                     disabled={busy || signing}
                     onClick={() => void executeAll()}
-                    className="bg-accent hover:opacity-90 w-full rounded-full px-4 py-2 text-xs font-medium text-white disabled:opacity-40"
+                    className="bg-accent text-secondary hover:opacity-90 w-full rounded-full px-4 py-2 text-xs font-medium disabled:opacity-40"
                   >
                     {signing
                       ? "Sign…"

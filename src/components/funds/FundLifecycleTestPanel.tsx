@@ -125,7 +125,7 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
               type="button"
               disabled={busy || signing}
               onClick={() => setStage("trading")}
-              className="bg-accent hover:bg-accent/80 disabled:bg-accent/40 mt-2 rounded-full px-4 py-2 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed"
+              className="bg-accent text-secondary hover:bg-accent/80 disabled:bg-accent/40 mt-2 rounded-full px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed"
             >
               {signing
                 ? "Sign in wallet…"

@@ -35,6 +35,7 @@ export type SearchMarket = {
   conditionId: string;
   clobTokenIds: string;
   outcomes: string;
+  outcomePrices?: string;
 };
 
 type GammaMarketRow = {
@@ -78,7 +79,27 @@ function toSearchMarket(market: GammaMarketRow): SearchMarket | null {
     conditionId: market.conditionId,
     clobTokenIds: market.clobTokenIds,
     outcomes: market.outcomes,
+    outcomePrices: market.outcomePrices,
   };
+}
+
+/** Display mid as cents, e.g. 0.42 → "42¢". */
+export function formatOutcomeCents(
+  outcomes: string,
+  outcomePrices: string | undefined,
+  side: string,
+): string | null {
+  if (!outcomePrices) return null;
+  try {
+    const prices = JSON.parse(outcomePrices) as string[];
+    const labels = parseOutcomes(outcomes);
+    const idx = outcomeIndex(labels, side);
+    const raw = idx >= 0 ? Number(prices[idx]) : NaN;
+    if (!Number.isFinite(raw)) return null;
+    return `${Math.round(raw * 100)}¢`;
+  } catch {
+    return null;
+  }
 }
 
 /** Parse polymarket.com/event/… URLs (with optional market slug). */
@@ -185,6 +206,7 @@ export async function searchPolymarketMarkets(
           conditionId: string;
           clobTokenIds?: string;
           outcomes: string;
+          outcomePrices?: string;
           active?: boolean;
           closed?: boolean;
         }>;
@@ -205,6 +227,7 @@ export async function searchPolymarketMarkets(
           conditionId: market.conditionId,
           clobTokenIds: market.clobTokenIds,
           outcomes: market.outcomes,
+          outcomePrices: market.outcomePrices,
         });
         if (markets.length >= limit) return markets;
       }
