@@ -1,0 +1,57 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Wrapper from "@/components/fundations/containers/Wrapper.astro";
+import { getCollection } from "astro:content";
+import { sortDocs } from "@/lib/docs";
+
+const { frontmatter, slug } = Astro.props;
+const entries = sortDocs(await getCollection("helpcenter"));
+---
+
+<BaseLayout>
+  <section>
+    <Wrapper variant="standard" class="py-16 sm:py-24">
+      <div class="grid grid-cols-1 gap-12 lg:grid-cols-[14rem_minmax(0,1fr)]">
+        <aside class="lg:sticky lg:top-24 lg:self-start">
+          <p class="text-primary/45 text-xs font-medium uppercase tracking-wide">
+            Docs
+          </p>
+          <nav class="mt-4 flex flex-col gap-1" aria-label="Documentation">
+            {
+              entries.map((entry) => {
+                const active = entry.id === slug;
+                return (
+                  <a
+                    href={`/docs/${entry.id}`}
+                    class:list={[
+                      "rounded px-2 py-1.5 text-sm transition-colors",
+                      active
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-primary/60 hover:text-primary hover:bg-primary/5",
+                    ]}
+                  >
+                    {entry.data.page}
+                  </a>
+                );
+              })
+            }
+          </nav>
+        </aside>
+
+        <article class="min-w-0">
+          <h1 class="text-primary text-3xl font-semibold tracking-tight sm:text-4xl">
+            {frontmatter.page}
+          </h1>
+          <p class="text-primary/60 mt-3 text-base">
+            {frontmatter.description}
+          </p>
+          <div
+            class="prose prose-neutral mt-10 max-w-none prose-headings:text-primary prose-p:text-primary/80 prose-li:text-primary/80 prose-strong:text-primary prose-a:text-primary prose-td:text-primary/80 prose-th:text-primary"
+          >
+            <slot />
+          </div>
+        </article>
+      </div>
+    </Wrapper>
+  </section>
+</BaseLayout>

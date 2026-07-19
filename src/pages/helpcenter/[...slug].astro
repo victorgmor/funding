@@ -1,22 +1,12 @@
 ---
-import { getCollection, render } from "astro:content";
-import HelpCenterLayout from "@/layouts/HelpCenterLayout.astro";
+import { getCollection } from "astro:content";
+
 export async function getStaticPaths() {
-  const helpcenter = await getCollection("helpcenter");
-  const paths = helpcenter.map((page) => {
-    return {
-      params: { slug: page.id },
-      props: { page },
-
-      trailingSlash: false,
-    };
-  });
-  return paths;
+  const docs = await getCollection("helpcenter");
+  const legacy = ["1", "2", "3", "4"];
+  const slugs = new Set([...legacy, ...docs.map((d) => d.id)]);
+  return [...slugs].map((slug) => ({ params: { slug } }));
 }
-const { page } = Astro.props;
-const { Content } = await render(page);
----
 
-<HelpCenterLayout frontmatter={page.data}>
-  <Content />
-</HelpCenterLayout>
+return Astro.redirect("/docs");
+---

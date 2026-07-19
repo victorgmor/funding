@@ -1,0 +1,7 @@
+---
+import { sortDocs } from "@/lib/docs";
+import { getCollection } from "astro:content";
+
+const first = sortDocs(await getCollection("helpcenter"))[0];
+return Astro.redirect(first ? `/docs/${first.id}` : "/");
+---
