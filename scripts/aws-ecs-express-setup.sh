@@ -6,7 +6,7 @@ set -euo pipefail
 AWS_REGION="${AWS_REGION:-eu-west-1}"
 AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID:-$(aws sts get-caller-identity --query Account --output text)}"
 GITHUB_USER="${GITHUB_USER:-victorgmor}"
-GITHUB_REPO="${GITHUB_REPO:-carriera}"
+GITHUB_REPO="${GITHUB_REPO:-funding}"
 ECR_REPOSITORY="${ECR_REPOSITORY:-carriera}"
 FUNDS_TABLE="${FUNDS_TABLE:-carriera-funds}"
 CHALLENGES_TABLE="${CHALLENGES_TABLE:-carriera-challenges}"
@@ -40,11 +40,13 @@ else
   echo "GitHub OIDC provider already exists."
 fi
 
+# GitHub OIDC sub is either repo:owner/name:* or repo:owner@id/name@id:*
 cat >"$TMP_DIR/trust-policy.json" <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Sid": "LegacySub",
       "Effect": "Allow",
       "Principal": {
         "Federated": "arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com"
@@ -56,6 +58,22 @@ cat >"$TMP_DIR/trust-policy.json" <<EOF
         },
         "StringLike": {
           "token.actions.githubusercontent.com:sub": "repo:${GITHUB_USER}/${GITHUB_REPO}:*"
+        }
+      }
+    },
+    {
+      "Sid": "NumericSub",
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+        },
+        "StringLike": {
+          "token.actions.githubusercontent.com:sub": "repo:${GITHUB_USER}@*/${GITHUB_REPO}@*:*"
         }
       }
     }
