@@ -22,7 +22,7 @@ function ProgressTrack({
     <div className="bg-primary/10 h-2 w-full overflow-hidden">
       {capped ? (
         <div
-          className="bg-white h-full transition-[width]"
+          className="bg-primary h-full transition-[width]"
           style={{ width: `${fillWidth}%` }}
         />
       ) : (
@@ -51,7 +51,7 @@ export default function PoolCapBar({
         {capped && (
           <div className="bg-primary/10 mb-1.5 h-1 overflow-hidden">
             <div
-              className="bg-white h-full transition-[width]"
+              className="bg-primary h-full transition-[width]"
               style={{ width: `${fillWidth}%` }}
             />
           </div>

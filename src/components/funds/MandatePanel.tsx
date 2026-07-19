@@ -482,7 +482,7 @@ export default function MandatePanel({ fund }: Props) {
                   {formatUsdExact(summary.mandateSettlement.managerShareUsdc)}
                 </span>
               </p>
-              <p className="text-emerald-400 mt-1 font-mono tabular-nums">
+              <p className="text-emerald-600 mt-1 font-mono tabular-nums">
                 Your profit {formatUsdExact(summary.mandateSettlement.investorProfitUsdc)}
               </p>
             </div>

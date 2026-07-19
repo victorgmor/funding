@@ -7,8 +7,8 @@ export default function PnlAmount({ amount }: Props) {
     amount === 0
       ? "text-primary/45"
       : amount > 0
-        ? "text-emerald-400"
-        : "text-red-400";
+        ? "text-emerald-600"
+        : "text-red-500";
 
   return (
     <span className="inline-flex items-baseline gap-1 text-sm">

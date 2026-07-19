@@ -65,19 +65,19 @@ function layoutTreemap(
   ];
 }
 
-const THEME_BG = "oklch(13.5% 0 0)";
+const THEME_BG = "oklch(89.1% 0.03 126)";
 
 /** Heat fills mixed into secondary so cells sit in the app chrome. */
 function pnlFill(profit: number, maxAbs: number): string {
   if (maxAbs <= 0 || Math.abs(profit) < 0.005) {
-    return `color-mix(in oklch, white 6%, ${THEME_BG})`;
+    return `color-mix(in oklch, black 8%, ${THEME_BG})`;
   }
   const t = Math.min(1, Math.abs(profit) / maxAbs);
   if (profit > 0) {
-    const pct = Math.round(10 + t * 28);
-    return `color-mix(in oklch, white ${pct}%, ${THEME_BG})`;
+    const pct = Math.round(18 + t * 42);
+    return `color-mix(in oklch, oklch(72% 0.17 155) ${pct}%, ${THEME_BG})`;
   }
-  const pct = Math.round(12 + t * 32);
+  const pct = Math.round(14 + t * 36);
   return `color-mix(in oklch, oklch(55% 0.12 25) ${pct}%, ${THEME_BG})`;
 }
 

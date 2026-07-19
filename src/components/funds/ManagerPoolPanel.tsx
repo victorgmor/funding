@@ -498,8 +498,8 @@ export default function ManagerPoolPanel({ fund }: Props) {
         )
       )}
 
-      {notice && <p className="text-emerald-400 mt-3 text-sm">{notice}</p>}
-      {error && <p className="text-red-400 mt-3 text-sm">{error}</p>}
+      {notice && <p className="text-emerald-600 mt-3 text-sm">{notice}</p>}
+      {error && <p className="text-red-500 mt-3 text-sm">{error}</p>}
     </div>
   );
 }
