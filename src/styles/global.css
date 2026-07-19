@@ -12,7 +12,7 @@
 }
 @theme {
   --font-sans: "Geist", sans-serif;
-  --font-mono: "Geist Mono", monospace;
+  --font-mono: "Geist", sans-serif;
   --color-primary: oklch(66.7% 0 0);
   --color-secondary: oklch(18.7% 0.015 266.77);
   --color-accent: oklch(100% 0 0);

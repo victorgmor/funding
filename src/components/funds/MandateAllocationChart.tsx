@@ -65,18 +65,20 @@ function layoutTreemap(
   ];
 }
 
+const THEME_BG = "oklch(18.7% 0.015 266.77)";
+
+/** Heat fills mixed into secondary so cells sit in the app chrome. */
 function pnlFill(profit: number, maxAbs: number): string {
   if (maxAbs <= 0 || Math.abs(profit) < 0.005) {
-    return "#1a3324";
+    return `color-mix(in oklch, white 6%, ${THEME_BG})`;
   }
   const t = Math.min(1, Math.abs(profit) / maxAbs);
-  // Dark → bright along the Finviz-style heat scale
   if (profit > 0) {
-    const g = Math.round(40 + t * 140);
-    return `rgb(${Math.round(8 + t * 20)}, ${g}, ${Math.round(40 + t * 50)})`;
+    const pct = Math.round(10 + t * 28);
+    return `color-mix(in oklch, white ${pct}%, ${THEME_BG})`;
   }
-  const r = Math.round(80 + t * 140);
-  return `rgb(${r}, ${Math.round(28 + t * 20)}, ${Math.round(28 + t * 20)})`;
+  const pct = Math.round(12 + t * 32);
+  return `color-mix(in oklch, oklch(55% 0.12 25) ${pct}%, ${THEME_BG})`;
 }
 
 export default function MandateAllocationChart({ entries }: Props) {
@@ -144,7 +146,7 @@ export default function MandateAllocationChart({ entries }: Props) {
                   key={rect.slug}
                   href={`/funds/${rect.slug}`}
                   title={`${rect.name}: ${formatUsdExact(rect.profit, true)}`}
-                  className="absolute flex flex-col items-center justify-center overflow-hidden px-1 text-center"
+                  className="border-primary/10 text-primary absolute flex flex-col items-center justify-center overflow-hidden border px-1 text-center"
                   style={{
                     left: isHovered ? "0%" : `${rect.x + CELL_GAP}%`,
                     top: `${rect.y + CELL_GAP}%`,
@@ -166,12 +168,12 @@ export default function MandateAllocationChart({ entries }: Props) {
                   aria-label={`${rect.name}, ${formatUsdExact(rect.profit, true)}`}
                 >
                   {showName && (
-                    <span className="line-clamp-2 w-full text-[11px] font-semibold leading-tight text-white sm:text-xs">
+                    <span className="line-clamp-2 w-full text-[11px] font-medium leading-tight sm:text-xs">
                       {rect.name}
                     </span>
                   )}
                   {showAmount && (
-                    <span className="mt-0.5 font-mono text-[10px] tabular-nums text-white/90 sm:text-xs">
+                    <span className="text-primary/70 mt-0.5 text-[10px] tabular-nums sm:text-xs">
                       {formatUsdExact(rect.profit, true)}
                     </span>
                   )}
