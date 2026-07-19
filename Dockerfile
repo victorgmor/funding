@@ -2,7 +2,7 @@ FROM node:22-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci
+    npm install -g npm@11 && npm ci
 ARG PUBLIC_POLY_BUILDER_CODE=""
 ARG PUBLIC_PRIVY_APP_ID=""
 ARG PUBLIC_PRIVY_SIGNER_QUORUM_ID=""
