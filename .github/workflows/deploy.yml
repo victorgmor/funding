@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
@@ -49,6 +53,9 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Set image tag
         run: echo "IMAGE_TAG=${GITHUB_SHA:0:7}" >> "$GITHUB_ENV"
 
@@ -58,6 +65,8 @@ jobs:
           context: .
           push: true
           tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           build-args: |
             PUBLIC_POLY_BUILDER_CODE=${{ secrets.PUBLIC_POLY_BUILDER_CODE }}
             PUBLIC_PRIVY_APP_ID=${{ secrets.PUBLIC_PRIVY_APP_ID }}
