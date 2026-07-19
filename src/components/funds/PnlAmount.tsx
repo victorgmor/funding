@@ -7,7 +7,7 @@ export default function PnlAmount({ amount }: Props) {
     amount === 0
       ? "text-primary/45"
       : amount > 0
-        ? "text-emerald-600"
+        ? "text-profit"
         : "text-red-500";
 
   return (

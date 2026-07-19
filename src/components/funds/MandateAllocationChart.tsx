@@ -65,7 +65,7 @@ function layoutTreemap(
   ];
 }
 
-const THEME_BG = "oklch(89.1% 0.03 126)";
+const THEME_BG = "#d6dfc9";
 
 /** Heat fills mixed into secondary so cells sit in the app chrome. */
 function pnlFill(profit: number, maxAbs: number): string {
@@ -75,7 +75,7 @@ function pnlFill(profit: number, maxAbs: number): string {
   const t = Math.min(1, Math.abs(profit) / maxAbs);
   if (profit > 0) {
     const pct = Math.round(18 + t * 42);
-    return `color-mix(in oklch, oklch(72% 0.17 155) ${pct}%, ${THEME_BG})`;
+    return `color-mix(in oklch, #179e63 ${pct}%, ${THEME_BG})`;
   }
   const pct = Math.round(14 + t * 36);
   return `color-mix(in oklch, oklch(55% 0.12 25) ${pct}%, ${THEME_BG})`;

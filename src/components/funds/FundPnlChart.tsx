@@ -190,7 +190,7 @@ export default function FundPnlChart({
       : null;
   const activePoint = activeIndex != null ? points[activeIndex] : null;
   const displayPoint = activePoint ?? latest;
-  const lineColor = latest.pnl >= 0 ? "#059669" : "#ef4444";
+  const lineColor = latest.pnl >= 0 ? "#179e63" : "#ef4444";
 
   function onPointerMove(event: React.PointerEvent<SVGSVGElement>) {
     const svg = svgRef.current;
@@ -223,7 +223,7 @@ export default function FundPnlChart({
           )}
           <p
             className={`font-mono text-base tabular-nums ${
-              displayPoint.pnl >= 0 ? "text-emerald-600" : "text-red-500"
+              displayPoint.pnl >= 0 ? "text-profit" : "text-red-500"
             }`}
           >
             {formatUsdExact(displayPoint.pnl, true)}
@@ -360,7 +360,7 @@ export default function FundPnlChart({
             <p className="text-primary/50">{formatTooltipDate(activePoint.iso)}</p>
             <p
               className={`font-mono tabular-nums ${
-                activePoint.pnl >= 0 ? "text-emerald-600" : "text-red-500"
+                activePoint.pnl >= 0 ? "text-profit" : "text-red-500"
               }`}
             >
               {formatUsdExact(activePoint.pnl, true)}

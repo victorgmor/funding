@@ -18,7 +18,7 @@ function ThesisRoi({
   size?: "row" | "header";
 }) {
   const positive = roi >= 0;
-  const color = positive ? "text-emerald-600" : "text-red-500";
+  const color = positive ? "text-profit" : "text-red-500";
 
   if (size === "header") {
     return (
