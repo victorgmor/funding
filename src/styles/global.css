@@ -13,8 +13,9 @@
 @theme {
   --font-sans: "Geist", sans-serif;
   --font-mono: "Geist", sans-serif;
-  --color-primary: oklch(66.7% 0 0);
-  --color-secondary: oklch(18.7% 0.015 266.77);
+  /* Ink / silver / white — neutral trading UI, no purple cast */
+  --color-primary: oklch(82% 0 0);
+  --color-secondary: oklch(13.5% 0 0);
   --color-accent: oklch(100% 0 0);
   --animate-marquee: marquee 40s linear infinite;
   --text-xs: 0.875rem;

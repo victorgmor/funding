@@ -65,7 +65,7 @@ function layoutTreemap(
   ];
 }
 
-const THEME_BG = "oklch(18.7% 0.015 266.77)";
+const THEME_BG = "oklch(13.5% 0 0)";
 
 /** Heat fills mixed into secondary so cells sit in the app chrome. */
 function pnlFill(profit: number, maxAbs: number): string {
@@ -141,6 +141,14 @@ export default function MandateAllocationChart({ entries }: Props) {
               const otherHovered = hovered !== null && !isHovered;
               const showAmount = isHovered || rect.w * rect.h > 120;
               const showName = isHovered || rect.w * rect.h > 40;
+              // Grow only inward: keep the outer edge fixed, expand toward center.
+              const leftEdge = rect.x + CELL_GAP;
+              const rightEdge = rect.x + rect.w - CELL_GAP;
+              const fromLeft = rect.x + rect.w / 2 < 50;
+              const hoverLeft = fromLeft ? leftEdge : CELL_GAP;
+              const hoverWidth = fromLeft
+                ? 100 - CELL_GAP - leftEdge
+                : rightEdge - CELL_GAP;
               return (
                 <a
                   key={rect.slug}
@@ -148,11 +156,9 @@ export default function MandateAllocationChart({ entries }: Props) {
                   title={`${rect.name}: ${formatUsdExact(rect.profit, true)}`}
                   className="border-primary/10 text-primary absolute flex flex-col items-center justify-center overflow-hidden border px-1 text-center"
                   style={{
-                    left: isHovered ? "0%" : `${rect.x + CELL_GAP}%`,
+                    left: `${isHovered ? hoverLeft : leftEdge}%`,
                     top: `${rect.y + CELL_GAP}%`,
-                    width: isHovered
-                      ? "100%"
-                      : `${Math.max(0, rect.w - CELL_GAP * 2)}%`,
+                    width: `${Math.max(0, isHovered ? hoverWidth : rect.w - CELL_GAP * 2)}%`,
                     height: `${Math.max(0, rect.h - CELL_GAP * 2)}%`,
                     backgroundColor: pnlFill(rect.profit, maxAbs),
                     zIndex: isHovered ? 2 : 1,
