@@ -154,7 +154,7 @@ export default function MandateAllocationChart({ entries }: Props) {
                   key={rect.slug}
                   href={`/funds/${rect.slug}`}
                   title={`${rect.name}: ${formatUsdExact(rect.profit, true)}`}
-                  className="border-primary/10 text-primary absolute flex flex-col items-center justify-center overflow-hidden border px-1 text-center"
+                  className="text-primary absolute flex flex-col items-center justify-center overflow-hidden px-0 text-center"
                   style={{
                     left: `${isHovered ? hoverLeft : leftEdge}%`,
                     top: `${rect.y + CELL_GAP}%`,

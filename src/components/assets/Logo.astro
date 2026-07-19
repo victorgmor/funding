@@ -1,13 +1,10 @@
 ---
-import { Image } from "astro:assets";
-import logo from "@/images/logo.png";
-
 const { class: className = "", ...rest } = Astro.props;
 ---
 
-<Image
-  src={logo}
-  alt="45 Degrees"
-  class:list={["h-5 w-auto", className]}
+<span
+  class:list={["text-primary text-lg font-semibold tracking-tight", className]}
   {...rest}
-/>
+>
+  PolyFund
+</span>
