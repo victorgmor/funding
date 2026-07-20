@@ -16,6 +16,8 @@ const metricClass =
   "text-primary/70 w-14 shrink-0 text-right font-mono text-sm tabular-nums sm:w-16";
 
 const headerMetricClass = "w-14 shrink-0 text-right sm:w-16";
+const positionClass =
+  "text-primary/40 w-16 shrink-0 font-mono text-xs tabular-nums sm:w-20";
 
 export default function TopManagersList({ managers }: Props) {
   if (managers.length === 0) {
@@ -29,9 +31,14 @@ export default function TopManagersList({ managers }: Props) {
   return (
     <div>
       <div className="flex items-center justify-between gap-4">
-        <p className="min-w-0 flex-1">
-          <span className={headerClass}>Manager</span>
-        </p>
+        <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
+          <p className={positionClass}>
+            <span className={headerClass}>Position</span>
+          </p>
+          <p className="min-w-0">
+            <span className={headerClass}>Manager</span>
+          </p>
+        </div>
         <div className="flex shrink-0 items-center gap-4 sm:gap-6">
           <p className={headerMetricClass}>
             <span className={headerClass}>Funds</span>
@@ -48,28 +55,30 @@ export default function TopManagersList({ managers }: Props) {
       {managers.map((manager, index) => (
         <article
           key={manager.id}
-          className="border-primary/10 border-b py-4 last:border-b-0"
+          className="border-primary/10 border-t py-4"
         >
           <div className="flex items-center justify-between gap-4">
-            <a
-              href={creatorPath(manager.id)}
-              className="group flex min-w-0 flex-1 items-center gap-2.5"
-            >
-              <span className="text-primary/40 w-5 shrink-0 text-center font-mono text-xs tabular-nums">
+            <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
+              <span className={`${positionClass} text-sm`}>
                 {index + 1}
               </span>
-              <CreatorAvatar
-                address={manager.id}
-                name={manager.name}
-                size="2xs"
-              />
-              <span className="text-primary group-hover:text-primary/85 break-all font-mono text-sm font-semibold tracking-tight">
-                {manager.id}
-              </span>
-              {manager.verified && (
-                <SealCheck size="xs" className="text-[#32BCFF] shrink-0" />
-              )}
-            </a>
+              <a
+                href={creatorPath(manager.id)}
+                className="group flex min-w-0 flex-1 items-center gap-2.5"
+              >
+                <CreatorAvatar
+                  address={manager.id}
+                  name={manager.name}
+                  size="2xs"
+                />
+                <span className="text-primary group-hover:text-primary/85 break-all font-mono text-sm font-semibold tracking-tight">
+                  {manager.id}
+                </span>
+                {manager.verified && (
+                  <SealCheck size="xs" className="text-[#32BCFF] shrink-0" />
+                )}
+              </a>
+            </div>
 
             <div className="text-primary/70 flex shrink-0 items-center gap-4 font-mono text-sm tabular-nums sm:gap-6">
               <span className={metricClass}>{manager.fundCount}</span>

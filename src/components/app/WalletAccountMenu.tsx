@@ -84,7 +84,7 @@ async function copyText(value: string) {
 }
 
 const panelShellClass =
-  "w-80 overflow-hidden rounded-[var(--privy-border-radius-md)] bg-[var(--privy-color-background)] shadow-[0px_0px_20px_-3px_rgba(0,0,0,0.1),0px_4px_10px_-3px_rgba(0,0,0,0.08)]";
+  "w-80 overflow-hidden rounded-[var(--privy-border-radius-md)] bg-[#181709] shadow-[0px_0px_20px_-3px_rgba(0,0,0,0.1),0px_4px_10px_-3px_rgba(0,0,0,0.08)]";
 const rowBtnClass =
   "flex h-[34px] w-full items-center gap-2 px-6 text-left text-sm text-[var(--privy-color-foreground)] transition-colors hover:bg-[var(--privy-color-background-2)]";
 const sectionBtnClass =
@@ -270,7 +270,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
         {...getReferenceProps()}
         aria-expanded={open}
         data-state={open ? "open" : "closed"}
-        className={`flex items-center gap-2 ${walletNavPad} ${walletNavRadius} border border-[var(--privy-color-foreground-4)] bg-[var(--privy-color-background)] text-[var(--privy-color-foreground-2)] transition-colors hover:text-[var(--privy-color-foreground)]`}
+        className={`flex items-center gap-2 ${walletNavPad} ${walletNavRadius} border border-[var(--privy-color-foreground-4)] bg-[#181709] text-[var(--privy-color-foreground-2)] transition-colors hover:text-[var(--privy-color-foreground)]`}
       >
         <CreatorAvatar
           address={address}
@@ -362,7 +362,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                           type="button"
                           onClick={(event) => void copyDepositAddress(event)}
                           disabled={!info?.depositAddress}
-                          className="ml-3 flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-[var(--privy-color-accent)] bg-[var(--privy-color-background)] px-2.5 text-sm font-medium text-[var(--privy-color-accent)] transition-colors hover:bg-[var(--privy-color-info-bg-hover)] disabled:opacity-50"
+                          className="ml-3 flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-[var(--privy-color-accent)] bg-[#181709] px-2.5 text-sm font-medium text-[var(--privy-color-accent)] transition-colors hover:bg-[var(--privy-color-info-bg-hover)] disabled:opacity-50"
                         >
                           {copied ? (
                             <>
