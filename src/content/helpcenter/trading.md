@@ -19,4 +19,4 @@ Example: two mandates at $100 and $300 in a $400 pool → a $40 buy becomes $10 
 
 Investors enable auto-trading when they join (Privy session / server signer). Filled trades create positions on the mandate; failed fills restore cash.
 
-You can follow open positions and PnL on the fund page and under **Your mandates**.
+You can follow open positions and PnL on the fund page and under **Your portfolio**.

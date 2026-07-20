@@ -90,7 +90,7 @@ export default function YourMandatesPanel() {
         </div>
         <div className="flex items-center justify-between lg:mt-4">
           <span className="border-primary text-primary inline-block border-b-2 pb-2 text-sm font-medium">
-            Your mandates
+            Your portfolio
           </span>
           <div className="flex items-center gap-2 pb-2">
             {settingsOpen && (
@@ -107,7 +107,7 @@ export default function YourMandatesPanel() {
             <button
               type="button"
               onClick={() => setSettingsOpen((open) => !open)}
-              aria-label="Mandates settings"
+              aria-label="Portfolio settings"
               aria-expanded={settingsOpen}
               className={`transition-colors ${
                 settingsOpen

@@ -20,7 +20,7 @@ lastUpdated: "2026-07-19"
 - Proportional trade fan-out across mandates
 - Privy wallet connect and account menu
 - Leaderboard by manager pool PnL
-- Your mandates treemap and fund PnL charts
+- Your portfolio waffle and fund PnL charts
 - Sage brand palette and docs section
 
 ## Upcoming

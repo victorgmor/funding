@@ -195,7 +195,7 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
       : !isConnected
         ? "Connect your wallet to filter funds you're in"
         : participatingLoading
-          ? "Checking your mandates…"
+          ? "Checking your portfolio…"
           : "You're not in any funds yet"
     : "No funds match your search";
 
@@ -331,13 +331,13 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
           fallback={
             <>
               <div data-wallet-restoring>
-                <WalletPanelPlaceholder label="Loading mandates…" />
+                <WalletPanelPlaceholder label="Loading portfolio…" />
               </div>
               <p
                 data-wallet-connect-cta
                 className="text-primary/40 text-sm"
               >
-                Log in to see your mandates
+                Log in to see your portfolio
               </p>
             </>
           }
