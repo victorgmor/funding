@@ -18,17 +18,10 @@ const CELLS = COLS * ROWS;
 
 const EMPTY = "color-mix(in oklch, black 10%, #d6dfc9)";
 
-function pnlFill(profit: number, maxAbs: number): string {
-  if (maxAbs <= 0 || Math.abs(profit) < 0.005) {
-    return "color-mix(in oklch, #179e63 28%, #d6dfc9)";
-  }
-  const t = Math.min(1, Math.abs(profit) / maxAbs);
-  if (profit > 0) {
-    const pct = Math.round(28 + t * 55);
-    return `color-mix(in oklch, #179e63 ${pct}%, #d6dfc9)`;
-  }
-  const pct = Math.round(22 + t * 45);
-  return `color-mix(in oklch, oklch(55% 0.12 25) ${pct}%, #d6dfc9)`;
+function pnlFill(profit: number): string {
+  if (profit > 0) return "var(--color-profit)";
+  if (profit < 0) return "var(--color-red-500)";
+  return EMPTY;
 }
 
 type Slice = {
@@ -83,11 +76,6 @@ export default function MandateAllocationChart({ entries }: Props) {
       .sort((a, b) => b.weight - a.weight);
   }, [entries]);
 
-  const maxAbs = useMemo(
-    () => Math.max(...slices.map((s) => Math.abs(s.profit)), 0),
-    [slices],
-  );
-
   const cells = useMemo(() => allocateCells(slices, CELLS), [slices]);
 
   return (
@@ -121,7 +109,7 @@ export default function MandateAllocationChart({ entries }: Props) {
               title={`${slice.name}: ${formatUsdExact(slice.profit, true)}`}
               className="aspect-square rounded-md transition-opacity"
               style={{
-                backgroundColor: pnlFill(slice.profit, maxAbs),
+                backgroundColor: pnlFill(slice.profit),
                 opacity: dimmed ? 0.35 : 1,
               }}
               onMouseEnter={() => setHovered(slice.slug)}
