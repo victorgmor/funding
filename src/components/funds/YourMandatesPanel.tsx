@@ -109,7 +109,7 @@ export default function YourMandatesPanel() {
               onClick={() => setSettingsOpen((open) => !open)}
               aria-label="Mandates settings"
               aria-expanded={settingsOpen}
-              className={`pb-2 transition-colors ${
+              className={`transition-colors ${
                 settingsOpen
                   ? "text-primary"
                   : "text-primary/45 hover:text-primary/70"

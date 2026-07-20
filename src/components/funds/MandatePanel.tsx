@@ -502,8 +502,10 @@ export default function MandatePanel({ fund }: Props) {
                     }`}
                   >
                     <p className="text-primary/80 line-clamp-2">{pos.question}</p>
-                    <p className="text-primary font-mono tabular-nums">
-                      {pos.shares.toFixed(2)} shares · {formatUsdExact(pos.costUsdc)}
+                    <p className="text-primary tabular-nums">
+                      {pos.shares.toFixed(2)} shares ·{" "}
+                      {formatUsdExact(pos.avgPrice)} avg ·{" "}
+                      {formatUsdExact(pos.costUsdc)}
                       <span className="text-primary/50 ml-1 uppercase">
                         {pos.side}
                       </span>

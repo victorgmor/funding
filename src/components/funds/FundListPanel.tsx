@@ -271,7 +271,7 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
               onClick={() => setSettingsOpen((open) => !open)}
               aria-label="Feed settings"
               aria-expanded={settingsOpen}
-              className={`pb-2 transition-colors ${
+              className={`transition-colors ${
                 settingsOpen
                   ? "text-primary"
                   : "text-primary/45 hover:text-primary/70"

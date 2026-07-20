@@ -111,25 +111,25 @@ function PrivyWalletSection({
 
   return (
     <div className="mt-4 px-4">
-      <p className="text-primary mb-2 text-left text-sm font-medium">
+      <p className="mb-2 text-left text-sm font-medium text-[var(--privy-color-foreground)]">
         Your wallet
       </p>
-      <div className="border-primary/10 flex h-14 w-full items-center justify-between border px-4 py-3">
+      <div className="flex h-14 w-full items-center justify-between rounded-[var(--privy-border-radius-md)] border border-[var(--privy-color-foreground-4)] px-4 py-3">
         <div className="flex min-w-0 flex-col gap-0">
           <p
-            className="text-primary truncate text-sm font-medium"
+            className="truncate text-sm font-medium text-[var(--privy-color-foreground)]"
             title={address}
           >
             {privyShortAddress(address)}
           </p>
-          <p className="text-primary/45 font-mono text-xs leading-4 tabular-nums">
+          <p className="text-xs leading-4 text-[var(--privy-color-foreground-3)]">
             {loading ? "…" : balance}
           </p>
         </div>
         <button
           type="button"
           onClick={(event) => void copyAddress(event)}
-          className="border-accent/40 text-accent hover:bg-accent/10 ml-3 flex h-7 shrink-0 items-center gap-1.5 border px-2.5 text-sm font-medium transition-colors"
+          className="ml-3 flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-[var(--privy-color-accent)] bg-[var(--privy-color-background)] px-2.5 text-sm font-medium text-[var(--privy-color-accent)] transition-colors hover:bg-[var(--privy-color-info-bg-hover)]"
         >
           {copied ? (
             <>
@@ -153,19 +153,13 @@ async function copyText(value: string) {
 }
 
 const panelShellClass =
-  "border-primary/10 bg-secondary text-primary w-80 overflow-hidden border";
+  "w-80 overflow-hidden rounded-[var(--privy-border-radius-md)] bg-[var(--privy-color-background)] shadow-[0px_0px_20px_-3px_rgba(0,0,0,0.1),0px_4px_10px_-3px_rgba(0,0,0,0.08)]";
 const rowBtnClass =
-  "text-primary hover:bg-primary/5 flex h-9 w-full items-center gap-2 px-4 text-left text-sm transition-colors";
+  "flex h-[34px] w-full items-center gap-2 px-6 text-left text-sm text-[var(--privy-color-foreground)] transition-colors hover:bg-[var(--privy-color-background-2)]";
 const sectionBtnClass =
-  "border-primary/15 text-primary hover:bg-primary/5 w-full border px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+  "w-full rounded-[var(--privy-border-radius-md)] border border-[var(--privy-color-foreground-4)] px-3 py-2 text-sm text-[var(--privy-color-foreground)] transition-colors hover:bg-[var(--privy-color-background-2)] disabled:cursor-not-allowed disabled:opacity-50";
 const inputClass =
-  "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/40 focus:border-primary/30 w-full border px-3 py-2 text-sm focus:outline-none";
-const primaryBtnClass =
-  "bg-accent text-secondary hover:opacity-90 w-full px-3 py-2 text-sm font-medium transition-opacity disabled:cursor-not-allowed disabled:opacity-50";
-const mutedClass = "text-primary/50 text-sm";
-const labelClass = "text-primary text-sm font-medium";
-const monoClass = "text-primary font-mono text-sm tabular-nums";
-const dividerClass = "border-primary/10";
+  "w-full rounded-[var(--privy-border-radius-md)] border border-[var(--privy-color-foreground-4)] bg-[var(--privy-color-background-2)] px-3 py-2 text-sm text-[var(--privy-color-foreground)] placeholder:text-[var(--privy-color-foreground-3)] focus:border-[var(--privy-color-accent)] focus:outline-none";
 
 export default function WalletAccountMenu({ address, label, onLogout }: Props) {
   const { sendTransaction } = useSendTransaction();
@@ -374,10 +368,10 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
         {...getReferenceProps()}
         aria-expanded={open}
         data-state={open ? "open" : "closed"}
-        className="text-primary flex items-center gap-2 text-sm font-medium transition-colors"
+        className="flex items-center gap-2 px-2 py-2 text-[var(--privy-color-foreground-2)] rounded-[var(--privy-border-radius-md)] border-[var(--privy-color-foreground-4)] bg-[var(--privy-color-background)] transition-colors hover:text-[var(--privy-color-foreground)]"
       >
         <CreatorAvatar address={address} name={label} size="2xs" />
-        <span className="max-w-32 truncate">{label}</span>
+        <span className="max-w-32 truncate text-sm">{label}</span>
       </button>
 
       {isMounted && (
@@ -390,13 +384,15 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
               {...getFloatingProps()}
             >
               <div style={transitionStyles} className={panelShellClass}>
-          <div className={`flex items-center justify-between border-b ${dividerClass} px-4 py-3`}>
-            <p className={labelClass}>Account</p>
+          <div className="flex items-center justify-between border-b border-[var(--privy-color-foreground-4)] px-4 py-3">
+            <p className="text-base font-medium text-[var(--privy-color-foreground)]">
+              Account
+            </p>
             <button
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Close"
-              className="text-primary/40 hover:bg-primary/10 hover:text-primary p-1"
+              className="rounded-full p-1 text-[var(--privy-color-foreground-3)] hover:bg-[var(--privy-color-background-2)] hover:text-[var(--privy-color-foreground)]"
             >
               ✕
             </button>
@@ -422,8 +418,10 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
           />
 
           <div className="px-4 py-3">
-            <p className={labelClass}>Withdraw pUSD</p>
-            <p className={`mt-1 ${mutedClass}`}>
+            <p className="text-sm font-medium text-[var(--privy-color-foreground)]">
+              Withdraw pUSD
+            </p>
+            <p className="mt-1 text-sm text-[var(--privy-color-foreground-3)]">
               From your Privy wallet on Polygon.
             </p>
             <div className="mt-3 space-y-2">
@@ -444,44 +442,54 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                   placeholder="Amount"
                   className={inputClass}
                 />
-                <span className={`shrink-0 ${mutedClass}`}>pUSD</span>
+                <span className="shrink-0 text-sm text-[var(--privy-color-foreground-3)]">
+                  pUSD
+                </span>
               </div>
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => void sendPusd()}
-                className={primaryBtnClass}
+                className="w-full rounded-[var(--privy-border-radius-md)] bg-[var(--privy-color-accent)] px-3 py-2 text-sm font-medium text-[var(--privy-color-foreground-accent)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Withdraw pUSD
               </button>
             </div>
           </div>
 
-          <div className={`border-t ${dividerClass} px-4 py-3`}>
-            <p className={labelClass}>Polymarket deposit wallet</p>
-            <p className={`mt-1 ${mutedClass}`}>
+          <div className="border-t border-[var(--privy-color-foreground-4)] px-4 py-3">
+            <p className="text-sm font-medium text-[var(--privy-color-foreground)]">
+              Polymarket deposit wallet
+            </p>
+            <p className="mt-1 text-sm text-[var(--privy-color-foreground-3)]">
               Fund commitments use this address. Committed capital stays locked
               until a fund closes.
             </p>
             <div className="mt-2 space-y-1 text-sm">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-primary/50">Address</span>
+                <span className="text-[var(--privy-color-foreground-3)]">
+                  Address
+                </span>
                 {info ? (
                   <button
                     type="button"
-                    className={`${monoClass} hover:underline`}
+                    className="font-mono text-[var(--privy-color-foreground)] hover:underline"
                     onClick={() => copyText(info.depositAddress)}
                     title={info.depositAddress}
                   >
                     {shortAddress(info.depositAddress)}
                   </button>
                 ) : (
-                  <span className="text-primary/30">…</span>
+                  <span className="text-[var(--privy-color-foreground-4)]">
+                    …
+                  </span>
                 )}
               </div>
               <div className="flex items-center justify-between gap-2">
-                <span className="text-primary/50">Balance</span>
-                <span className={monoClass}>
+                <span className="text-[var(--privy-color-foreground-3)]">
+                  Balance
+                </span>
+                <span className="font-mono tabular-nums text-[var(--privy-color-foreground)]">
                   {loading
                     ? "…"
                     : formatUsdExact(info?.depositCollateral ?? 0)}
@@ -490,14 +498,18 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
               {(info?.lockedUsdc ?? 0) > 0 && (
                 <>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-primary/50">Committed</span>
-                    <span className="text-primary/50 font-mono text-sm tabular-nums">
+                    <span className="text-[var(--privy-color-foreground-3)]">
+                      Committed
+                    </span>
+                    <span className="font-mono tabular-nums text-[var(--privy-color-foreground-3)]">
                       {loading ? "…" : formatUsdExact(info?.lockedUsdc ?? 0)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-primary/50">Withdrawable</span>
-                    <span className={monoClass}>
+                    <span className="text-[var(--privy-color-foreground-3)]">
+                      Withdrawable
+                    </span>
+                    <span className="font-mono tabular-nums text-[var(--privy-color-foreground)]">
                       {loading
                         ? "…"
                         : formatUsdExact(info?.withdrawableUsdc ?? 0)}
@@ -542,13 +554,15 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
           </div>
 
           {status && (
-            <p className={`px-4 pb-2 ${mutedClass}`}>{status}</p>
+            <p className="px-4 pb-2 text-sm text-[var(--privy-color-foreground-3)]">
+              {status}
+            </p>
           )}
           {error && (
             <p className="px-4 pb-3 text-sm text-red-400">{error}</p>
           )}
 
-          <div className="text-primary/30 flex justify-center px-4 py-3">
+          <div className="flex justify-center px-4 py-3 text-[var(--privy-color-foreground-3)]">
             <a
               href="https://privy.io"
               target="_blank"
