@@ -23,6 +23,12 @@ type MandateEntry = {
   mandateProfitUsdc: number | null;
 };
 
+type DayActivity = {
+  date: string;
+  value: number;
+  fundSlug: string;
+};
+
 export const GET: APIRoute = async ({ url }) => {
   const address = url.searchParams.get("address")?.trim();
   if (!address) {
@@ -34,6 +40,7 @@ export const GET: APIRoute = async ({ url }) => {
   try {
     const mandates = await listMandatesForInvestor(address);
     const entries: MandateEntry[] = [];
+    const activity: DayActivity[] = [];
 
     for (const mandate of mandates) {
       const fund = await getFund(mandate.fundSlug);
@@ -46,6 +53,11 @@ export const GET: APIRoute = async ({ url }) => {
           (trade) =>
             trade.mandateId === mandate.id && trade.status === "filled",
         );
+        for (const trade of filledTrades) {
+          const date = (trade.filledAt ?? trade.createdAt).slice(0, 10);
+          const value = Math.abs(trade.pnlUsdc ?? trade.usdcAmount ?? 1);
+          activity.push({ date, value, fundSlug: fund.slug });
+        }
         const depositByInvestor = await resolveDepositAddresses(fund.slug, [
           address,
         ]);
@@ -68,7 +80,7 @@ export const GET: APIRoute = async ({ url }) => {
       entries.push({ fund, mandate, mandateProfitUsdc });
     }
 
-    return new Response(JSON.stringify({ mandates: entries }), {
+    return new Response(JSON.stringify({ mandates: entries, activity }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (e) {

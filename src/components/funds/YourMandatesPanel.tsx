@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ConnectWallet from "@/components/app/ConnectWallet";
 import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import GearIcon from "@/components/fundations/icons/GearIcon";
-import MandateAllocationChart from "@/components/funds/MandateAllocationChart";
+import MandateAllocationChart, {
+  type DayActivity,
+} from "@/components/funds/MandateAllocationChart";
 import { resolveLifecycleStage } from "@/lib/funds/lifecycle";
 import type { Fund, Mandate } from "@/lib/funds/types";
 import { useWalletGate } from "@/lib/wagmi/useWalletGate";
@@ -16,6 +18,7 @@ type Entry = {
 export default function YourMandatesPanel() {
   const { address, isConnected, loading: walletLoading } = useWalletGate();
   const [entries, setEntries] = useState<Entry[] | null>(null);
+  const [activity, setActivity] = useState<DayActivity[]>([]);
   const [loading, setLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [hideClosed, setHideClosed] = useState(false);
@@ -23,6 +26,7 @@ export default function YourMandatesPanel() {
   useEffect(() => {
     if (walletLoading || !isConnected || !address) {
       setEntries(null);
+      setActivity([]);
       setLoading(false);
       return;
     }
@@ -41,11 +45,13 @@ export default function YourMandatesPanel() {
             mandate: Mandate;
             mandateProfitUsdc?: number | null;
           }>;
+          activity?: DayActivity[];
           error?: string;
         };
         if (!cancelled) {
           if (!res.ok) {
             setEntries([]);
+            setActivity([]);
             return;
           }
           setEntries(
@@ -55,9 +61,13 @@ export default function YourMandatesPanel() {
               profitUsdc: row.mandateProfitUsdc ?? null,
             })),
           );
+          setActivity(data.activity ?? []);
         }
       } catch {
-        if (!cancelled) setEntries([]);
+        if (!cancelled) {
+          setEntries([]);
+          setActivity([]);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -72,6 +82,12 @@ export default function YourMandatesPanel() {
   const visibleEntries = (entries ?? []).filter(
     ({ fund }) => !hideClosed || resolveLifecycleStage(fund) !== "closed",
   );
+
+  const visibleActivity = useMemo(() => {
+    if (!hideClosed) return activity;
+    const open = new Set(visibleEntries.map((e) => e.fund.slug));
+    return activity.filter((row) => open.has(row.fundSlug));
+  }, [activity, hideClosed, visibleEntries]);
 
   return (
     <div>
@@ -95,14 +111,14 @@ export default function YourMandatesPanel() {
           <div className="flex items-center gap-2 pb-2">
             {settingsOpen && (
               <label className="text-primary flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap">
-                  <input
-                    type="checkbox"
-                    checked={hideClosed}
-                    onChange={(e) => setHideClosed(e.target.checked)}
-                    className="border-primary/20 text-accent ring-0 size-3.5 shrink-0 rounded"
-                  />
-                  Hide closed funds
-                </label>
+                <input
+                  type="checkbox"
+                  checked={hideClosed}
+                  onChange={(e) => setHideClosed(e.target.checked)}
+                  className="border-primary/20 text-accent ring-0 size-3.5 shrink-0 rounded"
+                />
+                Hide closed funds
+              </label>
             )}
             <button
               type="button"
@@ -124,11 +140,11 @@ export default function YourMandatesPanel() {
       {isConnected && address ? (
         loading || entries === null ? (
           <div className="border-primary/10 border-t">
-            <MandateAllocationChart entries={[]} />
+            <MandateAllocationChart activity={[]} />
           </div>
         ) : (
           <div className="border-primary/10 border-t">
-            <MandateAllocationChart entries={visibleEntries} />
+            <MandateAllocationChart activity={visibleActivity} />
           </div>
         )
       ) : (

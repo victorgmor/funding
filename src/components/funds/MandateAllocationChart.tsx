@@ -1,193 +1,164 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { formatUsdExact } from "@/lib/funds/format";
-import type { Fund, Mandate } from "@/lib/funds/types";
 
-type Entry = {
-  fund: Fund;
-  mandate: Mandate;
-  profitUsdc: number | null;
+export type DayActivity = {
+  date: string;
+  value: number;
+  fundSlug: string;
 };
-
-type Slice = {
-  slug: string;
-  name: string;
-  weight: number;
-  profit: number;
-};
-
-type Rect = Slice & { x: number; y: number; w: number; h: number };
 
 type Props = {
-  entries: Entry[];
+  activity: DayActivity[];
 };
 
-const CELL_GAP = 0.6; // % inset between cells
+const WEEKS = 53;
+const EMPTY = "color-mix(in oklch, black 8%, #d6dfc9)";
+const LEVELS = [
+  "color-mix(in oklch, #179e63 22%, #d6dfc9)",
+  "color-mix(in oklch, #179e63 40%, #d6dfc9)",
+  "color-mix(in oklch, #179e63 62%, #d6dfc9)",
+  "#179e63",
+];
 
-/** Binary space-partition treemap — fine for a handful of funds. */
-function layoutTreemap(
-  items: Slice[],
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-): Rect[] {
-  if (items.length === 0) return [];
-  if (items.length === 1) {
-    return [{ ...items[0]!, x, y, w, h }];
-  }
+const MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
-  const total = items.reduce((sum, item) => sum + item.weight, 0);
-  let acc = 0;
-  let split = 1;
-  for (let i = 0; i < items.length - 1; i++) {
-    acc += items[i]!.weight;
-    if (acc >= total / 2) {
-      split = i + 1;
-      break;
+function utcDay(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+function startOfUtcDay(iso: string): Date {
+  return new Date(`${iso}T00:00:00.000Z`);
+}
+
+function buildWeeks(byDate: Map<string, number>) {
+  const today = startOfUtcDay(utcDay(new Date()));
+  const end = new Date(today);
+  end.setUTCDate(end.getUTCDate() + (6 - today.getUTCDay()));
+  const start = new Date(end);
+  start.setUTCDate(start.getUTCDate() - (WEEKS * 7 - 1));
+
+  const weeks: { date: string; value: number; month: number }[][] = [];
+  for (let w = 0; w < WEEKS; w++) {
+    const days = [];
+    for (let d = 0; d < 7; d++) {
+      const cell = new Date(start);
+      cell.setUTCDate(start.getUTCDate() + w * 7 + d);
+      const date = utcDay(cell);
+      days.push({
+        date,
+        value: byDate.get(date) ?? 0,
+        month: cell.getUTCMonth(),
+      });
     }
+    weeks.push(days);
   }
-
-  const left = items.slice(0, split);
-  const right = items.slice(split);
-  const leftWeight = left.reduce((sum, item) => sum + item.weight, 0);
-  const ratio = leftWeight / total;
-
-  if (w >= h) {
-    return [
-      ...layoutTreemap(left, x, y, w * ratio, h),
-      ...layoutTreemap(right, x + w * ratio, y, w * (1 - ratio), h),
-    ];
-  }
-
-  return [
-    ...layoutTreemap(left, x, y, w, h * ratio),
-    ...layoutTreemap(right, x, y + h * ratio, w, h * (1 - ratio)),
-  ];
+  return weeks;
 }
 
-const THEME_BG = "#d6dfc9";
-
-/** Heat fills mixed into secondary so cells sit in the app chrome. */
-function pnlFill(profit: number, maxAbs: number): string {
-  if (maxAbs <= 0 || Math.abs(profit) < 0.005) {
-    return `color-mix(in oklch, black 8%, ${THEME_BG})`;
-  }
-  const t = Math.min(1, Math.abs(profit) / maxAbs);
-  if (profit > 0) {
-    const pct = Math.round(18 + t * 42);
-    return `color-mix(in oklch, #179e63 ${pct}%, ${THEME_BG})`;
-  }
-  const pct = Math.round(14 + t * 36);
-  return `color-mix(in oklch, oklch(55% 0.12 25) ${pct}%, ${THEME_BG})`;
+function levelFor(value: number, max: number): number {
+  if (value <= 0 || max <= 0) return 0;
+  const t = value / max;
+  if (t > 0.75) return 4;
+  if (t > 0.5) return 3;
+  if (t > 0.25) return 2;
+  return 1;
 }
 
-export default function MandateAllocationChart({ entries }: Props) {
-  const [hovered, setHovered] = useState<string | null>(null);
+export default function MandateAllocationChart({ activity }: Props) {
+  const byDate = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const row of activity) {
+      map.set(row.date, (map.get(row.date) ?? 0) + row.value);
+    }
+    return map;
+  }, [activity]);
 
-  const slices = useMemo(() => {
-    const mapped = entries
-      .filter((entry) => entry.mandate.notionalUsdc > 0)
-      .map((entry) => ({
-        slug: entry.fund.slug,
-        name: entry.fund.name,
-        profit: entry.profitUsdc ?? 0,
-        notional: entry.mandate.notionalUsdc,
-      }));
-    // Size by |P&L|; fall back to notional when everything is flat.
-    const usePnl = mapped.some((slice) => Math.abs(slice.profit) >= 0.005);
-    return mapped
-      .map((slice) => ({
-        slug: slice.slug,
-        name: slice.name,
-        profit: slice.profit,
-        weight: usePnl
-          ? Math.max(Math.abs(slice.profit), 0.01)
-          : slice.notional,
-      }))
-      .sort((a, b) => b.weight - a.weight);
-  }, [entries]);
-
-  const maxAbs = useMemo(
-    () => Math.max(...slices.map((slice) => Math.abs(slice.profit)), 0),
-    [slices],
+  const weeks = useMemo(() => buildWeeks(byDate), [byDate]);
+  const max = useMemo(
+    () => Math.max(0, ...weeks.flatMap((w) => w.map((d) => d.value))),
+    [weeks],
   );
 
-  const rects = useMemo(
-    () => (slices.length > 0 ? layoutTreemap(slices, 0, 0, 100, 100) : []),
-    [slices],
-  );
-
-  const empty = rects.length === 0;
+  const monthLabels = useMemo(() => {
+    const labels: (string | null)[] = [];
+    let prev = -1;
+    for (const week of weeks) {
+      const month = week[0]?.month ?? -1;
+      if (month !== prev) {
+        labels.push(MONTHS[month] ?? null);
+        prev = month;
+      } else {
+        labels.push(null);
+      }
+    }
+    return labels;
+  }, [weeks]);
 
   return (
-    <div className="border-primary/10 border-b pb-6 pt-5">
+    <div className="border-primary/10 border-b overflow-x-auto pb-6 pt-5">
       <div
-        className="relative h-56 w-full bg-transparent sm:h-64"
+        className="inline-block min-w-full"
         role="img"
-        aria-label={
-          empty
-            ? "No mandate allocation yet"
-            : `Mandate P&L across ${rects.length} funds`
-        }
+        aria-label="Mandate trading activity over the past year"
       >
-        {empty ? (
-          <div className="text-primary/45 flex h-full items-center justify-center text-sm">
-            No mandates yet
+        <div className="mb-1.5 flex gap-[3px] pl-7">
+          {monthLabels.map((label, i) => (
+            <div
+              key={i}
+              className="text-primary/45 flex w-2.5 shrink-0 justify-start text-[10px] leading-none sm:w-3 sm:text-xs"
+            >
+              {label}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-1.5">
+          <div className="text-primary/45 flex w-6 shrink-0 flex-col gap-[3px] text-[10px] leading-none sm:text-xs">
+            <span className="h-2.5 sm:h-3" />
+            <span className="flex h-2.5 items-center sm:h-3">Mon</span>
+            <span className="h-2.5 sm:h-3" />
+            <span className="flex h-2.5 items-center sm:h-3">Wed</span>
+            <span className="h-2.5 sm:h-3" />
+            <span className="flex h-2.5 items-center sm:h-3">Fri</span>
+            <span className="h-2.5 sm:h-3" />
           </div>
-        ) : (
-          <div className="relative h-full w-full">
-            {rects.map((rect) => {
-              const isHovered = hovered === rect.slug;
-              const otherHovered = hovered !== null && !isHovered;
-              const showAmount = isHovered || rect.w * rect.h > 120;
-              const showName = isHovered || rect.w * rect.h > 40;
-              // Grow only inward: keep the outer edge fixed, expand toward center.
-              const leftEdge = rect.x + CELL_GAP;
-              const rightEdge = rect.x + rect.w - CELL_GAP;
-              const fromLeft = rect.x + rect.w / 2 < 50;
-              const hoverLeft = fromLeft ? leftEdge : CELL_GAP;
-              const hoverWidth = fromLeft
-                ? 100 - CELL_GAP - leftEdge
-                : rightEdge - CELL_GAP;
-              return (
-                <a
-                  key={rect.slug}
-                  href={`/funds/${rect.slug}`}
-                  title={`${rect.name}: ${formatUsdExact(rect.profit, true)}`}
-                  className="text-primary absolute flex flex-col items-center justify-center overflow-hidden px-0 text-center"
-                  style={{
-                    left: `${isHovered ? hoverLeft : leftEdge}%`,
-                    top: `${rect.y + CELL_GAP}%`,
-                    width: `${Math.max(0, isHovered ? hoverWidth : rect.w - CELL_GAP * 2)}%`,
-                    height: `${Math.max(0, rect.h - CELL_GAP * 2)}%`,
-                    backgroundColor: pnlFill(rect.profit, maxAbs),
-                    zIndex: isHovered ? 2 : 1,
-                    opacity: otherHovered ? 0 : 1,
-                    pointerEvents: otherHovered ? "none" : "auto",
-                    transition:
-                      "left 200ms ease, width 200ms ease, opacity 150ms ease",
-                  }}
-                  onMouseEnter={() => setHovered(rect.slug)}
-                  onMouseLeave={() => setHovered(null)}
-                  onFocus={() => setHovered(rect.slug)}
-                  onBlur={() => setHovered(null)}
-                  aria-label={`${rect.name}, ${formatUsdExact(rect.profit, true)}`}
-                >
-                  {showName && (
-                    <span className="line-clamp-2 w-full text-[11px] font-medium leading-tight sm:text-xs">
-                      {rect.name}
-                    </span>
-                  )}
-                  {showAmount && (
-                    <span className="text-primary/70 mt-0.5 text-[10px] tabular-nums sm:text-xs">
-                      {formatUsdExact(rect.profit, true)}
-                    </span>
-                  )}
-                </a>
-              );
-            })}
+
+          <div className="flex gap-[3px]">
+            {weeks.map((days, wi) => (
+              <div key={wi} className="flex flex-col gap-[3px]">
+                {days.map((day) => {
+                  const level = levelFor(day.value, max);
+                  const fill = level === 0 ? EMPTY : LEVELS[level - 1]!;
+                  return (
+                    <div
+                      key={day.date}
+                      title={
+                        day.value > 0
+                          ? `${day.date}: ${formatUsdExact(day.value)} activity`
+                          : day.date
+                      }
+                      className="size-2.5 rounded-[2px] sm:size-3"
+                      style={{ backgroundColor: fill }}
+                    />
+                  );
+                })}
+              </div>
+            ))}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
