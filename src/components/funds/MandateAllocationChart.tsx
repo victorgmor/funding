@@ -1,164 +1,137 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { formatUsdExact } from "@/lib/funds/format";
+import type { Fund, Mandate } from "@/lib/funds/types";
 
-export type DayActivity = {
-  date: string;
-  value: number;
-  fundSlug: string;
+type Entry = {
+  fund: Fund;
+  mandate: Mandate;
+  profitUsdc: number | null;
 };
 
 type Props = {
-  activity: DayActivity[];
+  entries: Entry[];
 };
 
-const WEEKS = 53;
-const EMPTY = "color-mix(in oklch, black 8%, #d6dfc9)";
-const LEVELS = [
-  "color-mix(in oklch, #179e63 22%, #d6dfc9)",
-  "color-mix(in oklch, #179e63 40%, #d6dfc9)",
-  "color-mix(in oklch, #179e63 62%, #d6dfc9)",
-  "#179e63",
-];
+const COLS = 20;
+const ROWS = 5;
+const CELLS = COLS * ROWS;
 
-const MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
+const EMPTY = "color-mix(in oklch, black 10%, #d6dfc9)";
 
-function utcDay(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
-function startOfUtcDay(iso: string): Date {
-  return new Date(`${iso}T00:00:00.000Z`);
-}
-
-function buildWeeks(byDate: Map<string, number>) {
-  const today = startOfUtcDay(utcDay(new Date()));
-  const end = new Date(today);
-  end.setUTCDate(end.getUTCDate() + (6 - today.getUTCDay()));
-  const start = new Date(end);
-  start.setUTCDate(start.getUTCDate() - (WEEKS * 7 - 1));
-
-  const weeks: { date: string; value: number; month: number }[][] = [];
-  for (let w = 0; w < WEEKS; w++) {
-    const days = [];
-    for (let d = 0; d < 7; d++) {
-      const cell = new Date(start);
-      cell.setUTCDate(start.getUTCDate() + w * 7 + d);
-      const date = utcDay(cell);
-      days.push({
-        date,
-        value: byDate.get(date) ?? 0,
-        month: cell.getUTCMonth(),
-      });
-    }
-    weeks.push(days);
+function pnlFill(profit: number, maxAbs: number): string {
+  if (maxAbs <= 0 || Math.abs(profit) < 0.005) {
+    return "color-mix(in oklch, #179e63 28%, #d6dfc9)";
   }
-  return weeks;
+  const t = Math.min(1, Math.abs(profit) / maxAbs);
+  if (profit > 0) {
+    const pct = Math.round(28 + t * 55);
+    return `color-mix(in oklch, #179e63 ${pct}%, #d6dfc9)`;
+  }
+  const pct = Math.round(22 + t * 45);
+  return `color-mix(in oklch, oklch(55% 0.12 25) ${pct}%, #d6dfc9)`;
 }
 
-function levelFor(value: number, max: number): number {
-  if (value <= 0 || max <= 0) return 0;
-  const t = value / max;
-  if (t > 0.75) return 4;
-  if (t > 0.5) return 3;
-  if (t > 0.25) return 2;
-  return 1;
+type Slice = {
+  slug: string;
+  name: string;
+  profit: number;
+  weight: number;
+};
+
+/** Largest-remainder allocation of `total` cells by weight. */
+function allocateCells(slices: Slice[], total: number): Slice[] {
+  if (slices.length === 0 || total <= 0) return [];
+  const sum = slices.reduce((s, x) => s + x.weight, 0);
+  if (sum <= 0) return [];
+
+  const raw = slices.map((slice) => {
+    const exact = (slice.weight / sum) * total;
+    return { slice, floor: Math.floor(exact), frac: exact - Math.floor(exact) };
+  });
+  let used = raw.reduce((s, r) => s + r.floor, 0);
+  const ranked = [...raw].sort((a, b) => b.frac - a.frac);
+  for (const row of ranked) {
+    if (used >= total) break;
+    row.floor += 1;
+    used += 1;
+  }
+  return raw.flatMap(({ slice, floor }) =>
+    Array.from({ length: floor }, () => slice),
+  );
 }
 
-export default function MandateAllocationChart({ activity }: Props) {
-  const byDate = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const row of activity) {
-      map.set(row.date, (map.get(row.date) ?? 0) + row.value);
-    }
-    return map;
-  }, [activity]);
+export default function MandateAllocationChart({ entries }: Props) {
+  const [hovered, setHovered] = useState<string | null>(null);
 
-  const weeks = useMemo(() => buildWeeks(byDate), [byDate]);
-  const max = useMemo(
-    () => Math.max(0, ...weeks.flatMap((w) => w.map((d) => d.value))),
-    [weeks],
+  const slices = useMemo(() => {
+    const mapped = entries
+      .filter((entry) => entry.mandate.notionalUsdc > 0)
+      .map((entry) => ({
+        slug: entry.fund.slug,
+        name: entry.fund.name,
+        profit: entry.profitUsdc ?? 0,
+        notional: entry.mandate.notionalUsdc,
+      }));
+    const usePnl = mapped.some((s) => Math.abs(s.profit) >= 0.005);
+    return mapped
+      .map((s) => ({
+        slug: s.slug,
+        name: s.name,
+        profit: s.profit,
+        weight: usePnl ? Math.max(Math.abs(s.profit), 0.01) : s.notional,
+      }))
+      .sort((a, b) => b.weight - a.weight);
+  }, [entries]);
+
+  const maxAbs = useMemo(
+    () => Math.max(...slices.map((s) => Math.abs(s.profit)), 0),
+    [slices],
   );
 
-  const monthLabels = useMemo(() => {
-    const labels: (string | null)[] = [];
-    let prev = -1;
-    for (const week of weeks) {
-      const month = week[0]?.month ?? -1;
-      if (month !== prev) {
-        labels.push(MONTHS[month] ?? null);
-        prev = month;
-      } else {
-        labels.push(null);
-      }
-    }
-    return labels;
-  }, [weeks]);
+  const cells = useMemo(() => allocateCells(slices, CELLS), [slices]);
 
   return (
-    <div className="border-primary/10 border-b overflow-x-auto pb-6 pt-5">
+    <div className="border-primary/10 border-b pb-6 pt-5">
       <div
-        className="inline-block min-w-full"
+        className="grid w-full gap-1.5"
+        style={{ gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))` }}
         role="img"
-        aria-label="Mandate trading activity over the past year"
+        aria-label={
+          cells.length === 0
+            ? "No mandate allocation yet"
+            : `Mandate mix across ${slices.length} funds`
+        }
       >
-        <div className="mb-1.5 flex gap-[3px] pl-7">
-          {monthLabels.map((label, i) => (
-            <div
-              key={i}
-              className="text-primary/45 flex w-2.5 shrink-0 justify-start text-[10px] leading-none sm:w-3 sm:text-xs"
-            >
-              {label}
-            </div>
-          ))}
-        </div>
-
-        <div className="flex gap-1.5">
-          <div className="text-primary/45 flex w-6 shrink-0 flex-col gap-[3px] text-[10px] leading-none sm:text-xs">
-            <span className="h-2.5 sm:h-3" />
-            <span className="flex h-2.5 items-center sm:h-3">Mon</span>
-            <span className="h-2.5 sm:h-3" />
-            <span className="flex h-2.5 items-center sm:h-3">Wed</span>
-            <span className="h-2.5 sm:h-3" />
-            <span className="flex h-2.5 items-center sm:h-3">Fri</span>
-            <span className="h-2.5 sm:h-3" />
-          </div>
-
-          <div className="flex gap-[3px]">
-            {weeks.map((days, wi) => (
-              <div key={wi} className="flex flex-col gap-[3px]">
-                {days.map((day) => {
-                  const level = levelFor(day.value, max);
-                  const fill = level === 0 ? EMPTY : LEVELS[level - 1]!;
-                  return (
-                    <div
-                      key={day.date}
-                      title={
-                        day.value > 0
-                          ? `${day.date}: ${formatUsdExact(day.value)} activity`
-                          : day.date
-                      }
-                      className="size-2.5 rounded-[2px] sm:size-3"
-                      style={{ backgroundColor: fill }}
-                    />
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        </div>
+        {Array.from({ length: CELLS }, (_, i) => {
+          const slice = cells[i];
+          if (!slice) {
+            return (
+              <div
+                key={i}
+                className="aspect-square rounded-md"
+                style={{ backgroundColor: EMPTY }}
+              />
+            );
+          }
+          const dimmed = hovered !== null && hovered !== slice.slug;
+          return (
+            <a
+              key={`${slice.slug}-${i}`}
+              href={`/funds/${slice.slug}`}
+              title={`${slice.name}: ${formatUsdExact(slice.profit, true)}`}
+              className="aspect-square rounded-md transition-opacity"
+              style={{
+                backgroundColor: pnlFill(slice.profit, maxAbs),
+                opacity: dimmed ? 0.35 : 1,
+              }}
+              onMouseEnter={() => setHovered(slice.slug)}
+              onMouseLeave={() => setHovered(null)}
+              onFocus={() => setHovered(slice.slug)}
+              onBlur={() => setHovered(null)}
+              aria-label={`${slice.name}, ${formatUsdExact(slice.profit, true)}`}
+            />
+          );
+        })}
       </div>
     </div>
   );
