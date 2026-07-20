@@ -1,14 +1,19 @@
+import { useEffect, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import WalletAccountMenu from "@/components/app/WalletAccountMenu";
 import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
-import { privyAppId } from "@/lib/privy/config";
-import { WAGMI_DISCONNECT_EVENT } from "@/lib/wagmi/events";
+import SignOut from "@/components/fundations/icons/SignOut";
 import { creatorPath } from "@/lib/funds/creator";
+import {
+  LOCAL_PROFILE_UPDATED_EVENT,
+  readLocalProfile,
+} from "@/lib/local-profile";
+import { privyAppId } from "@/lib/privy/config";
 import { addressDisplayFallback } from "@/lib/polymarket/profile";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
 import { useEnsurePolygon } from "@/lib/wagmi/useEnsurePolygon";
 import { useWalletGate } from "@/lib/wagmi/useWalletGate";
-import SignOut from "@/components/fundations/icons/SignOut";
+import { WAGMI_DISCONNECT_EVENT } from "@/lib/wagmi/events";
 
 type Props = {
   variant?: "nav" | "panel" | "create";
@@ -27,11 +32,33 @@ function restoringPlaceholder(variant: Props["variant"]) {
   return null;
 }
 
+function useLocalDisplayName(address: string | undefined) {
+  const [localName, setLocalName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!address) {
+      setLocalName(null);
+      return;
+    }
+    const refresh = () => {
+      const profile = readLocalProfile(address);
+      setLocalName(profile?.username?.trim() || null);
+    };
+    refresh();
+    window.addEventListener(LOCAL_PROFILE_UPDATED_EVENT, refresh);
+    return () =>
+      window.removeEventListener(LOCAL_PROFILE_UPDATED_EVENT, refresh);
+  }, [address]);
+
+  return localName;
+}
+
 function ConnectWalletInner({ variant = "panel" }: Props) {
   const { login, logout } = usePrivy();
   const { address, displayAddress, isConnected, hasSession } = useWalletGate();
   const { switching } = useEnsurePolygon();
   const { name: displayName } = usePolymarketProfile(address ?? displayAddress);
+  const localName = useLocalDisplayName(address ?? displayAddress);
 
   const sessionHint =
     hasSession ||
@@ -59,7 +86,8 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
       );
     }
 
-    const label = displayName ?? addressDisplayFallback(address);
+    const label =
+      localName || displayName || addressDisplayFallback(address);
 
     if (variant === "nav") {
       return (

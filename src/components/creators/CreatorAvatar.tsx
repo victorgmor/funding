@@ -1,4 +1,8 @@
 import { useEffect, useState } from "react";
+import {
+  LOCAL_PROFILE_UPDATED_EVENT,
+  readLocalProfile,
+} from "@/lib/local-profile";
 
 type Props = {
   address: string;
@@ -32,6 +36,12 @@ export default function CreatorAvatar({
       return;
     }
 
+    const local = readLocalProfile(address)?.avatarDataUrl;
+    if (local) {
+      setImage(local);
+      return;
+    }
+
     let cancelled = false;
 
     async function load() {
@@ -47,8 +57,16 @@ export default function CreatorAvatar({
     }
 
     void load();
+
+    const onProfile = () => {
+      const next = readLocalProfile(address)?.avatarDataUrl;
+      if (next) setImage(next);
+    };
+    window.addEventListener(LOCAL_PROFILE_UPDATED_EVENT, onProfile);
+
     return () => {
       cancelled = true;
+      window.removeEventListener(LOCAL_PROFILE_UPDATED_EVENT, onProfile);
     };
   }, [address, initialImage]);
 

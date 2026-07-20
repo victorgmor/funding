@@ -16,6 +16,7 @@ import {
 import { getWalletClient } from "@wagmi/core";
 import { polygon } from "wagmi/chains";
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
+import EditProfileModal from "@/components/app/EditProfileModal";
 import { formatUsdExact } from "@/lib/funds/format";
 import { walletNavPad, walletNavRadius } from "@/lib/walletNavChrome";
 import { ensureDepositWallet } from "@/lib/polymarket/depositWallet";
@@ -98,6 +99,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const { refs, floatingStyles, context } = useFloating({
     open,
@@ -311,6 +313,19 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                   className={rowBtnClass}
                   onClick={() => {
                     setOpen(false);
+                    setEditOpen(true);
+                  }}
+                >
+                  <span aria-hidden>✎</span>
+                  Edit profile
+                </button>
+
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={rowBtnClass}
+                  onClick={() => {
+                    setOpen(false);
                     onLogout();
                   }}
                 >
@@ -440,6 +455,12 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
           </FloatingFocusManager>
         </FloatingPortal>
       )}
+
+      <EditProfileModal
+        open={editOpen}
+        address={address}
+        onClose={() => setEditOpen(false)}
+      />
     </>
   );
 }
