@@ -1,3 +1,5 @@
+import { walletNavPad, walletNavRadius } from "@/lib/walletNavChrome";
+
 type Props = {
   label?: string;
   className?: string;
@@ -16,7 +18,7 @@ export default function WalletPanelPlaceholder({
       <span
         aria-busy="true"
         aria-live="polite"
-        className={`bg-accent/40 text-secondary/60 inline-flex min-h-9 min-w-[5.5rem] animate-pulse items-center justify-center rounded-[var(--privy-border-radius-md,0.5rem)] px-2 py-2 text-sm font-medium ${className}`}
+        className={`bg-accent/40 text-secondary/60 inline-flex min-h-9 min-w-[5.5rem] animate-pulse items-center justify-center border border-transparent ${walletNavPad} ${walletNavRadius} text-sm font-medium ${className}`}
       >
         {label}
       </span>

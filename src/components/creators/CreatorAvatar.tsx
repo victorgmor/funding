@@ -5,6 +5,7 @@ type Props = {
   name: string;
   initialImage?: string | null;
   size?: "2xs" | "xs" | "sm" | "md";
+  className?: string;
 };
 
 const sizes = {
@@ -19,6 +20,7 @@ export default function CreatorAvatar({
   name,
   initialImage = null,
   size = "md",
+  className = "",
 }: Props) {
   const [image, setImage] = useState(initialImage);
   const initial = name.trim().charAt(0).toUpperCase() || "?";
@@ -61,14 +63,14 @@ export default function CreatorAvatar({
         height={
           size === "2xs" ? 24 : size === "xs" ? 32 : size === "sm" ? 40 : 64
         }
-        className={`shrink-0 rounded-full object-cover ${sizeClass}`}
+        className={`shrink-0 rounded-full object-cover ${sizeClass} ${className}`}
       />
     );
   }
 
   return (
     <div
-      className={`bg-primary/10 text-primary flex shrink-0 items-center justify-center rounded-full font-semibold ${sizeClass}`}
+      className={`bg-secondary text-primary flex shrink-0 items-center justify-center rounded-full font-semibold ${sizeClass} ${className}`}
       aria-hidden="true"
     >
       {initial}
