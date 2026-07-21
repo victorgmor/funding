@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import {
   fetchPolymarketProfile,
   polymarketDisplayName,
+  polymarketProfileImage,
 } from "@/lib/polymarket/profile";
 import {
   dbGetFund,
@@ -11,6 +12,13 @@ import {
   dbSlugExists,
   dbUpdateFund,
 } from "@/lib/funds/dynamodb";
+import {
+  dbBatchGetManagers,
+  dbGetManager,
+  dbMergeManager,
+  managerDisplayName,
+  type ManagerRecord,
+} from "@/lib/funds/managers-dynamodb";
 import type { Fund, FundManager } from "@/lib/funds/types";
 import {
   parseFundDateInput,
@@ -68,12 +76,87 @@ async function replaceUserFund(fund: Fund): Promise<void> {
   await dbUpdateFund(fund);
 }
 
+async function resolveManager(address: string): Promise<FundManager> {
+  const id = address.toLowerCase();
+  const profile = await fetchPolymarketProfile(id);
+  const existing = await dbGetManager(id);
+  const record = await dbMergeManager({
+    id,
+    name: polymarketDisplayName(profile, id),
+    verified: Boolean(profile?.verifiedBadge),
+    // Keep custom avatar; otherwise seed from Polymarket.
+    avatarUrl: existing?.avatarUrl ?? polymarketProfileImage(profile),
+    username: existing?.username,
+    bio: existing?.bio,
+  });
+  return {
+    id: record.id,
+    name: managerDisplayName(record),
+    verified: record.verified,
+  };
+}
+
+/** Overlay canonical manager profile onto each fund (name / verified). */
+async function hydrateFunds(funds: Fund[]): Promise<Fund[]> {
+  if (funds.length === 0) return funds;
+
+  const ids = funds.map((fund) => fund.manager.id);
+  let byId = await dbBatchGetManagers(ids);
+
+  // Lazy backfill: missing managers are resolved from Polymarket once.
+  const missing = [...new Set(ids.map((id) => id.toLowerCase()))].filter(
+    (id) => !byId.has(id),
+  );
+  if (missing.length > 0) {
+    await Promise.all(missing.map((id) => resolveManager(id)));
+    byId = await dbBatchGetManagers(ids);
+  }
+
+  return funds.map((fund) => {
+    const manager = byId.get(fund.manager.id.toLowerCase());
+    if (!manager) return fund;
+    return {
+      ...fund,
+      manager: {
+        id: manager.id,
+        name: managerDisplayName(manager),
+        verified: manager.verified,
+      },
+    };
+  });
+}
+
+export async function getManagerProfile(
+  address: string,
+): Promise<ManagerRecord | undefined> {
+  const id = address.toLowerCase();
+  const existing = await dbGetManager(id);
+  if (existing) return existing;
+  await resolveManager(id);
+  return dbGetManager(id);
+}
+
+export async function updateManagerProfile(
+  address: string,
+  input: { username?: string; bio?: string; avatarUrl?: string | null },
+): Promise<ManagerRecord> {
+  return dbMergeManager({
+    id: address,
+    username: input.username,
+    bio: input.bio,
+    avatarUrl: input.avatarUrl,
+  });
+}
+
 async function listUserFunds(): Promise<Fund[]> {
-  return dbListFunds();
+  return hydrateFunds(await dbListFunds());
 }
 
 async function getUserFund(slug: string): Promise<Fund | undefined> {
-  return dbGetFund(slug);
+  const fund = await dbGetFund(slug);
+  if (!fund) return undefined;
+  const [hydrated] = await hydrateFunds([fund]);
+  return hydrated;
 }
 
 async function saveUserFund(fund: Fund): Promise<void> {
@@ -195,7 +278,7 @@ export async function getFund(slug: string): Promise<Fund | undefined> {
 }
 
 export async function getFundsByCreator(creatorId: string): Promise<Fund[]> {
-  return dbListFundsByCreator(creatorId.toLowerCase());
+  return hydrateFunds(await dbListFundsByCreator(creatorId.toLowerCase()));
 }
 
 function slugify(name: string): string {
@@ -293,15 +376,6 @@ function validatePublishAuth(input: CreateFundInput): string | null {
     return "Wallet signature required";
   }
   return null;
-}
-
-async function resolveManager(address: string): Promise<FundManager> {
-  const profile = await fetchPolymarketProfile(address);
-  return {
-    id: address.toLowerCase(),
-    name: polymarketDisplayName(profile, address),
-    verified: Boolean(profile?.verifiedBadge),
-  };
 }
 
 export async function createFund(input: CreateFundInput): Promise<Fund> {

@@ -1,7 +1,7 @@
 const REGION = process.env.AWS_REGION?.trim() ?? "eu-west-1";
 
 const STORAGE_ERROR =
-  "DynamoDB is required. Set FUNDS_TABLE (and optionally CHALLENGES_TABLE, MANDATES_TABLE).";
+  "DynamoDB is required. Set FUNDS_TABLE (and optionally CHALLENGES_TABLE, MANDATES_TABLE, MANAGERS_TABLE).";
 
 export function awsRegion(): string {
   return REGION;
@@ -21,4 +21,9 @@ export function challengesTableName(): string {
 export function mandatesTableName(): string {
   requireFundsTable();
   return process.env.MANDATES_TABLE?.trim() || "carriera-mandates";
+}
+
+export function managersTableName(): string {
+  requireFundsTable();
+  return process.env.MANAGERS_TABLE?.trim() || "carriera-managers";
 }

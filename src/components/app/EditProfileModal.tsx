@@ -53,18 +53,25 @@ export default function EditProfileModal({
     void (async () => {
       try {
         const res = await fetch(
-          `/api/polymarket/profile?address=${encodeURIComponent(address)}`,
+          `/api/managers/${encodeURIComponent(address)}`,
         );
         const data = (await res.json()) as {
+          username?: string;
+          bio?: string;
+          avatarUrl?: string | null;
+          polymarketName?: string | null;
           name?: string | null;
-          profileImage?: string | null;
         };
         if (cancelled || !res.ok) return;
-        setPolyImage(data.profileImage ?? null);
-        setPolyName(data.name ?? null);
-        if (!local?.username && data.name) setUsername(data.name);
-        if (!local?.avatarDataUrl && data.profileImage) {
-          setAvatar(data.profileImage);
+        setPolyName(data.polymarketName ?? data.name ?? null);
+        if (data.avatarUrl) setPolyImage(data.avatarUrl);
+        if (!local?.username && data.username) setUsername(data.username);
+        else if (!local?.username && data.polymarketName) {
+          setUsername(data.polymarketName);
+        }
+        if (!local?.bio && data.bio) setBio(data.bio);
+        if (!local?.avatarDataUrl && data.avatarUrl) {
+          setAvatar(data.avatarUrl);
         }
       } catch {
         // keep local / empty
@@ -94,8 +101,8 @@ export default function EditProfileModal({
 
   function onPickAvatar(file: File | undefined) {
     if (!file || !file.type.startsWith("image/")) return;
-    if (file.size > 400_000) {
-      // ponytail: keep avatars small for localStorage
+    if (file.size > 350_000) {
+      // ponytail: DynamoDB item size budget for avatar data URLs
       return;
     }
     const reader = new FileReader();
@@ -105,12 +112,26 @@ export default function EditProfileModal({
     reader.readAsDataURL(file);
   }
 
-  function save() {
-    writeLocalProfile(address, {
+  async function save() {
+    const profile = {
       username: username.trim(),
       bio: bio.slice(0, BIO_MAX),
       avatarDataUrl: avatar,
-    });
+    };
+    writeLocalProfile(address, profile);
+    try {
+      await fetch(`/api/managers/${encodeURIComponent(address)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: profile.username,
+          bio: profile.bio,
+          avatarUrl: profile.avatarDataUrl,
+        }),
+      });
+    } catch {
+      // local cache still updated
+    }
     onClose();
   }
 

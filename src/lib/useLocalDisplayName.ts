@@ -4,7 +4,7 @@ import {
   localDisplayName,
 } from "@/lib/local-profile";
 
-/** Prefers localStorage username for this address; falls back otherwise. */
+/** Prefers local cache, then Dynamo manager profile, then fallback. */
 export function useLocalDisplayName(
   address: string | undefined,
   fallback = "",
@@ -16,11 +16,32 @@ export function useLocalDisplayName(
       setName(fallback);
       return;
     }
-    const refresh = () => setName(localDisplayName(address) ?? fallback);
-    refresh();
-    window.addEventListener(LOCAL_PROFILE_UPDATED_EVENT, refresh);
-    return () =>
-      window.removeEventListener(LOCAL_PROFILE_UPDATED_EVENT, refresh);
+
+    const refreshLocal = () =>
+      setName(localDisplayName(address) ?? fallback);
+
+    refreshLocal();
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/polymarket/profile?address=${encodeURIComponent(address)}`,
+        );
+        const data = (await res.json()) as { name?: string | null };
+        if (cancelled || !res.ok) return;
+        const next = localDisplayName(address) || data.name?.trim() || fallback;
+        setName(next);
+      } catch {
+        // keep local / fallback
+      }
+    })();
+
+    window.addEventListener(LOCAL_PROFILE_UPDATED_EVENT, refreshLocal);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(LOCAL_PROFILE_UPDATED_EVENT, refreshLocal);
+    };
   }, [address, fallback]);
 
   return name;
