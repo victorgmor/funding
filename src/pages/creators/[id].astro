@@ -117,7 +117,8 @@ const polymarketUrl = profileWalletId
   : null;
 
 const metricLabel =
-  "text-primary/45 text-xs font-medium tracking-wide uppercase";
+  "text-primary/50 text-sm font-medium tracking-wide uppercase sm:text-base";
+const metricValue = "text-primary mt-2 font-mono text-2xl tabular-nums sm:text-3xl";
 ---
 
 <BaseLayout>
@@ -217,7 +218,7 @@ const metricLabel =
       </div>
 
       <div
-        class="mt-10 grid items-start gap-8 lg:grid-cols-[minmax(0,672px)_minmax(280px,1fr)]"
+        class="mt-10 grid items-stretch gap-8 lg:grid-cols-[minmax(0,672px)_minmax(0,1fr)]"
       >
         <div class="min-w-0">
           <CreatorFundList
@@ -227,22 +228,18 @@ const metricLabel =
           />
         </div>
 
-        <aside class="border-primary/10 min-w-0 space-y-6 border-t pt-6 lg:border-t-0 lg:pt-0">
-          <div>
+        <aside class="border-primary/10 grid h-full min-w-0 grid-cols-2 grid-rows-2 gap-6 border-t pt-6 lg:border-t-0 lg:pt-0">
+          <div class="min-w-0">
             <p class={metricLabel}>Total deposits</p>
-            <p class="text-primary mt-1 font-mono text-lg tabular-nums">
-              {formatUsd(totalDepositedUsdc)}
-            </p>
+            <p class={metricValue}>{formatUsd(totalDepositedUsdc)}</p>
           </div>
-          <div>
+          <div class="min-w-0">
             <p class={metricLabel}>Total returned</p>
-            <p class="text-primary mt-1 font-mono text-lg tabular-nums">
-              {formatUsd(totalReturnedUsdc)}
-            </p>
+            <p class={metricValue}>{formatUsd(totalReturnedUsdc)}</p>
           </div>
-          <div>
+          <div class="min-w-0">
             <p class={metricLabel}>Overall performance</p>
-            <p class="mt-1 font-mono text-lg tabular-nums">
+            <p class="mt-2 font-mono text-2xl tabular-nums sm:text-3xl">
               {
                 overallRoi == null ? (
                   <span class="text-primary/45">—</span>
@@ -256,11 +253,9 @@ const metricLabel =
               }
             </p>
           </div>
-          <div>
+          <div class="min-w-0">
             <p class={metricLabel}>Fees earned</p>
-            <p class="text-primary mt-1 font-mono text-lg tabular-nums">
-              {formatUsd(totalFeesUsdc)}
-            </p>
+            <p class={metricValue}>{formatUsd(totalFeesUsdc)}</p>
           </div>
         </aside>
       </div>
