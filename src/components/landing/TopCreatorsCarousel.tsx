@@ -1,3 +1,4 @@
+import CreatorAvatar from "@/components/creators/CreatorAvatar";
 import CreatorName from "@/components/creators/CreatorName";
 import PnlAmount from "@/components/funds/PnlAmount";
 import SealCheck from "@/components/fundations/icons/SealCheck";
@@ -21,6 +22,7 @@ function CreatorItem({ creator }: { creator: TopCreator }) {
       href={creatorPath(creator.id)}
       className="text-primary/60 hover:text-primary inline-flex shrink-0 items-center gap-2 text-sm transition-colors"
     >
+      <CreatorAvatar address={creator.id} name={creator.name} size="2xs" />
       <span className="text-primary inline-flex items-center gap-0.5 font-medium">
         <CreatorName address={creator.id} fallback={creator.name} />
         {creator.verified && (

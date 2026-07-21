@@ -108,22 +108,81 @@ function sampleHoldSeries(points: PnlPoint[]): PnlPoint[] {
   });
 }
 
-/** Step-after path — flat until the next sample, then vertical to the new level. */
+/** Step-after with filleted corners (Polymarket-ish blocks, not sharp 90°). */
+const STEP_CORNER = 8;
+
+function stepScreenPoints(
+  points: PnlPoint[],
+  xScale: (t: number) => number,
+  yScale: (v: number) => number,
+) {
+  return points.map((point) => ({
+    x: xScale(point.t),
+    y: yScale(point.pnl),
+  }));
+}
+
+function roundedStepLine(pts: { x: number; y: number }[]) {
+  if (pts.length === 0) return "";
+  const first = pts[0]!;
+  let d = `M ${first.x.toFixed(2)} ${first.y.toFixed(2)}`;
+  let cx = first.x;
+  let cy = first.y;
+
+  for (let i = 1; i < pts.length; i++) {
+    const nx = pts[i]!.x;
+    const ny = pts[i]!.y;
+    const dy = ny - cy;
+    const dx = nx - cx;
+
+    if (Math.abs(dy) < 0.5) {
+      d += ` H ${nx.toFixed(2)}`;
+      cx = nx;
+      continue;
+    }
+
+    const r = Math.min(
+      STEP_CORNER,
+      Math.abs(dx) / 2,
+      Math.abs(dy) / 2,
+    );
+
+    if (r < 0.75) {
+      d += ` H ${nx.toFixed(2)} V ${ny.toFixed(2)}`;
+      cx = nx;
+      cy = ny;
+      continue;
+    }
+
+    const sy = Math.sign(dy) || 1;
+    const isLast = i === pts.length - 1;
+
+    // Horizontal into top corner, curve into vertical.
+    d += ` H ${(nx - r).toFixed(2)}`;
+    d += ` Q ${nx.toFixed(2)} ${cy.toFixed(2)} ${nx.toFixed(2)} ${(cy + sy * r).toFixed(2)}`;
+    if (Math.abs(dy) > 2 * r + 0.5) {
+      d += ` V ${(ny - sy * r).toFixed(2)}`;
+    }
+    if (isLast) {
+      d += ` V ${ny.toFixed(2)}`;
+      cx = nx;
+      cy = ny;
+    } else {
+      d += ` Q ${nx.toFixed(2)} ${ny.toFixed(2)} ${(nx + r).toFixed(2)} ${ny.toFixed(2)}`;
+      cx = nx + r;
+      cy = ny;
+    }
+  }
+
+  return d;
+}
+
 function stepPath(
   points: PnlPoint[],
   xScale: (t: number) => number,
   yScale: (v: number) => number,
 ) {
-  if (points.length === 0) return "";
-  const first = points[0]!;
-  let path = `M ${xScale(first.t).toFixed(2)} ${yScale(first.pnl).toFixed(2)}`;
-
-  for (let index = 1; index < points.length; index++) {
-    const point = points[index]!;
-    path += ` H ${xScale(point.t).toFixed(2)} V ${yScale(point.pnl).toFixed(2)}`;
-  }
-
-  return path;
+  return roundedStepLine(stepScreenPoints(points, xScale, yScale));
 }
 
 function stepArea(
@@ -133,18 +192,12 @@ function stepArea(
   zeroY: number,
 ) {
   if (points.length === 0) return "";
-  const first = points[0]!;
-  const last = points[points.length - 1]!;
-  const x0 = xScale(first.t);
-  const y0 = yScale(first.pnl);
-
-  let path = `M ${x0.toFixed(2)} ${zeroY.toFixed(2)} L ${x0.toFixed(2)} ${y0.toFixed(2)}`;
-  for (let index = 1; index < points.length; index++) {
-    const point = points[index]!;
-    path += ` H ${xScale(point.t).toFixed(2)} V ${yScale(point.pnl).toFixed(2)}`;
-  }
-  path += ` L ${xScale(last.t).toFixed(2)} ${zeroY.toFixed(2)} Z`;
-  return path;
+  const pts = stepScreenPoints(points, xScale, yScale);
+  const first = pts[0]!;
+  const last = pts[pts.length - 1]!;
+  const line = roundedStepLine(pts);
+  // Close under the rounded step from the true last sample x (not past-corner).
+  return `${line} L ${last.x.toFixed(2)} ${zeroY.toFixed(2)} L ${first.x.toFixed(2)} ${zeroY.toFixed(2)} Z`;
 }
 
 export default function FundPnlChart({
