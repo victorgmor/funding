@@ -1,6 +1,6 @@
 ---
 import Text from "@/components/fundations/elements/Text.astro";
-import Button from "@/components/fundations/elements/Button.astro";
+import { walletNavRadius } from "@/lib/walletNavChrome";
 ---
 
 <div>
@@ -16,14 +16,14 @@ import Button from "@/components/fundations/elements/Button.astro";
     wallets; managers trade with proportional fan-out. Non-custodial on Polygon.
   </p>
   <div class="mt-6">
-    <Button
-      isLink
-      size="sm"
-      variant="accent"
+    <a
       href="/funds/create"
-      class="w-fit"
+      class:list={[
+        "bg-accent text-secondary hover:opacity-90 inline-flex w-fit items-center justify-center px-4 py-2 text-sm font-medium transition-opacity",
+        walletNavRadius,
+      ]}
     >
       Create fund
-    </Button>
+    </a>
   </div>
 </div>

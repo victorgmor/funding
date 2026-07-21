@@ -158,7 +158,9 @@ export default function FundPnlChart({
     [trades, fundCreatedAt],
   );
   const [range, setRange] = useState<PnlRange>(() => defaultPnlRange(series));
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [hover, setHover] = useState<{ x: number; index: number } | null>(
+    null,
+  );
   const svgRef = useRef<SVGSVGElement>(null);
 
   const points = useMemo(
@@ -184,32 +186,33 @@ export default function FundPnlChart({
   const yTicks = yTickValues.map((value) => ({ value, y: yScale(value) }));
   const xTicks = buildXTicks(points, xScale);
 
-  const activeIndex =
-    hoverIndex != null
-      ? Math.max(0, Math.min(hoverIndex, points.length - 1))
-      : null;
+  const activeIndex = hover?.index ?? null;
   const activePoint = activeIndex != null ? points[activeIndex] : null;
   const displayPoint = activePoint ?? latest;
   const lineColor = latest.pnl >= 0 ? "#179e63" : "#ef4444";
+  const cursorX = hover?.x ?? null;
+  const cursorT =
+    cursorX != null
+      ? scaleLinear(cursorX, [PAD.left, PAD.left + plotW], [xMin, xMax])
+      : null;
 
   function onPointerMove(event: React.PointerEvent<SVGSVGElement>) {
     const svg = svgRef.current;
     if (!svg || points.length === 0) return;
 
     const rect = svg.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * W;
-    let nearest = 0;
-    let nearestDist = Infinity;
+    const rawX = ((event.clientX - rect.left) / rect.width) * W;
+    const x = Math.max(PAD.left, Math.min(PAD.left + plotW, rawX));
+    const t = scaleLinear(x, [PAD.left, PAD.left + plotW], [xMin, xMax]);
 
-    for (let index = 0; index < points.length; index++) {
-      const dist = Math.abs(xScale(points[index]!.t) - x);
-      if (dist < nearestDist) {
-        nearestDist = dist;
-        nearest = index;
-      }
+    // Step-after: hold the last settled PnL at this time (matches the line).
+    let index = 0;
+    for (let i = 0; i < points.length; i++) {
+      if (points[i]!.t <= t) index = i;
+      else break;
     }
 
-    setHoverIndex(nearest);
+    setHover({ x, index });
   }
 
   const content = (
@@ -256,7 +259,7 @@ export default function FundPnlChart({
           role="img"
           aria-label="Fund PnL over time"
           onPointerMove={onPointerMove}
-          onPointerLeave={() => setHoverIndex(null)}
+          onPointerLeave={() => setHover(null)}
         >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -305,11 +308,11 @@ export default function FundPnlChart({
             strokeLinecap="round"
           />
 
-          {activePoint && activeIndex != null && (
+          {activePoint && cursorX != null && (
             <>
               <line
-                x1={xScale(activePoint.t)}
-                x2={xScale(activePoint.t)}
+                x1={cursorX}
+                x2={cursorX}
                 y1={PAD.top}
                 y2={PAD.top + plotH}
                 stroke="#32BCFF"
@@ -318,7 +321,7 @@ export default function FundPnlChart({
                 vectorEffect="non-scaling-stroke"
               />
               <circle
-                cx={xScale(activePoint.t)}
+                cx={cursorX}
                 cy={yScale(activePoint.pnl)}
                 r={3.5}
                 fill={lineColor}
@@ -348,16 +351,18 @@ export default function FundPnlChart({
           })}
         </svg>
 
-        {activePoint && (
+        {activePoint && cursorX != null && cursorT != null && (
           <div
             className="border-primary/10 bg-secondary/90 pointer-events-none absolute z-10 rounded-md border px-2.5 py-1.5 text-xs shadow-sm backdrop-blur-sm"
             style={{
-              left: `${Math.min(Math.max((xScale(activePoint.t) / W) * 100, 12), 88)}%`,
+              left: `${Math.min(Math.max((cursorX / W) * 100, 12), 88)}%`,
               top: 28,
               transform: "translateX(-50%)",
             }}
           >
-            <p className="text-primary/50">{formatTooltipDate(activePoint.iso)}</p>
+            <p className="text-primary/50">
+              {formatTooltipDate(new Date(cursorT).toISOString())}
+            </p>
             <p
               className={`font-mono tabular-nums ${
                 activePoint.pnl >= 0 ? "text-profit" : "text-red-500"
