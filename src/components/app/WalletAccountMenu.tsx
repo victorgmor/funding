@@ -37,7 +37,7 @@ type Props = {
 };
 
 function shortAddress(value: string) {
-  return `${value.slice(0, 6)}…${value.slice(-4)}`;
+  return `${value.slice(0, 10)}…${value.slice(-8)}`;
 }
 
 function CopyIcon() {
@@ -284,10 +284,10 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                   <p className="mb-2 text-left text-sm font-medium text-white/80">
                     Polymarket wallet
                   </p>
-                  <div className="flex h-14 w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                    <div className="flex min-w-0 flex-col gap-0">
+                  <div className="flex h-14 w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                    <div className="flex min-w-0 flex-1 flex-col gap-0">
                       <p
-                        className="truncate text-sm font-medium text-white"
+                        className="truncate font-mono text-sm font-medium text-white"
                         title={info?.depositAddress}
                       >
                         {info ? shortAddress(info.depositAddress) : "…"}
@@ -304,7 +304,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                       type="button"
                       onClick={(event) => void copyDepositAddress(event)}
                       disabled={!info?.depositAddress}
-                      className="ml-3 flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-white/25 bg-transparent px-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-50"
+                      className="flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-white/25 bg-transparent px-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-50"
                     >
                       {copied ? (
                         <>
