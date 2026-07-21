@@ -19,7 +19,6 @@ import CreatorAvatar from "@/components/creators/CreatorAvatar";
 import EditProfileModal from "@/components/app/EditProfileModal";
 import { formatUsdExact } from "@/lib/funds/format";
 import { walletNavPad, walletNavRadius } from "@/lib/walletNavChrome";
-import { ensureDepositWallet } from "@/lib/polymarket/depositWallet";
 import {
   transferPusdFromDepositWallet,
   transferPusdToDepositWallet,
@@ -166,33 +165,9 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
     return () => clearTimeout(timer);
   }, [copied]);
 
-  async function registerWithPolymarket() {
-    setBusy(true);
-    setError(null);
-    setStatus("Approve in Privy to create your Polymarket deposit wallet…");
-
-    try {
-      const walletClient = await getWalletClient(wagmiConfig, {
-        chainId: polygon.id,
-        account: address,
-      });
-      if (!walletClient) throw new Error("Wallet not ready");
-
-      await ensureDepositWallet(walletClient, setStatus);
-      setStatus("Polymarket deposit wallet ready");
-      window.dispatchEvent(new Event(DEPOSIT_WALLET_UPDATED_EVENT));
-      await refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Registration failed");
-      setStatus(null);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function movePusdToDeposit() {
     if (!info?.depositDeployed) {
-      setError("Register with Polymarket first");
+      setError("Deposit wallet not ready yet");
       return;
     }
 
@@ -221,7 +196,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
 
   async function movePusdFromDeposit() {
     if (!info?.depositDeployed) {
-      setError("Register with Polymarket first");
+      setError("Deposit wallet not ready yet");
       return;
     }
 
@@ -334,89 +309,67 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                 </button>
 
                 <div className="px-4 py-3">
-                  {!registered ? (
-                    <>
-                      <p className="text-sm font-medium text-[var(--privy-color-foreground)]">
-                        Polymarket deposit wallet
+                  <p className="mb-2 text-left text-sm font-medium text-[var(--privy-color-foreground)]">
+                    Polymarket wallet
+                  </p>
+                  <div className="flex h-14 w-full items-center justify-between rounded-[var(--privy-border-radius-md)] border border-[var(--privy-color-foreground-4)] px-4 py-3">
+                    <div className="flex min-w-0 flex-col gap-0">
+                      <p
+                        className="truncate text-sm font-medium text-[var(--privy-color-foreground)]"
+                        title={info?.depositAddress}
+                      >
+                        {info ? shortAddress(info.depositAddress) : "…"}
                       </p>
-                      <p className="mt-1 text-sm text-[var(--privy-color-foreground-3)]">
-                        Register once to get a deposit address for fund
-                        commitments.
+                      <p className="text-xs leading-4 text-[var(--privy-color-foreground-3)]">
+                        {loading
+                          ? "…"
+                          : !registered
+                            ? "Setting up…"
+                            : `${formatUsdExact(info?.depositCollateral ?? 0)} pUSD`}
                       </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(event) => void copyDepositAddress(event)}
+                      disabled={!info?.depositAddress}
+                      className="ml-3 flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-[var(--privy-color-accent)] bg-[#181709] px-2.5 text-sm font-medium text-[var(--privy-color-accent)] transition-colors hover:bg-[var(--privy-color-info-bg-hover)] disabled:opacity-50"
+                    >
+                      {copied ? (
+                        <>
+                          Copied
+                          <CheckIcon />
+                        </>
+                      ) : (
+                        <>
+                          Copy
+                          <CopyIcon />
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="mt-3 flex flex-col gap-2">
+                    {canMoveFromDeposit && (
                       <button
                         type="button"
-                        disabled={busy || loading}
-                        onClick={() => void registerWithPolymarket()}
-                        className={`${sectionBtnClass} mt-3`}
+                        disabled={busy}
+                        onClick={() => void movePusdFromDeposit()}
+                        className={sectionBtnClass}
                       >
-                        Register with Polymarket
+                        Move pUSD to Privy wallet
                       </button>
-                    </>
-                  ) : (
-                    <>
-                      <p className="mb-2 text-left text-sm font-medium text-[var(--privy-color-foreground)]">
-                        Polymarket wallet
-                      </p>
-                      <div className="flex h-14 w-full items-center justify-between rounded-[var(--privy-border-radius-md)] border border-[var(--privy-color-foreground-4)] px-4 py-3">
-                        <div className="flex min-w-0 flex-col gap-0">
-                          <p
-                            className="truncate text-sm font-medium text-[var(--privy-color-foreground)]"
-                            title={info?.depositAddress}
-                          >
-                            {info
-                              ? shortAddress(info.depositAddress)
-                              : "…"}
-                          </p>
-                          <p className="text-xs leading-4 text-[var(--privy-color-foreground-3)]">
-                            {loading
-                              ? "…"
-                              : `${formatUsdExact(info?.depositCollateral ?? 0)} pUSD`}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(event) => void copyDepositAddress(event)}
-                          disabled={!info?.depositAddress}
-                          className="ml-3 flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-[var(--privy-color-accent)] bg-[#181709] px-2.5 text-sm font-medium text-[var(--privy-color-accent)] transition-colors hover:bg-[var(--privy-color-info-bg-hover)] disabled:opacity-50"
-                        >
-                          {copied ? (
-                            <>
-                              Copied
-                              <CheckIcon />
-                            </>
-                          ) : (
-                            <>
-                              Copy
-                              <CopyIcon />
-                            </>
-                          )}
-                        </button>
-                      </div>
-
-                      <div className="mt-3 flex flex-col gap-2">
-                        {canMoveFromDeposit && (
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => void movePusdFromDeposit()}
-                            className={sectionBtnClass}
-                          >
-                            Move pUSD to Privy wallet
-                          </button>
-                        )}
-                        {canMovePusd && (
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => void movePusdToDeposit()}
-                            className={sectionBtnClass}
-                          >
-                            Move pUSD to deposit wallet
-                          </button>
-                        )}
-                      </div>
-                    </>
-                  )}
+                    )}
+                    {canMovePusd && (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void movePusdToDeposit()}
+                        className={sectionBtnClass}
+                      >
+                        Move pUSD to deposit wallet
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {status && (
