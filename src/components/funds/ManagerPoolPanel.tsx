@@ -14,6 +14,8 @@ import { walletNavButtonClass } from "@/lib/walletNavChrome";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 
+const tradeChipClass = `${walletNavButtonClass} !px-4 !py-2.5`;
+
 type Props = { fund: Fund };
 
 type PlannedTrade = {
@@ -376,7 +378,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
                         onClick={() =>
                           setSelected({ ...selected, side: outcome })
                         }
-                        className={`${walletNavButtonClass} uppercase ${
+                        className={`${tradeChipClass} uppercase ${
                           active ? "text-white" : "text-white/50 hover:text-white"
                         }`}
                       >
@@ -395,7 +397,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
                     max={remainingDeployable > 0 ? remainingDeployable : undefined}
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="border-primary/10 bg-primary/5 text-primary w-20 rounded-[12px] border px-2 py-2 text-sm tabular-nums focus:border-primary/30 focus:outline-none"
+                    className="border-primary/10 bg-primary/5 text-primary w-24 rounded-[12px] border px-3 py-2.5 text-sm tabular-nums focus:border-primary/30 focus:outline-none"
                     placeholder="$"
                     aria-label="Pool trade size"
                   />
@@ -403,7 +405,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
                     type="button"
                     disabled={busy || signing}
                     onClick={() => void addToPreview()}
-                    className={`${walletNavButtonClass} uppercase disabled:opacity-40`}
+                    className={`${tradeChipClass} uppercase disabled:opacity-40`}
                   >
                     {busy ? "…" : "Add"}
                   </button>
@@ -483,7 +485,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
                     type="button"
                     disabled={busy || signing}
                     onClick={() => void executeAll()}
-                    className={`${walletNavButtonClass} w-full disabled:opacity-40`}
+                    className={`${tradeChipClass} w-full disabled:opacity-40`}
                   >
                     {signing
                       ? "Sign…"
