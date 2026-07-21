@@ -20,7 +20,7 @@ import {
   mandateMarkValue,
   resolveDepositAddresses,
 } from "@/lib/funds/valuation";
-import { getTradingSession } from "@/lib/funds/trading-sessions";
+import { getTradingSession, revokeTradingSession } from "@/lib/funds/trading-sessions";
 import { serverSigningEnabled } from "@/lib/privy/server";
 
 export const prerender = false;
@@ -185,6 +185,10 @@ export const POST: APIRoute = async ({ params, request }) => {
         address,
         amountUsdc,
       );
+      // Full leave → drop auto-trade session (authorize stays on join only).
+      if (mandate.notionalUsdc <= 0) {
+        await revokeTradingSession(fund.slug, address);
+      }
       return new Response(JSON.stringify({ mandate }), {
         headers: { "Content-Type": "application/json" },
       });

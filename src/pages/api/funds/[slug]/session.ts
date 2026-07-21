@@ -2,7 +2,6 @@ import type { APIRoute } from "astro";
 import { verifyBundleSignature } from "@/lib/auth/bundle-auth";
 import {
   getTradingSession,
-  revokeTradingSession,
   saveTradingSession,
 } from "@/lib/funds/trading-sessions";
 import { getFund } from "@/lib/funds/store";
@@ -95,30 +94,6 @@ export const POST: APIRoute = async ({ params, request }) => {
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Session save failed";
-    return new Response(JSON.stringify({ error: message }), { status: 500 });
-  }
-};
-
-export const DELETE: APIRoute = async ({ params, url }) => {
-  const fund = await getFund(params.slug!);
-  if (!fund) {
-    return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
-  }
-
-  const address = url.searchParams.get("address");
-  if (!address) {
-    return new Response(JSON.stringify({ error: "Wallet required" }), {
-      status: 400,
-    });
-  }
-
-  try {
-    await revokeTradingSession(fund.slug, address);
-    return new Response(JSON.stringify({ ok: true }), {
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Revoke failed";
     return new Response(JSON.stringify({ error: message }), { status: 500 });
   }
 };

@@ -55,6 +55,7 @@ export async function createBundleChallenge(
     (action === "manage" ||
       action === "close" ||
       action === "commit" ||
+      action === "withdraw" ||
       action === "instruct" ||
       action === "authorize") &&
     !fundSlug
@@ -130,6 +131,7 @@ export async function verifyBundleSignature(input: {
     input.action === "manage" ||
     input.action === "close" ||
     input.action === "commit" ||
+    input.action === "withdraw" ||
     input.action === "instruct" ||
     input.action === "authorize"
   ) {
