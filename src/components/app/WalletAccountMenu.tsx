@@ -260,7 +260,7 @@ export default function WalletAccountMenu({
         <span className="inline-flex min-w-0 items-center gap-0.5">
           <span className="max-w-32 truncate">{label}</span>
           {verified && (
-            <SealCheck size="xs" className="!size-3.5 text-[#32BCFF]" />
+            <SealCheck size="xs" className="!size-3.5 text-[#288cbc]" />
           )}
         </span>
       </button>
