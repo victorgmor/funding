@@ -6,15 +6,26 @@ export type PnlPoint = {
   iso: string;
 };
 
-export type PnlRange = "1D" | "7D" | "30D" | "90D" | "All";
+export type PnlRange = "1D" | "1W" | "1M" | "1Y" | "YTD" | "All";
 
-export const PNL_RANGES: PnlRange[] = ["1D", "7D", "30D", "90D", "All"];
+export const PNL_RANGES: PnlRange[] = ["1D", "1W", "1M", "1Y", "YTD", "All"];
 
-const RANGE_MS: Record<Exclude<PnlRange, "All">, number> = {
-  "1D": 86_400_000,
-  "7D": 7 * 86_400_000,
-  "30D": 30 * 86_400_000,
-  "90D": 90 * 86_400_000,
+export const PNL_RANGE_LABELS: Record<PnlRange, string> = {
+  "1D": "Past day",
+  "1W": "Past week",
+  "1M": "Past month",
+  "1Y": "Past year",
+  YTD: "Year to date",
+  All: "All time",
+};
+
+const DAY = 86_400_000;
+
+const RANGE_MS: Record<Exclude<PnlRange, "All" | "YTD">, number> = {
+  "1D": DAY,
+  "1W": 7 * DAY,
+  "1M": 30 * DAY,
+  "1Y": 365 * DAY,
 };
 
 function round(n: number, d: number) {
@@ -24,6 +35,16 @@ function round(n: number, d: number) {
 
 function tradeTime(trade: MandateTrade): number {
   return new Date(trade.filledAt ?? trade.createdAt).getTime();
+}
+
+function rangeCutoff(range: Exclude<PnlRange, "All">): number {
+  if (range === "YTD") {
+    const start = new Date();
+    start.setMonth(0, 1);
+    start.setHours(0, 0, 0, 0);
+    return start.getTime();
+  }
+  return Date.now() - RANGE_MS[range];
 }
 
 /** Cumulative trade PnL over fill time (current marks per slice). */
@@ -39,11 +60,11 @@ export function buildPnlSeries(
 
   const originMs = fundCreatedAt
     ? new Date(fundCreatedAt).getTime()
-    : tradeTime(filled[0]!) - 86_400_000;
+    : tradeTime(filled[0]!) - DAY;
 
   const points: PnlPoint[] = [
     {
-      t: Number.isFinite(originMs) ? originMs : tradeTime(filled[0]!) - 86_400_000,
+      t: Number.isFinite(originMs) ? originMs : tradeTime(filled[0]!) - DAY,
       pnl: 0,
       iso: fundCreatedAt ?? filled[0]!.createdAt,
     },
@@ -87,7 +108,7 @@ export function filterPnlSeries(
 ): PnlPoint[] {
   if (range === "All" || points.length === 0) return points;
 
-  const cutoff = Date.now() - RANGE_MS[range];
+  const cutoff = rangeCutoff(range);
   const inRange = points.filter((point) => point.t >= cutoff);
   if (inRange.length === 0) return points.slice(-2);
 
@@ -105,8 +126,8 @@ export function defaultPnlRange(points: PnlPoint[]): PnlRange {
   if (points.length < 2) return "All";
   const span = points[points.length - 1]!.t - points[0]!.t;
   if (span <= RANGE_MS["1D"]) return "1D";
-  if (span <= RANGE_MS["7D"]) return "7D";
-  if (span <= RANGE_MS["30D"]) return "30D";
-  if (span <= RANGE_MS["90D"]) return "90D";
+  if (span <= RANGE_MS["1W"]) return "1W";
+  if (span <= RANGE_MS["1M"]) return "1M";
+  if (span <= RANGE_MS["1Y"]) return "1Y";
   return "All";
 }

@@ -4,6 +4,7 @@ import {
   buildPnlSeries,
   defaultPnlRange,
   filterPnlSeries,
+  PNL_RANGE_LABELS,
   PNL_RANGES,
   type PnlPoint,
   type PnlRange,
@@ -19,6 +20,7 @@ type Props = {
 const W = 640;
 const H = 200;
 const PAD = { top: 10, right: 0, bottom: 10, left: 0 };
+const LINE_COLOR = "#288cbc";
 
 function formatTooltipDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -68,46 +70,75 @@ function scaleLinear(
   return r0 + ((value - d0) / (d1 - d0)) * (r1 - r0);
 }
 
-/** Step-after path — PnL holds flat until the next trade settles. */
-function stepPath(
+type ScreenPoint = { x: number; y: number };
+
+function toScreen(
   points: PnlPoint[],
   xScale: (t: number) => number,
   yScale: (v: number) => number,
-) {
-  if (points.length === 0) return "";
-  const first = points[0]!;
-  let path = `M ${xScale(first.t).toFixed(2)} ${yScale(first.pnl).toFixed(2)}`;
+): ScreenPoint[] {
+  return points.map((point) => ({
+    x: xScale(point.t),
+    y: yScale(point.pnl),
+  }));
+}
 
-  for (let index = 1; index < points.length; index++) {
-    const point = points[index]!;
-    path += ` H ${xScale(point.t).toFixed(2)} V ${yScale(point.pnl).toFixed(2)}`;
+/** Monotone cubic — smooth without overshooting flat PnL segments. */
+function smoothLine(pts: ScreenPoint[]) {
+  if (pts.length === 0) return "";
+  if (pts.length === 1) {
+    return `M ${pts[0]!.x.toFixed(2)} ${pts[0]!.y.toFixed(2)}`;
   }
 
+  const n = pts.length;
+  const dx: number[] = [];
+  const m: number[] = [];
+  for (let i = 0; i < n - 1; i++) {
+    const dxi = pts[i + 1]!.x - pts[i]!.x;
+    dx[i] = dxi;
+    m[i] = dxi === 0 ? 0 : (pts[i + 1]!.y - pts[i]!.y) / dxi;
+  }
+
+  const slopes = new Array<number>(n);
+  slopes[0] = m[0]!;
+  slopes[n - 1] = m[n - 2]!;
+  for (let i = 1; i < n - 1; i++) {
+    slopes[i] =
+      m[i - 1]! * m[i]! <= 0 ? 0 : (m[i - 1]! + m[i]!) / 2;
+  }
+
+  for (let i = 0; i < n - 1; i++) {
+    if (Math.abs(m[i]!) < 1e-12) {
+      slopes[i] = 0;
+      slopes[i + 1] = 0;
+      continue;
+    }
+    const a = slopes[i]! / m[i]!;
+    const b = slopes[i + 1]! / m[i]!;
+    const s = a * a + b * b;
+    if (s > 9) {
+      const t = 3 / Math.sqrt(s);
+      slopes[i] = t * a * m[i]!;
+      slopes[i + 1] = t * b * m[i]!;
+    }
+  }
+
+  let path = `M ${pts[0]!.x.toFixed(2)} ${pts[0]!.y.toFixed(2)}`;
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = pts[i]!;
+    const p1 = pts[i + 1]!;
+    const d = dx[i]!;
+    path += ` C ${(p0.x + d / 3).toFixed(2)} ${(p0.y + (slopes[i]! * d) / 3).toFixed(2)}, ${(p1.x - d / 3).toFixed(2)} ${(p1.y - (slopes[i + 1]! * d) / 3).toFixed(2)}, ${p1.x.toFixed(2)} ${p1.y.toFixed(2)}`;
+  }
   return path;
 }
 
-function stepAreaToZero(
-  points: PnlPoint[],
-  xScale: (t: number) => number,
-  yScale: (v: number) => number,
-  zeroY: number,
-) {
-  if (points.length === 0) return "";
-
-  const first = points[0]!;
-  const last = points[points.length - 1]!;
-  const x0 = xScale(first.t);
-  const y0 = yScale(first.pnl);
-
-  let path = `M ${x0.toFixed(2)} ${zeroY.toFixed(2)} L ${x0.toFixed(2)} ${y0.toFixed(2)}`;
-
-  for (let index = 1; index < points.length; index++) {
-    const point = points[index]!;
-    path += ` H ${xScale(point.t).toFixed(2)} V ${yScale(point.pnl).toFixed(2)}`;
-  }
-
-  path += ` L ${xScale(last.t).toFixed(2)} ${zeroY.toFixed(2)} Z`;
-  return path;
+function smoothArea(pts: ScreenPoint[], zeroY: number) {
+  if (pts.length === 0) return "";
+  const line = smoothLine(pts);
+  const first = pts[0]!;
+  const last = pts[pts.length - 1]!;
+  return `${line} L ${last.x.toFixed(2)} ${zeroY.toFixed(2)} L ${first.x.toFixed(2)} ${zeroY.toFixed(2)} Z`;
 }
 
 export default function FundPnlChart({
@@ -145,12 +176,15 @@ export default function FundPnlChart({
   const yScale = (v: number) =>
     scaleLinear(v, [yMin, yMax], [PAD.top + plotH, PAD.top]);
   const zeroY = yScale(0);
+  const screen = toScreen(points, xScale, yScale);
 
   const activeIndex = hover?.index ?? null;
   const activePoint = activeIndex != null ? points[activeIndex] : null;
   const displayPoint = activePoint ?? latest;
-  const lineColor = "#288cbc";
   const cursorX = hover?.x ?? null;
+  const dateLabel = activePoint
+    ? formatTooltipDate(new Date(displayPoint.t).toISOString())
+    : PNL_RANGE_LABELS[range];
 
   function onPointerMove(event: React.PointerEvent<SVGSVGElement>) {
     const svg = svgRef.current;
@@ -161,7 +195,6 @@ export default function FundPnlChart({
     const x = Math.max(PAD.left, Math.min(PAD.left + plotW, rawX));
     const t = scaleLinear(x, [PAD.left, PAD.left + plotW], [xMin, xMax]);
 
-    // Step-after: hold the last settled PnL at this time (matches the line).
     let index = 0;
     for (let i = 0; i < points.length; i++) {
       if (points[i]!.t <= t) index = i;
@@ -176,7 +209,7 @@ export default function FundPnlChart({
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           {!embedded && (
-            <span className="bg-[#32BCFF]/15 text-[#32BCFF] shrink-0 rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide">
+            <span className="bg-[#288cbc]/15 text-[#288cbc] shrink-0 rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide">
               P&L
             </span>
           )}
@@ -188,9 +221,7 @@ export default function FundPnlChart({
             >
               {formatUsdExact(displayPoint.pnl, true)}
             </p>
-            <p className="text-primary/50 text-xs">
-              {formatTooltipDate(new Date(displayPoint.t).toISOString())}
-            </p>
+            <p className="text-primary/50 text-xs">{dateLabel}</p>
           </div>
         </div>
 
@@ -224,19 +255,16 @@ export default function FundPnlChart({
         >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={lineColor} stopOpacity="0.22" />
-              <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
+              <stop offset="0%" stopColor={LINE_COLOR} stopOpacity="0.22" />
+              <stop offset="100%" stopColor={LINE_COLOR} stopOpacity="0" />
             </linearGradient>
           </defs>
 
+          <path d={smoothArea(screen, zeroY)} fill={`url(#${gradientId})`} />
           <path
-            d={stepAreaToZero(points, xScale, yScale, zeroY)}
-            fill={`url(#${gradientId})`}
-          />
-          <path
-            d={stepPath(points, xScale, yScale)}
+            d={smoothLine(screen)}
             fill="none"
-            stroke={lineColor}
+            stroke={LINE_COLOR}
             strokeWidth={2}
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -249,7 +277,7 @@ export default function FundPnlChart({
                 x2={cursorX}
                 y1={PAD.top}
                 y2={PAD.top + plotH}
-                stroke="#32BCFF"
+                stroke={LINE_COLOR}
                 strokeOpacity={0.4}
                 strokeDasharray="3 4"
                 vectorEffect="non-scaling-stroke"
@@ -258,7 +286,7 @@ export default function FundPnlChart({
                 cx={cursorX}
                 cy={yScale(activePoint.pnl)}
                 r={3.5}
-                fill={lineColor}
+                fill={LINE_COLOR}
                 stroke="#0f2918"
                 strokeWidth={2}
               />
