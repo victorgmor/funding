@@ -24,7 +24,7 @@ function CreatorItem({ creator }: { creator: TopCreator }) {
       <span className="text-primary inline-flex items-center gap-0.5 font-medium">
         <CreatorName address={creator.id} fallback={creator.name} />
         {creator.verified && (
-          <SealCheck size="sm" className="text-[#32BCFF] shrink-0" />
+          <SealCheck size="sm" className="!size-3.5 text-[#32BCFF] shrink-0" />
         )}
       </span>
       <span className="text-primary/40 text-xs">

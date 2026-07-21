@@ -259,7 +259,9 @@ export default function WalletAccountMenu({
         <CreatorAvatar address={address} name={label} size="2xs" />
         <span className="inline-flex min-w-0 items-center gap-0.5">
           <span className="max-w-32 truncate text-sm">{label}</span>
-          {verified && <SealCheck size="xs" className="text-[#32BCFF]" />}
+          {verified && (
+            <SealCheck size="xs" className="!size-3.5 text-[#32BCFF]" />
+          )}
         </span>
       </button>
 

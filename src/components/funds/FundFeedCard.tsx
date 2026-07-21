@@ -59,7 +59,7 @@ export default function FundFeedCard({
               fallback={fund.manager.name}
             />
             {fund.manager.verified && (
-              <SealCheck size="xs" className="text-[#32BCFF]" />
+              <SealCheck size="xs" className="!size-3.5 text-[#32BCFF]" />
             )}
           </a>
           {published && (
