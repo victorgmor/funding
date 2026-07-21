@@ -23,8 +23,8 @@ const PAD = { top: 10, right: 0, bottom: 10, left: 0 };
 const LINE_COLOR = "#288cbc";
 /** Regular samples across the window; value held between real fills. */
 const TARGET_SAMPLES = 80;
-/** Polyline resolution for hover + matching the visible spline. */
-const CURVE_SAMPLES = 200;
+/** Points along each level→level cosine ramp (no overshoot). */
+const COSINE_STEPS = 16;
 
 function formatTooltipDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -85,8 +85,16 @@ function valueAt(points: PnlPoint[], t: number): PnlPoint {
   return points[index]!;
 }
 
-/** Even time grid + change times; hold last PnL between fills. */
-function sampleHoldSeries(points: PnlPoint[]): PnlPoint[] {
+/** Cosine ease 0→1 — smoothstep without overshoot (raised cosine). */
+function cosineEase(u: number) {
+  return (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, u)))) / 2;
+}
+
+/**
+ * Hold-forward on a regular grid, then ease between levels with a cosine ramp.
+ * Flats stay flat; jumps become soft S-curves with no Catmull bumps.
+ */
+function sampleCosineSeries(points: PnlPoint[]): PnlPoint[] {
   if (points.length < 2) return points;
 
   const t0 = points[0]!.t;
@@ -99,10 +107,46 @@ function sampleHoldSeries(points: PnlPoint[]): PnlPoint[] {
   }
   for (const point of points) times.add(point.t);
 
-  return [...times].sort((a, b) => a - b).map((t) => {
-    const held = valueAt(points, t);
-    return { t, pnl: held.pnl, iso: held.iso };
+  const held = [...times].sort((a, b) => a - b).map((t) => {
+    const v = valueAt(points, t);
+    return { t, pnl: v.pnl, iso: v.iso };
   });
+
+  // Plateau edges only.
+  const keys: PnlPoint[] = [];
+  for (let i = 0; i < held.length; i++) {
+    const point = held[i]!;
+    const prev = keys[keys.length - 1];
+    const next = held[i + 1];
+    if (
+      !prev ||
+      Math.abs(prev.pnl - point.pnl) > 1e-9 ||
+      !next ||
+      Math.abs(next.pnl - point.pnl) > 1e-9
+    ) {
+      keys.push(point);
+    }
+  }
+
+  const out: PnlPoint[] = [];
+  for (let i = 0; i < keys.length - 1; i++) {
+    const a = keys[i]!;
+    const b = keys[i + 1]!;
+    out.push(a);
+    if (Math.abs(a.pnl - b.pnl) < 1e-9 || b.t <= a.t) continue;
+
+    for (let s = 1; s < COSINE_STEPS; s++) {
+      const u = s / COSINE_STEPS;
+      const e = cosineEase(u);
+      out.push({
+        t: a.t + (b.t - a.t) * u,
+        pnl: a.pnl + (b.pnl - a.pnl) * e,
+        iso: e < 0.5 ? a.iso : b.iso,
+      });
+    }
+  }
+  out.push(keys[keys.length - 1]!);
+  return out;
 }
 
 type Pt = { x: number; y: number };
@@ -118,85 +162,32 @@ function toScreen(
   }));
 }
 
-/** Catmull-Rom → cubic beziers (soft hills like the reference). */
-function catmullRomLine(pts: Pt[]) {
+/** Straight segments through cosine samples — already smooth, no spline wiggle. */
+function linePath(pts: Pt[]) {
   if (pts.length === 0) return "";
-  if (pts.length === 1) {
-    return `M ${pts[0]!.x.toFixed(2)} ${pts[0]!.y.toFixed(2)}`;
-  }
-  if (pts.length === 2) {
-    return `M ${pts[0]!.x.toFixed(2)} ${pts[0]!.y.toFixed(2)} L ${pts[1]!.x.toFixed(2)} ${pts[1]!.y.toFixed(2)}`;
-  }
-
   let d = `M ${pts[0]!.x.toFixed(2)} ${pts[0]!.y.toFixed(2)}`;
-  for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[i - 1] ?? pts[i]!;
-    const p1 = pts[i]!;
-    const p2 = pts[i + 1]!;
-    const p3 = pts[i + 2] ?? p2;
-    const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
-    const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
-    d += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+  for (let i = 1; i < pts.length; i++) {
+    d += ` L ${pts[i]!.x.toFixed(2)} ${pts[i]!.y.toFixed(2)}`;
   }
   return d;
 }
 
-/**
- * Area under the curve down to the chart bottom — always below the line
- * on screen, whether PnL is above or below zero.
- */
 function areaUnderCurve(pts: Pt[], bottomY: number) {
   if (pts.length === 0) return "";
   const first = pts[0]!;
   const last = pts[pts.length - 1]!;
-  const line = catmullRomLine(pts);
-  // Bottom → up to curve → along curve → down to bottom (always under the line).
+  const line = linePath(pts);
   return `M ${first.x.toFixed(2)} ${bottomY.toFixed(2)} ${line.replace(/^M/, "L")} L ${last.x.toFixed(2)} ${bottomY.toFixed(2)} Z`;
 }
 
-function sampleCurve(pts: Pt[], count: number): Pt[] {
-  if (pts.length < 2) return pts;
-  const out: Pt[] = [];
-  const n = pts.length - 1;
-  for (let i = 0; i < count; i++) {
-    const u = i / (count - 1);
-    const f = u * n;
-    const i0 = Math.min(Math.floor(f), n - 1);
-    const t = f - i0;
-    const p0 = pts[i0 - 1] ?? pts[i0]!;
-    const p1 = pts[i0]!;
-    const p2 = pts[i0 + 1]!;
-    const p3 = pts[i0 + 2] ?? p2;
-    // Catmull-Rom interpolate
-    const t2 = t * t;
-    const t3 = t2 * t;
-    const x =
-      0.5 *
-      (2 * p1.x +
-        (-p0.x + p2.x) * t +
-        (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
-        (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
-    const y =
-      0.5 *
-      (2 * p1.y +
-        (-p0.y + p2.y) * t +
-        (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
-        (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
-    out.push({ x, y });
-  }
-  return out;
-}
-
-function yOnPolyline(poly: Pt[], x: number): number {
-  if (poly.length === 0) return 0;
-  if (x <= poly[0]!.x) return poly[0]!.y;
-  const last = poly[poly.length - 1]!;
+function yOnPolyline(pts: Pt[], x: number): number {
+  if (pts.length === 0) return 0;
+  if (x <= pts[0]!.x) return pts[0]!.y;
+  const last = pts[pts.length - 1]!;
   if (x >= last.x) return last.y;
-  for (let i = 0; i < poly.length - 1; i++) {
-    const a = poly[i]!;
-    const b = poly[i + 1]!;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i]!;
+    const b = pts[i + 1]!;
     if (x >= a.x && x <= b.x) {
       const u = (x - a.x) / Math.max(b.x - a.x, 1e-6);
       return a.y + (b.y - a.y) * u;
@@ -224,7 +215,7 @@ export default function FundPnlChart({
     [series, range],
   );
   const points = useMemo(
-    () => sampleHoldSeries(eventPoints),
+    () => sampleCosineSeries(eventPoints),
     [eventPoints],
   );
 
@@ -246,12 +237,11 @@ export default function FundPnlChart({
     scaleLinear(y, [PAD.top + plotH, PAD.top], [yMin, yMax]);
 
   const screen = toScreen(points, xScale, yScale);
-  const curvePoly = sampleCurve(screen, CURVE_SAMPLES);
-  const linePath = catmullRomLine(screen);
-  const areaPath = areaUnderCurve(screen, bottomY);
+  const pathLine = linePath(screen);
+  const pathArea = areaUnderCurve(screen, bottomY);
 
   const cursorX = hover?.x ?? null;
-  const cursorY = cursorX != null ? yOnPolyline(curvePoly, cursorX) : null;
+  const cursorY = cursorX != null ? yOnPolyline(screen, cursorX) : null;
   const displayPnl =
     cursorY != null ? yUnscale(cursorY) : latest.pnl;
   const dateLabel = hover
@@ -319,7 +309,6 @@ export default function FundPnlChart({
           onPointerLeave={() => setHover(null)}
         >
           <defs>
-            {/* Fade from the line toward the chart bottom (user space). */}
             <linearGradient
               id={gradientId}
               gradientUnits="userSpaceOnUse"
@@ -333,9 +322,9 @@ export default function FundPnlChart({
             </linearGradient>
           </defs>
 
-          <path d={areaPath} fill={`url(#${gradientId})`} />
+          <path d={pathArea} fill={`url(#${gradientId})`} />
           <path
-            d={linePath}
+            d={pathLine}
             fill="none"
             stroke={LINE_COLOR}
             strokeWidth={2.5}
