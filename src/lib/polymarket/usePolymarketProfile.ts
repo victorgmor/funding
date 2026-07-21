@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocalDisplayName } from "@/lib/useLocalDisplayName";
 import { isAddressDisplayFallback } from "@/lib/polymarket/profile";
+import { fetchClientPolymarketProfile } from "@/lib/polymarket/profile-client";
 
 export type PolymarketProfileView = {
   name: string | null;
@@ -29,11 +30,8 @@ export function usePolymarketProfile(
 
     setState((current) => ({ ...current, loading: !current.name }));
     try {
-      const res = await fetch(
-        `/api/polymarket/profile?address=${encodeURIComponent(address)}`,
-      );
-      const data = await res.json();
-      if (!res.ok) return;
+      const data = await fetchClientPolymarketProfile(address);
+      if (!data) return;
       setState({
         name: data.name ?? null,
         verified: Boolean(data.verified),

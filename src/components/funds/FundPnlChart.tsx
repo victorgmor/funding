@@ -201,7 +201,7 @@ export default function FundPnlChart({
               onClick={() => setRange(option)}
               className={
                 range === option
-                  ? "text-primary px-2 py-0.5 font-bold"
+                  ? "text-primary px-2 py-0.5 font-medium"
                   : "hover:text-primary/70 px-2 py-0.5 transition-colors"
               }
             >

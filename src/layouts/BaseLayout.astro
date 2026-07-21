@@ -36,37 +36,9 @@ const {
       html[data-wallet-session="1"] [data-wallet-connect-cta] { display: none !important; }
       html[data-wallet-session="1"] [data-wallet-restoring] { display: block; }
     </style>
-    <script is:inline>
-      // Reformat every [data-iso] element into the visitor's local timezone.
-      function formatLocalTimes(root = document) {
-        root.querySelectorAll("time[data-iso]").forEach((node) => {
-          const iso = node.getAttribute("data-iso");
-          const format = node.getAttribute("data-format") || "datetime";
-          if (!iso) return;
-          const opts =
-            format === "date"
-              ? { dateStyle: "medium" }
-              : format === "time"
-                ? { timeStyle: "short" }
-                : { dateStyle: "medium", timeStyle: "short" };
-          try {
-            node.textContent = new Date(iso).toLocaleString(undefined, opts);
-          } catch {}
-        });
-      }
-      function setupLocalTimes() {
-        formatLocalTimes();
-        document.addEventListener("astro:after-swap", () => formatLocalTimes());
-      }
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", setupLocalTimes);
-      } else {
-        setupLocalTimes();
-      }
-    </script>
   </head>
   <body class="flex flex-col bg-secondary  min-h-svh">
-    <AppProviders client:load />
+    <AppProviders client:idle />
     <Navigation />
     <main class="grow">
       <slot />

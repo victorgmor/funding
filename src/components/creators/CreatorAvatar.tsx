@@ -4,6 +4,7 @@ import {
   readLocalProfile,
 } from "@/lib/local-profile";
 import { useLocalDisplayName } from "@/lib/useLocalDisplayName";
+import { fetchClientPolymarketProfile } from "@/lib/polymarket/profile-client";
 
 type Props = {
   address: string;
@@ -48,11 +49,8 @@ export default function CreatorAvatar({
 
     async function load() {
       try {
-        const res = await fetch(
-          `/api/polymarket/profile?address=${encodeURIComponent(address)}`,
-        );
-        const data = (await res.json()) as { profileImage?: string | null };
-        if (!cancelled && data.profileImage) setImage(data.profileImage);
+        const data = await fetchClientPolymarketProfile(address);
+        if (!cancelled && data?.profileImage) setImage(data.profileImage);
       } catch {
         // keep fallback initial
       }
