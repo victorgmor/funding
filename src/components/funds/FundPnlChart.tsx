@@ -149,7 +149,7 @@ export default function FundPnlChart({
   const activeIndex = hover?.index ?? null;
   const activePoint = activeIndex != null ? points[activeIndex] : null;
   const displayPoint = activePoint ?? latest;
-  const lineColor = latest.pnl >= 0 ? "#179e63" : "#ef4444";
+  const lineColor = "#288cbc";
   const cursorX = hover?.x ?? null;
 
   function onPointerMove(event: React.PointerEvent<SVGSVGElement>) {
