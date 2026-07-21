@@ -25,13 +25,11 @@ const {
       } catch {}
     </script>
     <style is:inline>
-      /* Pre-hydration wallet slot: default shows the "Log in" button; flip to
-         the placeholder pill when a saved session is detected. React's portal
-         replaces whichever is visible once Providers mount. */
-      [data-wallet-slot] [data-slot-when] { display: none; }
-      [data-wallet-slot] [data-slot-when="anonymous"] { display: inline-flex; }
-      html[data-wallet-session="1"] [data-wallet-slot] [data-slot-when="anonymous"] { display: none; }
-      html[data-wallet-session="1"] [data-wallet-slot] [data-slot-when="connected"] { display: inline-flex; }
+      /* One nav chip: swap the label, never swap the button. */
+      [data-wallet-label-session] { display: none; }
+      html[data-wallet-session="1"] [data-wallet-label-anon] { display: none; }
+      html[data-wallet-session="1"] [data-wallet-label-session] { display: inline; }
+      html[data-wallet-session="1"] [data-wallet-login] { pointer-events: none; }
 
       /* Panel connect CTAs: hide while a saved session is restoring. */
       [data-wallet-restoring] { display: none; }

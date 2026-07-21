@@ -6,7 +6,7 @@ import Wrapper from "@/components/fundations/containers/Wrapper.astro";
 // Components
 import MobileNav from "@/components/global/MobileNav.astro";
 import { PUBLIC_PRIVY_APP_ID } from "astro:env/client";
-import { walletNavLoadingPad, walletNavRadius } from "@/lib/walletNavChrome";
+import { walletNavButtonClass } from "@/lib/walletNavChrome";
 
 const privyConfigured = Boolean(PUBLIC_PRIVY_APP_ID?.trim());
 
@@ -16,11 +16,6 @@ const navLinks = [
   { href: "/docs/overview", label: "Docs" },
   { href: "https://t.me/+Q0aItbvNIGM5MzVh", label: "Community" },
 ];
-
-// Pre-hydration placeholder — same pad/radius as WalletAccountMenu trigger.
-const placeholderClass = `bg-accent/40 text-secondary/60 inline-flex min-h-9 min-w-[5.5rem] animate-pulse items-center justify-center border border-transparent ${walletNavLoadingPad} ${walletNavRadius} text-sm font-medium`;
-const loginButtonClass =
-  "bg-accent text-secondary hover:opacity-90 rounded-full px-4 py-1.5 text-sm font-medium transition-opacity";
 ---
 <section>
   <Wrapper variant="standard">
@@ -53,23 +48,14 @@ const loginButtonClass =
                 data-wallet-slot
                 class="flex min-h-9 min-w-[5.5rem] items-center justify-end"
               >
-                {/* Pre-hydration placeholders. The swap script in BaseLayout
-                    toggles [data-wallet-slot-has-session] based on the
-                    wallet-session dataset flag set before React loads. React's
-                    portal replaces whichever is visible on mount. */}
-                <span
-                  data-slot-when="connected"
-                  class={placeholderClass}
-                  aria-busy="true"
-                >
-                  Loading…
-                </span>
+                {/* One chip — label flips Log in ↔ Loading…; React fills profile. */}
                 <button
                   type="button"
-                  data-slot-when="anonymous"
-                  class={loginButtonClass}
+                  data-wallet-login
+                  class={walletNavButtonClass}
                 >
-                  Log in
+                  <span data-wallet-label-anon>Log in</span>
+                  <span data-wallet-label-session>Loading…</span>
                 </button>
               </div>
             ) : (

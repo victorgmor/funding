@@ -6,9 +6,8 @@ type ProvidersProps = {
 };
 
 /**
- * Global wallet shell. Does not portal over the nav SSR placeholders —
- * those already show Loading (session) or Log in (anonymous) via CSS.
- * Privy loads when a session exists or the user clicks Log in.
+ * Global wallet shell. SSR shows one chip (Log in / Loading… label).
+ * Privy loads when a session exists or the user clicks that chip.
  */
 export default function AppProviders() {
   const [Providers, setProviders] = useState<ComponentType<ProvidersProps> | null>(
@@ -31,7 +30,7 @@ export default function AppProviders() {
     }
 
     const buttons = document.querySelectorAll<HTMLElement>(
-      "[data-wallet-slot] [data-slot-when='anonymous']",
+      "[data-wallet-login]",
     );
     const onClick = () => mount();
     buttons.forEach((btn) => btn.addEventListener("click", onClick));

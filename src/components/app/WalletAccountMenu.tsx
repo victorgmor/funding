@@ -19,7 +19,7 @@ import CreatorAvatar from "@/components/creators/CreatorAvatar";
 import EditProfileModal from "@/components/app/EditProfileModal";
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { formatUsdExact } from "@/lib/funds/format";
-import { walletNavPad, walletNavRadius } from "@/lib/walletNavChrome";
+import { walletNavButtonClass } from "@/lib/walletNavChrome";
 import {
   transferPusdFromDepositWallet,
   transferPusdToDepositWallet,
@@ -254,11 +254,11 @@ export default function WalletAccountMenu({
         {...getReferenceProps()}
         aria-expanded={open}
         data-state={open ? "open" : "closed"}
-        className={`flex items-center gap-2 ${walletNavPad} ${walletNavRadius} bg-[#181709] text-white/80 transition-colors hover:text-white`}
+        className={walletNavButtonClass}
       >
         <CreatorAvatar address={address} name={label} size="2xs" />
         <span className="inline-flex min-w-0 items-center gap-0.5">
-          <span className="max-w-32 truncate text-sm">{label}</span>
+          <span className="max-w-32 truncate">{label}</span>
           {verified && (
             <SealCheck size="xs" className="!size-3.5 text-[#32BCFF]" />
           )}

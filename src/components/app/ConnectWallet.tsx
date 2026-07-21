@@ -6,6 +6,7 @@ import { creatorPath } from "@/lib/funds/creator";
 import { privyAppId } from "@/lib/privy/config";
 import { addressDisplayFallback } from "@/lib/polymarket/profile";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
+import { walletNavButtonClass } from "@/lib/walletNavChrome";
 import { useEnsurePolygon } from "@/lib/wagmi/useEnsurePolygon";
 import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 import { WAGMI_DISCONNECT_EVENT } from "@/lib/wagmi/events";
@@ -14,12 +15,18 @@ type Props = {
   variant?: "nav" | "panel" | "create";
 };
 
-const navButtonClass =
-  "bg-accent text-secondary hover:opacity-90 rounded-full px-4 py-1.5 text-sm font-medium transition-opacity disabled:cursor-wait disabled:opacity-60";
-
 function restoringPlaceholder(variant: Props["variant"]) {
   if (variant === "nav") {
-    return <WalletPanelPlaceholder variant="button" />;
+    return (
+      <button
+        type="button"
+        disabled
+        aria-busy="true"
+        className={walletNavButtonClass}
+      >
+        <span className="animate-pulse">Loading…</span>
+      </button>
+    );
   }
   if (variant === "panel" || variant === "create") {
     return <WalletPanelPlaceholder />;
@@ -94,15 +101,23 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
     );
   }
 
+  if (variant === "nav") {
+    return (
+      <button
+        type="button"
+        onClick={() => login()}
+        className={walletNavButtonClass}
+      >
+        Log in
+      </button>
+    );
+  }
+
   return (
     <button
       type="button"
       onClick={() => login()}
-      className={
-        variant === "nav"
-          ? navButtonClass
-          : "bg-accent text-secondary hover:opacity-90 w-full rounded px-3 py-2 text-sm font-medium"
-      }
+      className="bg-accent text-secondary hover:opacity-90 w-full rounded px-3 py-2 text-sm font-medium"
     >
       Log in
     </button>

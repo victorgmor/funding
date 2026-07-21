@@ -2,15 +2,10 @@
 // Assets
 import Logo from "@/components/assets/Logo.astro";
 import { PUBLIC_PRIVY_APP_ID } from "astro:env/client";
-import { walletNavLoadingPad, walletNavRadius } from "@/lib/walletNavChrome";
+import { walletNavButtonClass } from "@/lib/walletNavChrome";
 
 const privyConfigured = Boolean(PUBLIC_PRIVY_APP_ID?.trim());
 const { links = [] } = Astro.props;
-
-// Same pad/radius as WalletAccountMenu trigger — see Navigation.astro.
-const placeholderClass = `bg-accent/40 text-secondary/60 inline-flex min-h-9 min-w-[5.5rem] animate-pulse items-center justify-center border border-transparent ${walletNavLoadingPad} ${walletNavRadius} text-sm font-medium`;
-const loginButtonClass =
-  "bg-accent text-secondary hover:opacity-90 w-full rounded px-3 py-2 text-sm font-medium";
 ---
 <div id="mobileMenu" class="lg:hidden fixed inset-0 z-40 hidden" aria-hidden="true">
   <div
@@ -47,19 +42,13 @@ const loginButtonClass =
             data-wallet-slot
             class="flex min-h-9 items-center"
           >
-            <span
-              data-slot-when="connected"
-              class={placeholderClass}
-              aria-busy="true"
-            >
-              Loading…
-            </span>
             <button
               type="button"
-              data-slot-when="anonymous"
-              class={loginButtonClass}
+              data-wallet-login
+              class={`${walletNavButtonClass} w-full`}
             >
-              Log in
+              <span data-wallet-label-anon>Log in</span>
+              <span data-wallet-label-session>Loading…</span>
             </button>
           </div>
         ) : (
