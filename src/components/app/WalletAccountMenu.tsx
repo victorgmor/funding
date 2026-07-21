@@ -17,6 +17,7 @@ import { getWalletClient } from "@wagmi/core";
 import { polygon } from "wagmi/chains";
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
 import EditProfileModal from "@/components/app/EditProfileModal";
+import SealCheck from "@/components/fundations/icons/SealCheck";
 import { formatUsdExact } from "@/lib/funds/format";
 import { walletNavPad, walletNavRadius } from "@/lib/walletNavChrome";
 import {
@@ -33,6 +34,7 @@ import { wagmiConfig } from "@/lib/wagmi/config";
 type Props = {
   address: `0x${string}`;
   label: string;
+  verified?: boolean;
   onLogout: () => void;
 };
 
@@ -90,7 +92,12 @@ const rowBtnClass =
 const sectionBtnClass =
   "w-full rounded-xl border border-white/15 px-3 py-2 text-sm text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50";
 
-export default function WalletAccountMenu({ address, label, onLogout }: Props) {
+export default function WalletAccountMenu({
+  address,
+  label,
+  verified = false,
+  onLogout,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [info, setInfo] = useState<PolymarketWalletInfo | null>(null);
   const [loading, setLoading] = useState(false);
@@ -247,15 +254,13 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
         {...getReferenceProps()}
         aria-expanded={open}
         data-state={open ? "open" : "closed"}
-        className={`flex items-center gap-2 ${walletNavPad} ${walletNavRadius} border border-white/15 bg-[#181709] text-white/80 transition-colors hover:text-white`}
+        className={`flex items-center gap-2 ${walletNavPad} ${walletNavRadius} bg-[#181709] text-white/80 transition-colors hover:text-white`}
       >
-        <CreatorAvatar
-          address={address}
-          name={label}
-          size="2xs"
-          className="ring-1 ring-white/30"
-        />
-        <span className="max-w-32 truncate text-sm">{label}</span>
+        <CreatorAvatar address={address} name={label} size="2xs" />
+        <span className="inline-flex min-w-0 items-center gap-0.5">
+          <span className="max-w-32 truncate text-sm">{label}</span>
+          {verified && <SealCheck size="xs" className="text-[#32BCFF]" />}
+        </span>
       </button>
 
       {isMounted && (

@@ -21,14 +21,12 @@ function CreatorItem({ creator }: { creator: TopCreator }) {
       href={creatorPath(creator.id)}
       className="text-primary/60 hover:text-primary inline-flex shrink-0 items-center gap-2 text-sm transition-colors"
     >
-      <span className="text-primary font-medium">
+      <span className="text-primary inline-flex items-center gap-0.5 font-medium">
         <CreatorName address={creator.id} fallback={creator.name} />
+        {creator.verified && (
+          <SealCheck size="sm" className="text-[#32BCFF] shrink-0" />
+        )}
       </span>
-      {creator.verified && (
-        <span className="inline-flex shrink-0 translate-z-0 items-center backface-hidden antialiased">
-          <SealCheck size="sm" className="text-[#32BCFF]" />
-        </span>
-      )}
       <span className="text-primary/40 text-xs">
         {creator.fundCount} fund{creator.fundCount === 1 ? "" : "s"}
       </span>

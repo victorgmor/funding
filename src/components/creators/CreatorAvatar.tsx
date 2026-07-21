@@ -14,7 +14,7 @@ type Props = {
 };
 
 const sizes = {
-  "2xs": "size-6 text-xs",
+  "2xs": "size-5 text-[10px]",
   xs: "size-8 text-sm",
   sm: "size-10 text-base",
   md: "size-16 text-xl",
@@ -78,10 +78,10 @@ export default function CreatorAvatar({
         src={image}
         alt=""
         width={
-          size === "2xs" ? 24 : size === "xs" ? 32 : size === "sm" ? 40 : 64
+          size === "2xs" ? 20 : size === "xs" ? 32 : size === "sm" ? 40 : 64
         }
         height={
-          size === "2xs" ? 24 : size === "xs" ? 32 : size === "sm" ? 40 : 64
+          size === "2xs" ? 20 : size === "xs" ? 32 : size === "sm" ? 40 : 64
         }
         className={`bg-secondary shrink-0 rounded-full object-cover ${sizeClass} ${className}`}
       />

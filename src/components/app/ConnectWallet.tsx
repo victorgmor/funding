@@ -31,7 +31,9 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
   const { login, logout } = usePrivy();
   const { address, displayAddress, isConnected, hasSession } = useWalletGate();
   const { switching } = useEnsurePolygon();
-  const { name: displayName } = usePolymarketProfile(address ?? displayAddress);
+  const { name: displayName, verified } = usePolymarketProfile(
+    address ?? displayAddress,
+  );
 
   const sessionHint =
     hasSession ||
@@ -66,6 +68,7 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
         <WalletAccountMenu
           address={address}
           label={label}
+          verified={verified}
           onLogout={disconnectWallet}
         />
       );

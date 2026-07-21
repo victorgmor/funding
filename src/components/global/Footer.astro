@@ -8,9 +8,29 @@ import XLogo from "@/components/fundations/icons/XLogo.astro";
 <footer>
   <Wrapper variant="standard" class="py-12">
     <div class="mt-12 flex flex-wrap items-center justify-between gap-2">
-      <Text tag="p" variant="textSM" class="text-primary/60">
-        © Copyright Lexington Themes <span id="year"></span>
-      </Text>
+      <a
+        href="https://polymarket.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-primary/60 hover:text-primary inline-flex items-center gap-2 font-mono text-sm transition-colors"
+      >
+        <Text tag="span" variant="textSM" class="text-inherit">Powered by</Text>
+        <svg
+          class="h-4 w-2.5 shrink-0"
+          viewBox="0 0 24 38"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M24.0629 33.5654V4.43457L23.8087 4.5062L0.7366 11.0045L0.59082 11.0455V26.9545L0.736636 26.9955L24.0629 33.5654ZM21.4298 16.9078L5.41453 12.3971L21.4298 7.88593V16.9078ZM3.22391 23.5101V14.4899L19.2356 19.0001L3.22391 23.5101ZM21.4298 30.1141L5.41457 25.603L21.4298 21.0923V30.1141Z"
+          ></path>
+        </svg>
+        <Text tag="span" variant="textSM" class="text-inherit font-semibold"
+          >Polymarket</Text
+        >
+      </a>
       <ul role="list" class="flex items-center gap-3">
         <li>
           <a
@@ -34,6 +54,3 @@ import XLogo from "@/components/fundations/icons/XLogo.astro";
     </div>
   </Wrapper>
 </footer>
-<script type="module">
-  document.getElementById("year").textContent = new Date().getFullYear();
-</script>

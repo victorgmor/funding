@@ -72,14 +72,16 @@ export default function TopManagersList({ managers }: Props) {
                   name={manager.name}
                   size="2xs"
                 />
-                <CreatorName
-                  address={manager.id}
-                  fallback={manager.name}
-                  className="text-primary group-hover:text-primary/85 break-all font-mono text-sm font-semibold tracking-tight"
-                />
-                {manager.verified && (
-                  <SealCheck size="xs" className="text-[#32BCFF] shrink-0" />
-                )}
+                <span className="inline-flex min-w-0 items-center gap-0.5">
+                  <CreatorName
+                    address={manager.id}
+                    fallback={manager.name}
+                    className="text-primary group-hover:text-primary/85 break-all font-mono text-sm font-semibold tracking-tight"
+                  />
+                  {manager.verified && (
+                    <SealCheck size="xs" className="text-[#32BCFF] shrink-0" />
+                  )}
+                </span>
               </a>
             </div>
 

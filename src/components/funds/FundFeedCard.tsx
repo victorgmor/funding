@@ -52,7 +52,7 @@ export default function FundFeedCard({
 
           <a
             href={creatorPath(fund.manager.id)}
-            className="text-primary/70 hover:text-primary inline-flex items-center gap-1 transition-colors"
+            className="text-primary/70 hover:text-primary inline-flex items-center gap-0.5 transition-colors"
           >
             <CreatorName
               address={fund.manager.id}
