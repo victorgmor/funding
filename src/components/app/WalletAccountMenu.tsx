@@ -84,11 +84,11 @@ async function copyText(value: string) {
 }
 
 const panelShellClass =
-  "w-80 overflow-hidden rounded-[var(--privy-border-radius-md)] bg-[#181709] shadow-[0px_0px_20px_-3px_rgba(0,0,0,0.1),0px_4px_10px_-3px_rgba(0,0,0,0.08)]";
+  "w-80 overflow-hidden rounded-2xl bg-[#181709] text-white shadow-[0px_0px_40px_-8px_rgba(0,0,0,0.45)]";
 const rowBtnClass =
-  "flex h-[34px] w-full items-center gap-2 px-6 text-left text-sm text-[var(--privy-color-foreground)] transition-colors hover:bg-[var(--privy-color-background-2)]";
+  "flex h-[34px] w-full items-center gap-2 px-6 text-left text-sm text-white transition-colors hover:bg-white/10";
 const sectionBtnClass =
-  "w-full rounded-[var(--privy-border-radius-md)] border border-[var(--privy-color-foreground-4)] px-3 py-2 text-sm text-[var(--privy-color-foreground)] transition-colors hover:bg-[var(--privy-color-background-2)] disabled:cursor-not-allowed disabled:opacity-50";
+  "w-full rounded-xl border border-white/15 px-3 py-2 text-sm text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50";
 
 export default function WalletAccountMenu({ address, label, onLogout }: Props) {
   const [open, setOpen] = useState(false);
@@ -247,7 +247,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
         {...getReferenceProps()}
         aria-expanded={open}
         data-state={open ? "open" : "closed"}
-        className={`flex items-center gap-2 ${walletNavPad} ${walletNavRadius} border border-[var(--privy-color-foreground-4)] bg-[#181709] text-[var(--privy-color-foreground-2)] transition-colors hover:text-[var(--privy-color-foreground)]`}
+        className={`flex items-center gap-2 ${walletNavPad} ${walletNavRadius} border border-white/15 bg-[#181709] text-white/80 transition-colors hover:text-white`}
       >
         <CreatorAvatar
           address={address}
@@ -268,59 +268,31 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
               {...getFloatingProps()}
             >
               <div style={transitionStyles} className={panelShellClass}>
-                <div className="flex items-center justify-between border-b border-[var(--privy-color-foreground-4)] px-4 py-3">
-                  <p className="text-base font-medium text-[var(--privy-color-foreground)]">
-                    Account
-                  </p>
+                <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                  <p className="text-base font-medium text-white">Account</p>
                   <button
                     type="button"
                     onClick={() => setOpen(false)}
                     aria-label="Close"
-                    className="rounded-full p-1 text-[var(--privy-color-foreground-3)] hover:bg-[var(--privy-color-background-2)] hover:text-[var(--privy-color-foreground)]"
+                    className="rounded-full p-1 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
                   >
                     ✕
                   </button>
                 </div>
 
-                <button
-                  type="button"
-                  role="menuitem"
-                  className={rowBtnClass}
-                  onClick={() => {
-                    setOpen(false);
-                    setEditOpen(true);
-                  }}
-                >
-                  <span aria-hidden>✎</span>
-                  Edit profile
-                </button>
-
-                <button
-                  type="button"
-                  role="menuitem"
-                  className={rowBtnClass}
-                  onClick={() => {
-                    setOpen(false);
-                    onLogout();
-                  }}
-                >
-                  <span aria-hidden>↪</span>
-                  Log out
-                </button>
-
                 <div className="px-4 py-3">
-                  <p className="mb-2 text-left text-sm font-medium text-[var(--privy-color-foreground)]">
+                  <p className="mb-2 text-left text-sm font-medium text-white/80">
                     Polymarket wallet
                   </p>
-                  <div className="flex h-14 w-full items-center justify-between rounded-[var(--privy-border-radius-md)] border border-[var(--privy-color-foreground-4)] px-4 py-3">
+                  <div className="flex h-14 w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                     <div className="flex min-w-0 flex-col gap-0">
                       <p
-                        className="truncate text-sm font-medium text-[var(--privy-color-foreground)]"
+                        className="truncate text-sm font-medium text-white"
                         title={info?.depositAddress}
                       >
                         {info ? shortAddress(info.depositAddress) : "…"}
                       </p>
-                      <p className="text-xs leading-4 text-[var(--privy-color-foreground-3)]">
+                      <p className="text-xs leading-4 text-white/50">
                         {loading
                           ? "…"
                           : !registered
@@ -332,7 +304,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                       type="button"
                       onClick={(event) => void copyDepositAddress(event)}
                       disabled={!info?.depositAddress}
-                      className="ml-3 flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-[var(--privy-color-accent)] bg-[#181709] px-2.5 text-sm font-medium text-[var(--privy-color-accent)] transition-colors hover:bg-[var(--privy-color-info-bg-hover)] disabled:opacity-50"
+                      className="ml-3 flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-white/25 bg-transparent px-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-50"
                     >
                       {copied ? (
                         <>
@@ -372,16 +344,40 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                   </div>
                 </div>
 
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={rowBtnClass}
+                  onClick={() => {
+                    setOpen(false);
+                    setEditOpen(true);
+                  }}
+                >
+                  <span aria-hidden>✎</span>
+                  Edit profile
+                </button>
+
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={rowBtnClass}
+                  onClick={() => {
+                    setOpen(false);
+                    onLogout();
+                  }}
+                >
+                  <span aria-hidden>↪</span>
+                  Log out
+                </button>
+
                 {status && (
-                  <p className="px-4 pb-2 text-sm text-[var(--privy-color-foreground-3)]">
-                    {status}
-                  </p>
+                  <p className="px-4 pb-2 text-sm text-white/50">{status}</p>
                 )}
                 {error && (
                   <p className="px-4 pb-3 text-sm text-red-400">{error}</p>
                 )}
 
-                <div className="flex justify-center px-4 py-3 text-[var(--privy-color-foreground-3)]">
+                <div className="flex justify-center px-4 py-3 text-white/40">
                   <a
                     href="https://privy.io"
                     target="_blank"

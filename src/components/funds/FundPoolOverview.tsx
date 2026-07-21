@@ -6,8 +6,10 @@ import FundPnlChart from "@/components/funds/FundPnlChart";
 import FundStageMetricsRow from "@/components/funds/FundStageMetricsRow";
 import PoolCapBar from "@/components/funds/PoolCapBar";
 import ProfitShareLabel from "@/components/funds/ProfitShareLabel";
+import CreatorName from "@/components/creators/CreatorName";
 import { formatUsdExact } from "@/lib/funds/format";
 import { creatorPath } from "@/lib/funds/creator";
+import { addressDisplayFallback } from "@/lib/polymarket/profile";
 import { POOL_UPDATED_EVENT } from "@/lib/funds/pool-events";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
@@ -104,7 +106,14 @@ function DepositorsList({
                 href={creatorPath(mandate.profileId)}
                 className="text-primary/80 hover:text-primary min-w-0 flex-1 truncate font-mono text-sm transition-colors"
               >
-                {mandate.investorWallet}
+                <CreatorName
+                  address={mandate.profileId}
+                  fallback={
+                    mandate.investorWallet.startsWith("0x")
+                      ? addressDisplayFallback(mandate.investorWallet)
+                      : mandate.investorWallet
+                  }
+                />
               </a>
               <p className={depositSummaryClass}>
                 {formatUsdExact(mandate.notionalUsdc)}

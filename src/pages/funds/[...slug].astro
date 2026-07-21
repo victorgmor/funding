@@ -5,6 +5,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import BackLink from "@/components/fundations/elements/BackLink.astro";
 import Wrapper from "@/components/fundations/containers/Wrapper.astro";
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
+import CreatorName from "@/components/creators/CreatorName";
 import FundLifecycleTestPanel from "@/components/funds/FundLifecycleTestPanel";
 import FundPoolOverview from "@/components/funds/FundPoolOverview";
 import FundPerformanceCell from "@/components/funds/FundPerformanceCell";
@@ -74,7 +75,11 @@ const showAvatar = isCreatorWallet(fund.manager.id);
                 href={creatorPath(fund.manager.id)}
                 class="text-primary/70 hover:text-primary inline-flex items-center gap-1 transition-colors"
               >
-                {fund.manager.name}
+                <CreatorName
+                  client:load
+                  address={fund.manager.id}
+                  fallback={fund.manager.name}
+                />
                 {
                   fund.manager.verified && (
                     <SealCheck size="xs" class="text-[#32BCFF]" />

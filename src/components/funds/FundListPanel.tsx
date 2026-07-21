@@ -11,6 +11,7 @@ import {
   type PoolTotalEntry,
 } from "@/lib/funds/usePoolTotals";
 import type { Fund } from "@/lib/funds/types";
+import { localDisplayName } from "@/lib/local-profile";
 import { notifyPoolUpdated } from "@/lib/funds/pool-events";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
@@ -34,13 +35,16 @@ function filterFunds(funds: Fund[], query: string): Fund[] {
   const q = query.trim().toLowerCase();
   if (!q) return funds;
 
-  return funds.filter(
-    (fund) =>
+  return funds.filter((fund) => {
+    const localName = localDisplayName(fund.manager.id)?.toLowerCase() ?? "";
+    return (
       fund.name.toLowerCase().includes(q) ||
       fund.description.toLowerCase().includes(q) ||
       fund.thesis.toLowerCase().includes(q) ||
-      fund.manager.name.toLowerCase().includes(q),
-  );
+      fund.manager.name.toLowerCase().includes(q) ||
+      localName.includes(q)
+    );
+  });
 }
 
 function sortFunds(

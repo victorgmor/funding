@@ -9,6 +9,7 @@ import SealCheck from "@/components/fundations/icons/SealCheck.astro";
 import CreatorFundList from "@/components/funds/CreatorFundList";
 import PnlAmount from "@/components/funds/PnlAmount";
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
+import CreatorName from "@/components/creators/CreatorName";
 import { getFundsByCreator } from "@/lib/funds/store";
 import { isCreatorWallet } from "@/lib/funds/creator";
 import { sumCreatorProfit } from "@/lib/funds/creators";
@@ -98,7 +99,17 @@ const totalProfitUsdc = sumCreatorProfit(funds, creatorId, profitByFundSlug);
           <div class="min-w-0">
             <div class="flex items-center gap-2">
               <Text tag="h1" variant="displaySM" class="text-primary font-semibold">
-                {name}
+                {
+                  profileWalletId ? (
+                    <CreatorName
+                      client:load
+                      address={profileWalletId}
+                      fallback={name}
+                    />
+                  ) : (
+                    name
+                  )
+                }
               </Text>
               {verified && <SealCheck size="base" class="text-[#32BCFF]" />}
             </div>

@@ -1,4 +1,5 @@
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
+import CreatorName from "@/components/creators/CreatorName";
 import FundStageMetricsRow from "@/components/funds/FundStageMetricsRow";
 import PoolCapBar from "@/components/funds/PoolCapBar";
 import ProfitShareLabel from "@/components/funds/ProfitShareLabel";
@@ -53,7 +54,10 @@ export default function FundFeedCard({
             href={creatorPath(fund.manager.id)}
             className="text-primary/70 hover:text-primary inline-flex items-center gap-1 transition-colors"
           >
-            {fund.manager.name}
+            <CreatorName
+              address={fund.manager.id}
+              fallback={fund.manager.name}
+            />
             {fund.manager.verified && (
               <SealCheck size="xs" className="text-[#32BCFF]" />
             )}

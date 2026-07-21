@@ -1,6 +1,7 @@
 import { fundListGridClass } from "@/components/funds/fund-list-layout";
 import FundPerformanceCell from "@/components/funds/FundPerformanceCell";
 import PoolCapBar from "@/components/funds/PoolCapBar";
+import CreatorName from "@/components/creators/CreatorName";
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { creatorPath } from "@/lib/funds/creator";
 import type { FundPerformance } from "@/lib/funds/performance";
@@ -38,7 +39,10 @@ export default function FundRow({ fund, deposited = 0, performance }: Props) {
             href={creatorPath(fund.manager.id)}
             className="text-primary hover:text-primary/80 truncate text-sm"
           >
-            {fund.manager.name}
+            <CreatorName
+              address={fund.manager.id}
+              fallback={fund.manager.name}
+            />
           </a>
           {fund.manager.verified && (
             <SealCheck size="sm" className="text-[#32BCFF]" />

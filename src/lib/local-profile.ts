@@ -26,6 +26,11 @@ export function readLocalProfile(address: string): LocalProfile | null {
   }
 }
 
+/** Local username when set; otherwise null. */
+export function localDisplayName(address: string): string | null {
+  return readLocalProfile(address)?.username?.trim() || null;
+}
+
 export function writeLocalProfile(address: string, profile: LocalProfile) {
   localStorage.setItem(KEY(address), JSON.stringify(profile));
   window.dispatchEvent(

@@ -1,3 +1,4 @@
+import CreatorName from "@/components/creators/CreatorName";
 import PnlAmount from "@/components/funds/PnlAmount";
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { creatorPath } from "@/lib/funds/creator";
@@ -20,7 +21,9 @@ function CreatorItem({ creator }: { creator: TopCreator }) {
       href={creatorPath(creator.id)}
       className="text-primary/60 hover:text-primary inline-flex shrink-0 items-center gap-2 text-sm transition-colors"
     >
-      <span className="text-primary font-medium">{creator.name}</span>
+      <span className="text-primary font-medium">
+        <CreatorName address={creator.id} fallback={creator.name} />
+      </span>
       {creator.verified && (
         <span className="inline-flex shrink-0 translate-z-0 items-center backface-hidden antialiased">
           <SealCheck size="sm" className="text-[#32BCFF]" />

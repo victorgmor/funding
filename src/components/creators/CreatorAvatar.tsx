@@ -3,6 +3,7 @@ import {
   LOCAL_PROFILE_UPDATED_EVENT,
   readLocalProfile,
 } from "@/lib/local-profile";
+import { useLocalDisplayName } from "@/lib/useLocalDisplayName";
 
 type Props = {
   address: string;
@@ -27,7 +28,8 @@ export default function CreatorAvatar({
   className = "",
 }: Props) {
   const [image, setImage] = useState(initialImage);
-  const initial = name.trim().charAt(0).toUpperCase() || "?";
+  const displayName = useLocalDisplayName(address, name);
+  const initial = displayName.trim().charAt(0).toUpperCase() || "?";
   const sizeClass = sizes[size];
 
   useEffect(() => {

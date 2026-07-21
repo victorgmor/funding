@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useLocalDisplayName } from "@/lib/useLocalDisplayName";
 import { isAddressDisplayFallback } from "@/lib/polymarket/profile";
 
 export type PolymarketProfileView = {
@@ -18,6 +19,7 @@ export function usePolymarketProfile(
     verified: false,
     loading: false,
   });
+  const localName = useLocalDisplayName(address, "");
 
   const fetchProfile = useCallback(async () => {
     if (!address) {
@@ -80,5 +82,8 @@ export function usePolymarketProfile(
     return () => window.clearInterval(id);
   }, [address, state.name, fetchProfile]);
 
-  return state;
+  return {
+    ...state,
+    name: localName || state.name,
+  };
 }
