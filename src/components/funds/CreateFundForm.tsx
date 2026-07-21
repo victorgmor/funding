@@ -1,6 +1,5 @@
 import { useState } from "react";
 import LazyProviders from "@/components/app/LazyProviders";
-import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
 import ConnectWallet from "@/components/app/ConnectWallet";
 import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import { defaultLifecycleDate } from "@/lib/funds/lifecycle";
@@ -10,7 +9,7 @@ import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 
 export default function CreateFundForm() {
   return (
-    <LazyProviders fallback={<WalletPanelPlaceholder />}>
+    <LazyProviders fallback={<WalletPanelPlaceholder variant="button" />}>
       <CreateFundFormInner />
     </LazyProviders>
   );
@@ -27,8 +26,6 @@ function CreateFundFormInner() {
   const [tradingEndsAt, setTradingEndsAt] = useState(() =>
     defaultLifecycleDate(90),
   );
-  const { name: managerName } = usePolymarketProfile(address);
-
   const capValue = Number(capUsdc);
   const capValid =
     capUsdc.trim() !== "" &&
@@ -105,14 +102,9 @@ function CreateFundFormInner() {
       <div>
         <p className="text-primary mb-2 text-sm">Creator</p>
         {loading ? (
-          <WalletPanelPlaceholder label="Loading wallet…" />
+          <WalletPanelPlaceholder label="Loading…" variant="button" />
         ) : (
           <ConnectWallet variant="create" />
-        )}
-        {managerName && (
-          <p className="text-primary/60 mt-2 text-xs">
-            Publishing as <span className="text-primary">{managerName}</span>
-          </p>
         )}
       </div>
 

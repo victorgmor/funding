@@ -1,5 +1,5 @@
 import { useId, useMemo, useRef, useState } from "react";
-import { formatSinceDate, formatUsdExact } from "@/lib/funds/format";
+import { formatUsdExact } from "@/lib/funds/format";
 import {
   buildPnlSeries,
   defaultPnlRange,
@@ -18,7 +18,7 @@ type Props = {
 
 const W = 640;
 const H = 200;
-const PAD = { top: 10, right: 0, bottom: 28, left: 0 };
+const PAD = { top: 10, right: 0, bottom: 10, left: 0 };
 
 function formatTooltipDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -26,14 +26,6 @@ function formatTooltipDate(iso: string) {
     day: "numeric",
     year: "numeric",
   });
-}
-
-function formatAxisUsd(value: number) {
-  const abs = Math.abs(value);
-  if (abs >= 1000) {
-    return `$${value < 0 ? "-" : ""}${(abs / 1000).toFixed(abs >= 10_000 ? 0 : 1)}k`;
-  }
-  return `$${Math.round(value)}`;
 }
 
 function niceStep(range: number, ticks = 4) {
@@ -50,7 +42,9 @@ function buildYScale(points: PnlPoint[]) {
   const values = points.map((point) => point.pnl);
   const dataMin = Math.min(...values);
   const dataMax = Math.max(...values);
-  const step = niceStep(Math.max(dataMax - dataMin, Math.abs(dataMax), Math.abs(dataMin), 1));
+  const step = niceStep(
+    Math.max(dataMax - dataMin, Math.abs(dataMax), Math.abs(dataMin), 1),
+  );
 
   let min = Math.floor(Math.min(dataMin, 0) / step) * step;
   let max = Math.ceil(Math.max(dataMax, 0) / step) * step;
@@ -60,12 +54,7 @@ function buildYScale(points: PnlPoint[]) {
     max += step;
   }
 
-  const ticks: number[] = [];
-  for (let value = min; value <= max + step * 0.001; value += step) {
-    ticks.push(Math.round(value * 100) / 100);
-  }
-
-  return { min, max, ticks };
+  return { min, max };
 }
 
 function scaleLinear(
@@ -121,32 +110,6 @@ function stepAreaToZero(
   return path;
 }
 
-function buildXTicks(points: PnlPoint[], xScale: (t: number) => number) {
-  const byDay = new Map<string, number>();
-  for (const point of points) {
-    const label = formatSinceDate(new Date(point.t).toISOString());
-    if (!byDay.has(label)) byDay.set(label, point.t);
-  }
-
-  const times = [...byDay.values()].sort((a, b) => a - b);
-  if (times.length <= 6) {
-    return times.map((t) => ({
-      t,
-      x: xScale(t),
-      label: formatSinceDate(new Date(t).toISOString()),
-    }));
-  }
-
-  const step = Math.ceil(times.length / 6);
-  return times
-    .filter((_, index) => index % step === 0 || index === times.length - 1)
-    .map((t) => ({
-      t,
-      x: xScale(t),
-      label: formatSinceDate(new Date(t).toISOString()),
-    }));
-}
-
 export default function FundPnlChart({
   trades,
   fundCreatedAt,
@@ -172,7 +135,7 @@ export default function FundPnlChart({
 
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
-  const { min: yMin, max: yMax, ticks: yTickValues } = buildYScale(points);
+  const { min: yMin, max: yMax } = buildYScale(points);
   const xMin = points[0]!.t;
   const xMax = points[points.length - 1]!.t;
   const latest = points[points.length - 1]!;
@@ -182,9 +145,6 @@ export default function FundPnlChart({
   const yScale = (v: number) =>
     scaleLinear(v, [yMin, yMax], [PAD.top + plotH, PAD.top]);
   const zeroY = yScale(0);
-
-  const yTicks = yTickValues.map((value) => ({ value, y: yScale(value) }));
-  const xTicks = buildXTicks(points, xScale);
 
   const activeIndex = hover?.index ?? null;
   const activePoint = activeIndex != null ? points[activeIndex] : null;
@@ -241,7 +201,7 @@ export default function FundPnlChart({
               onClick={() => setRange(option)}
               className={
                 range === option
-                  ? "bg-[#32BCFF] rounded-full px-2 py-0.5 font-medium text-white"
+                  ? "text-primary px-2 py-0.5 font-bold"
                   : "hover:text-primary/70 px-2 py-0.5 transition-colors"
               }
             >
@@ -267,33 +227,6 @@ export default function FundPnlChart({
               <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
             </linearGradient>
           </defs>
-
-          {yTicks.map((tick) => {
-            const isZero = Math.abs(tick.value) < 0.001;
-            return (
-              <g key={tick.value}>
-                <line
-                  x1={0}
-                  x2={W}
-                  y1={tick.y}
-                  y2={tick.y}
-                  stroke="currentColor"
-                  strokeOpacity={isZero ? 0.14 : 0.04}
-                  vectorEffect="non-scaling-stroke"
-                />
-                <text
-                  x={2}
-                  y={tick.y - 4}
-                  textAnchor="start"
-                  className={`font-mono text-sm tabular-nums ${
-                    isZero ? "fill-primary/45" : "fill-primary/30"
-                  }`}
-                >
-                  {formatAxisUsd(tick.value)}
-                </text>
-              </g>
-            );
-          })}
 
           <path
             d={stepAreaToZero(points, xScale, yScale, zeroY)}
@@ -330,25 +263,6 @@ export default function FundPnlChart({
               />
             </>
           )}
-
-          {xTicks.map((tick, index) => {
-            const isFirst = index === 0;
-            const isLast = index === xTicks.length - 1;
-            const x = isFirst ? 2 : isLast ? W - 2 : tick.x;
-            const anchor = isFirst ? "start" : isLast ? "end" : "middle";
-
-            return (
-              <text
-                key={tick.t}
-                x={x}
-                y={H - 6}
-                textAnchor={anchor}
-                className="fill-primary/30 font-mono text-sm tabular-nums"
-              >
-                {tick.label}
-              </text>
-            );
-          })}
         </svg>
 
         {activePoint && cursorX != null && cursorT != null && (

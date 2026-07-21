@@ -1,8 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import WalletAccountMenu from "@/components/app/WalletAccountMenu";
 import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
-import SignOut from "@/components/fundations/icons/SignOut";
-import { creatorPath } from "@/lib/funds/creator";
 import { privyAppId } from "@/lib/privy/config";
 import { addressDisplayFallback } from "@/lib/polymarket/profile";
 import { usePolymarketProfile } from "@/lib/polymarket/usePolymarketProfile";
@@ -16,22 +14,19 @@ type Props = {
 };
 
 function restoringPlaceholder(variant: Props["variant"]) {
-  if (variant === "nav") {
-    return (
-      <button
-        type="button"
-        disabled
-        aria-busy="true"
-        className={walletNavButtonClass}
-      >
-        <span className="animate-pulse">Loading…</span>
-      </button>
-    );
+  if (variant === "panel") {
+    return <WalletPanelPlaceholder label="Loading wallet…" variant="button" />;
   }
-  if (variant === "panel" || variant === "create") {
-    return <WalletPanelPlaceholder />;
-  }
-  return null;
+  return (
+    <button
+      type="button"
+      disabled
+      aria-busy="true"
+      className={walletNavButtonClass}
+    >
+      <span className="animate-pulse">Loading…</span>
+    </button>
+  );
 }
 
 function ConnectWalletInner({ variant = "panel" }: Props) {
@@ -58,10 +53,6 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
   }
 
   if (isConnected && address) {
-    if (variant === "create") {
-      return null;
-    }
-
     if (switching) {
       return (
         <span className="text-primary/60 text-sm">Switching to Polygon…</span>
@@ -70,46 +61,13 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
 
     const label = displayName || addressDisplayFallback(address);
 
-    if (variant === "nav") {
-      return (
-        <WalletAccountMenu
-          address={address}
-          label={label}
-          verified={verified}
-          onLogout={disconnectWallet}
-        />
-      );
-    }
-
     return (
-      <div className="flex flex-wrap items-center gap-2">
-        <a
-          href={creatorPath(address)}
-          className="text-primary/60 hover:text-primary text-sm transition-colors"
-        >
-          {label}
-        </a>
-        <button
-          type="button"
-          onClick={disconnectWallet}
-          className="text-primary hover:text-primary/80 inline-flex items-center gap-2 text-sm"
-        >
-          <SignOut size="sm" aria-hidden />
-          Log out
-        </button>
-      </div>
-    );
-  }
-
-  if (variant === "nav") {
-    return (
-      <button
-        type="button"
-        onClick={() => login()}
-        className={walletNavButtonClass}
-      >
-        Log in
-      </button>
+      <WalletAccountMenu
+        address={address}
+        label={label}
+        verified={verified}
+        onLogout={disconnectWallet}
+      />
     );
   }
 
@@ -117,7 +75,11 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
     <button
       type="button"
       onClick={() => login()}
-      className="bg-accent text-secondary hover:opacity-90 w-full rounded px-3 py-2 text-sm font-medium"
+      className={
+        variant === "panel"
+          ? `${walletNavButtonClass} w-full`
+          : walletNavButtonClass
+      }
     >
       Log in
     </button>

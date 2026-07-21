@@ -10,6 +10,7 @@ import {
   parseOutcomes,
   type SearchMarket,
 } from "@/lib/polymarket/gamma";
+import { walletNavButtonClass } from "@/lib/walletNavChrome";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 
@@ -367,6 +368,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
                       selected.outcomePrices,
                       outcome,
                     );
+                    const active = selected.side === outcome;
                     return (
                       <button
                         key={outcome}
@@ -374,15 +376,13 @@ export default function ManagerPoolPanel({ fund }: Props) {
                         onClick={() =>
                           setSelected({ ...selected, side: outcome })
                         }
-                        className={
-                          selected.side === outcome
-                            ? "rounded-full border border-white bg-white/10 px-3 py-1 text-xs uppercase text-white"
-                            : "text-primary/50 hover:text-primary px-3 py-1 text-xs uppercase"
-                        }
+                        className={`${walletNavButtonClass} uppercase ${
+                          active ? "text-white" : "text-white/50 hover:text-white"
+                        }`}
                       >
                         {outcome}
                         {cents ? (
-                          <span className="ml-1.5 font-mono tabular-nums normal-case">
+                          <span className="font-mono tabular-nums normal-case">
                             {cents}
                           </span>
                         ) : null}
@@ -395,7 +395,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
                     max={remainingDeployable > 0 ? remainingDeployable : undefined}
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="border-primary/10 bg-primary/5 text-primary w-20 rounded border px-2 py-1.5 text-sm tabular-nums focus:border-white focus:outline-none"
+                    className="border-primary/10 bg-primary/5 text-primary w-20 rounded-[12px] border px-2 py-2 text-sm tabular-nums focus:border-primary/30 focus:outline-none"
                     placeholder="$"
                     aria-label="Pool trade size"
                   />
@@ -403,7 +403,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
                     type="button"
                     disabled={busy || signing}
                     onClick={() => void addToPreview()}
-                    className="border-white text-white hover:bg-white/10 rounded-full border px-3 py-1.5 text-xs font-medium uppercase disabled:opacity-40"
+                    className={`${walletNavButtonClass} uppercase disabled:opacity-40`}
                   >
                     {busy ? "…" : "Add"}
                   </button>
@@ -483,7 +483,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
                     type="button"
                     disabled={busy || signing}
                     onClick={() => void executeAll()}
-                    className="bg-accent text-secondary hover:opacity-90 w-full rounded-full px-4 py-2 text-xs font-medium disabled:opacity-40"
+                    className={`${walletNavButtonClass} w-full disabled:opacity-40`}
                   >
                     {signing
                       ? "Sign…"
