@@ -86,7 +86,7 @@ async function copyText(value: string) {
 const panelShellClass =
   "w-80 overflow-hidden rounded-2xl bg-[#181709] text-white shadow-[0px_0px_40px_-8px_rgba(0,0,0,0.45)]";
 const rowBtnClass =
-  "flex h-[34px] w-full items-center gap-2 px-6 text-left text-sm text-white transition-colors hover:bg-white/10";
+  "flex h-[34px] w-full items-center gap-2 px-6 text-left text-sm text-white";
 const sectionBtnClass =
   "w-full rounded-xl border border-white/15 px-3 py-2 text-sm text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -281,9 +281,6 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                 </div>
 
                 <div className="px-4 py-3">
-                  <p className="mb-2 text-left text-sm font-medium text-white/80">
-                    Polymarket wallet
-                  </p>
                   <div className="flex h-14 w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                     <div className="flex min-w-0 flex-1 flex-col gap-0">
                       <p
@@ -377,7 +374,7 @@ export default function WalletAccountMenu({ address, label, onLogout }: Props) {
                   <p className="px-4 pb-3 text-sm text-red-400">{error}</p>
                 )}
 
-                <div className="flex justify-center px-4 py-3 text-white/40">
+                <div className="flex justify-center px-4 py-5 text-white/40">
                   <a
                     href="https://privy.io"
                     target="_blank"

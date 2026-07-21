@@ -111,14 +111,14 @@ const memberSince = memberSinceIso
     }).format(new Date(memberSinceIso))
   : null;
 
-const roleLabel = funds.length > 0 ? "Fund manager" : "Member";
 const polymarketUrl = profileWalletId
   ? `https://polymarket.com/profile/${profileWalletId}`
   : null;
 
 const metricLabel =
-  "text-primary/50 text-sm font-medium tracking-wide uppercase sm:text-base";
-const metricValue = "text-primary mt-2 font-mono text-2xl tabular-nums sm:text-3xl";
+  "text-primary/45 text-xs font-medium tracking-wide uppercase";
+const metricValue =
+  "text-primary mt-2 font-mono text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl";
 ---
 
 <BaseLayout>
@@ -178,11 +178,6 @@ const metricValue = "text-primary mt-2 font-mono text-2xl tabular-nums sm:text-3
                   <CreatorWalletChip client:load address={profileWalletId} />
                 )
               }
-              <span
-                class="border-primary/20 text-primary/70 rounded-full border px-2.5 py-0.5 text-xs font-medium"
-              >
-                {roleLabel}
-              </span>
             </div>
 
             {
@@ -228,18 +223,18 @@ const metricValue = "text-primary mt-2 font-mono text-2xl tabular-nums sm:text-3
           />
         </div>
 
-        <aside class="border-primary/10 grid h-full min-w-0 grid-cols-2 grid-rows-2 gap-6 border-t pt-6 lg:border-t-0 lg:pt-0">
-          <div class="min-w-0">
+        <aside class="border-primary/10 bg-primary/5 grid h-full min-w-0 grid-cols-2 grid-rows-2 overflow-hidden rounded-lg border">
+          <div class="border-primary/10 flex min-w-0 flex-col justify-center border-r border-b p-5 sm:p-6">
             <p class={metricLabel}>Total deposits</p>
             <p class={metricValue}>{formatUsd(totalDepositedUsdc)}</p>
           </div>
-          <div class="min-w-0">
+          <div class="border-primary/10 flex min-w-0 flex-col justify-center border-b p-5 sm:p-6">
             <p class={metricLabel}>Total returned</p>
             <p class={metricValue}>{formatUsd(totalReturnedUsdc)}</p>
           </div>
-          <div class="min-w-0">
+          <div class="border-primary/10 flex min-w-0 flex-col justify-center border-r p-5 sm:p-6">
             <p class={metricLabel}>Overall performance</p>
-            <p class="mt-2 font-mono text-2xl tabular-nums sm:text-3xl">
+            <p class="mt-2 font-mono text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">
               {
                 overallRoi == null ? (
                   <span class="text-primary/45">—</span>
@@ -253,7 +248,7 @@ const metricValue = "text-primary mt-2 font-mono text-2xl tabular-nums sm:text-3
               }
             </p>
           </div>
-          <div class="min-w-0">
+          <div class="flex min-w-0 flex-col justify-center p-5 sm:p-6">
             <p class={metricLabel}>Fees earned</p>
             <p class={metricValue}>{formatUsd(totalFeesUsdc)}</p>
           </div>
