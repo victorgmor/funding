@@ -21,8 +21,8 @@ const W = 640;
 const H = 200;
 const PAD = { top: 10, right: 0, bottom: 10, left: 0 };
 const LINE_COLOR = "#288cbc";
-/** ~one sample per few px — denser windows still look continuous. */
-const TARGET_SAMPLES = 96;
+/** Even samples across the window — value held between real changes. */
+const TARGET_SAMPLES = 64;
 
 function formatTooltipDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -72,7 +72,7 @@ function scaleLinear(
   return r0 + ((value - d0) / (d1 - d0)) * (r1 - r0);
 }
 
-/** Last known PnL at or before `t` (Polymarket-style hold). */
+/** Last known PnL at or before `t` (hold-forward). */
 function valueAt(points: PnlPoint[], t: number): PnlPoint {
   const first = points[0]!;
   if (t <= first.t) return first;
@@ -85,8 +85,8 @@ function valueAt(points: PnlPoint[], t: number): PnlPoint {
 }
 
 /**
- * Even time grid across the window + exact change times.
- * Between changes the value is held flat (same PnL for hours if nothing fills).
+ * Regular time grid + change times, hold value between fills.
+ * Then collapse flat runs so the curve can ease between levels.
  */
 function sampleHoldSeries(points: PnlPoint[]): PnlPoint[] {
   if (points.length < 2) return points;
@@ -101,103 +101,142 @@ function sampleHoldSeries(points: PnlPoint[]): PnlPoint[] {
   }
   for (const point of points) times.add(point.t);
 
-  const sorted = [...times].sort((a, b) => a - b);
-  return sorted.map((t) => {
+  const sampled = [...times].sort((a, b) => a - b).map((t) => {
     const held = valueAt(points, t);
     return { t, pnl: held.pnl, iso: held.iso };
   });
+
+  // Keep first/last of each plateau — smooth cubic then eases between levels.
+  const collapsed: PnlPoint[] = [];
+  for (let i = 0; i < sampled.length; i++) {
+    const point = sampled[i]!;
+    const prev = collapsed[collapsed.length - 1];
+    const next = sampled[i + 1];
+    if (
+      !prev ||
+      Math.abs(prev.pnl - point.pnl) > 1e-9 ||
+      !next ||
+      Math.abs(next.pnl - point.pnl) > 1e-9
+    ) {
+      collapsed.push(point);
+    }
+  }
+  return collapsed;
 }
 
-/** Step-after with filleted corners (Polymarket-ish blocks, not sharp 90°). */
-const STEP_CORNER = 8;
+type ScreenPoint = { x: number; y: number };
+type CurveSeg = {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  m0: number;
+  m1: number;
+};
 
-function stepScreenPoints(
+function toScreen(
   points: PnlPoint[],
   xScale: (t: number) => number,
   yScale: (v: number) => number,
-) {
+): ScreenPoint[] {
   return points.map((point) => ({
     x: xScale(point.t),
     y: yScale(point.pnl),
   }));
 }
 
-function roundedStepLine(pts: { x: number; y: number }[]) {
-  if (pts.length === 0) return "";
-  const first = pts[0]!;
-  let d = `M ${first.x.toFixed(2)} ${first.y.toFixed(2)}`;
-  let cx = first.x;
-  let cy = first.y;
+/** Monotone cubic — smooth curves, no overshoot on flats. */
+function buildCurveSegs(pts: ScreenPoint[]): CurveSeg[] {
+  if (pts.length < 2) return [];
 
-  for (let i = 1; i < pts.length; i++) {
-    const nx = pts[i]!.x;
-    const ny = pts[i]!.y;
-    const dy = ny - cy;
-    const dx = nx - cx;
+  const n = pts.length;
+  const dx: number[] = [];
+  const m: number[] = [];
+  for (let i = 0; i < n - 1; i++) {
+    const dxi = Math.max(pts[i + 1]!.x - pts[i]!.x, 1e-6);
+    dx[i] = dxi;
+    m[i] = (pts[i + 1]!.y - pts[i]!.y) / dxi;
+  }
 
-    if (Math.abs(dy) < 0.5) {
-      d += ` H ${nx.toFixed(2)}`;
-      cx = nx;
+  const slopes = new Array<number>(n);
+  slopes[0] = m[0]!;
+  slopes[n - 1] = m[n - 2]!;
+  for (let i = 1; i < n - 1; i++) {
+    slopes[i] =
+      m[i - 1]! * m[i]! <= 0 ? 0 : (m[i - 1]! + m[i]!) / 2;
+  }
+
+  for (let i = 0; i < n - 1; i++) {
+    if (Math.abs(m[i]!) < 1e-12) {
+      slopes[i] = 0;
+      slopes[i + 1] = 0;
       continue;
     }
-
-    const r = Math.min(
-      STEP_CORNER,
-      Math.abs(dx) / 2,
-      Math.abs(dy) / 2,
-    );
-
-    if (r < 0.75) {
-      d += ` H ${nx.toFixed(2)} V ${ny.toFixed(2)}`;
-      cx = nx;
-      cy = ny;
-      continue;
-    }
-
-    const sy = Math.sign(dy) || 1;
-    const isLast = i === pts.length - 1;
-
-    // Horizontal into top corner, curve into vertical.
-    d += ` H ${(nx - r).toFixed(2)}`;
-    d += ` Q ${nx.toFixed(2)} ${cy.toFixed(2)} ${nx.toFixed(2)} ${(cy + sy * r).toFixed(2)}`;
-    if (Math.abs(dy) > 2 * r + 0.5) {
-      d += ` V ${(ny - sy * r).toFixed(2)}`;
-    }
-    if (isLast) {
-      d += ` V ${ny.toFixed(2)}`;
-      cx = nx;
-      cy = ny;
-    } else {
-      d += ` Q ${nx.toFixed(2)} ${ny.toFixed(2)} ${(nx + r).toFixed(2)} ${ny.toFixed(2)}`;
-      cx = nx + r;
-      cy = ny;
+    const a = slopes[i]! / m[i]!;
+    const b = slopes[i + 1]! / m[i]!;
+    const s = a * a + b * b;
+    if (s > 9) {
+      const t = 3 / Math.sqrt(s);
+      slopes[i] = t * a * m[i]!;
+      slopes[i + 1] = t * b * m[i]!;
     }
   }
 
-  return d;
+  const segs: CurveSeg[] = [];
+  for (let i = 0; i < n - 1; i++) {
+    segs.push({
+      x0: pts[i]!.x,
+      y0: pts[i]!.y,
+      x1: pts[i + 1]!.x,
+      y1: pts[i + 1]!.y,
+      m0: slopes[i]!,
+      m1: slopes[i + 1]!,
+    });
+  }
+  return segs;
 }
 
-function stepPath(
-  points: PnlPoint[],
-  xScale: (t: number) => number,
-  yScale: (v: number) => number,
-) {
-  return roundedStepLine(stepScreenPoints(points, xScale, yScale));
+function yOnCurve(segs: CurveSeg[], x: number): number {
+  if (segs.length === 0) return 0;
+  const first = segs[0]!;
+  const last = segs[segs.length - 1]!;
+  if (x <= first.x0) return first.y0;
+  if (x >= last.x1) return last.y1;
+
+  const seg = segs.find((s) => x >= s.x0 && x <= s.x1) ?? last;
+  const dx = seg.x1 - seg.x0;
+  const t = dx <= 0 ? 0 : (x - seg.x0) / dx;
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return (
+    (2 * t3 - 3 * t2 + 1) * seg.y0 +
+    (t3 - 2 * t2 + t) * dx * seg.m0 +
+    (-2 * t3 + 3 * t2) * seg.y1 +
+    (t3 - t2) * dx * seg.m1
+  );
 }
 
-function stepArea(
-  points: PnlPoint[],
-  xScale: (t: number) => number,
-  yScale: (v: number) => number,
-  zeroY: number,
-) {
-  if (points.length === 0) return "";
-  const pts = stepScreenPoints(points, xScale, yScale);
+function smoothLine(segs: CurveSeg[], pts: ScreenPoint[]) {
+  if (pts.length === 0) return "";
+  if (pts.length === 1 || segs.length === 0) {
+    return `M ${pts[0]!.x.toFixed(2)} ${pts[0]!.y.toFixed(2)}`;
+  }
+
+  let path = `M ${pts[0]!.x.toFixed(2)} ${pts[0]!.y.toFixed(2)}`;
+  for (const seg of segs) {
+    const dx = seg.x1 - seg.x0;
+    path += ` C ${(seg.x0 + dx / 3).toFixed(2)} ${(seg.y0 + (seg.m0 * dx) / 3).toFixed(2)}, ${(seg.x1 - dx / 3).toFixed(2)} ${(seg.y1 - (seg.m1 * dx) / 3).toFixed(2)}, ${seg.x1.toFixed(2)} ${seg.y1.toFixed(2)}`;
+  }
+  return path;
+}
+
+function smoothArea(segs: CurveSeg[], pts: ScreenPoint[], bottomY: number) {
+  if (pts.length === 0) return "";
+  const line = smoothLine(segs, pts);
   const first = pts[0]!;
   const last = pts[pts.length - 1]!;
-  const line = roundedStepLine(pts);
-  // Close under the rounded step from the true last sample x (not past-corner).
-  return `${line} L ${last.x.toFixed(2)} ${zeroY.toFixed(2)} L ${first.x.toFixed(2)} ${zeroY.toFixed(2)} Z`;
+  // Always fill below the line toward the chart bottom (works for +/− PnL).
+  return `${line} L ${last.x.toFixed(2)} ${bottomY.toFixed(2)} L ${first.x.toFixed(2)} ${bottomY.toFixed(2)} Z`;
 }
 
 export default function FundPnlChart({
@@ -236,15 +275,20 @@ export default function FundPnlChart({
     scaleLinear(t, [xMin, xMax], [PAD.left, PAD.left + plotW]);
   const yScale = (v: number) =>
     scaleLinear(v, [yMin, yMax], [PAD.top + plotH, PAD.top]);
-  const zeroY = yScale(0);
+  const yUnscale = (y: number) =>
+    scaleLinear(y, [PAD.top + plotH, PAD.top], [yMin, yMax]);
+  const bottomY = PAD.top + plotH;
+  const screen = toScreen(points, xScale, yScale);
+  const segs = buildCurveSegs(screen);
 
-  const scrub = hover ? valueAt(eventPoints, hover.t) : null;
-  const displayPnl = scrub?.pnl ?? latest.pnl;
-  const dateLabel = scrub
+  const scrubHeld = hover ? valueAt(eventPoints, hover.t) : null;
+  const cursorX = hover?.x ?? null;
+  const cursorY = cursorX != null ? yOnCurve(segs, cursorX) : null;
+  const displayPnl =
+    cursorY != null ? yUnscale(cursorY) : latest.pnl;
+  const dateLabel = scrubHeld
     ? formatTooltipDate(new Date(hover!.t).toISOString())
     : PNL_RANGE_LABELS[range];
-  const cursorX = hover?.x ?? null;
-  const cursorY = scrub ? yScale(scrub.pnl) : null;
 
   function onPointerMove(event: React.PointerEvent<SVGSVGElement>) {
     const svg = svgRef.current;
@@ -314,11 +358,11 @@ export default function FundPnlChart({
           </defs>
 
           <path
-            d={stepArea(points, xScale, yScale, zeroY)}
+            d={smoothArea(segs, screen, bottomY)}
             fill={`url(#${gradientId})`}
           />
           <path
-            d={stepPath(points, xScale, yScale)}
+            d={smoothLine(segs, screen)}
             fill="none"
             stroke={LINE_COLOR}
             strokeWidth={2}
