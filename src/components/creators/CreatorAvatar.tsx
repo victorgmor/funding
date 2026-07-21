@@ -83,7 +83,7 @@ export default function CreatorAvatar({
         height={
           size === "2xs" ? 24 : size === "xs" ? 32 : size === "sm" ? 40 : 64
         }
-        className={`shrink-0 rounded-full object-cover ${sizeClass} ${className}`}
+        className={`bg-secondary shrink-0 rounded-full object-cover ${sizeClass} ${className}`}
       />
     );
   }
