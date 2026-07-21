@@ -10,7 +10,7 @@ import CreatorAvatar from "@/components/creators/CreatorAvatar";
 import CreatorName from "@/components/creators/CreatorName";
 import CreatorLocalBio from "@/components/creators/CreatorLocalBio";
 import CreatorWalletChip from "@/components/creators/CreatorWalletChip";
-import { getFundsByCreator } from "@/lib/funds/store";
+import { getFundsByCreator, getManagerProfile } from "@/lib/funds/store";
 import { isCreatorWallet } from "@/lib/funds/creator";
 import { sumCreatorProfit } from "@/lib/funds/creators";
 import {
@@ -18,11 +18,7 @@ import {
   type PoolTotalEntry,
 } from "@/lib/funds/performance";
 import { formatPercent, formatUsd } from "@/lib/funds/format";
-import {
-  fetchPolymarketProfile,
-  polymarketDisplayName,
-  polymarketProfileImage,
-} from "@/lib/polymarket/profile";
+import { managerDisplayName } from "@/lib/funds/managers-dynamodb";
 
 const creatorId = Astro.params.id;
 if (!creatorId) {
@@ -44,10 +40,10 @@ const profileWalletId =
   walletId ?? (manager && isCreatorWallet(manager.id) ? manager.id : null);
 
 if (profileWalletId) {
-  const profile = await fetchPolymarketProfile(profileWalletId);
-  name = polymarketDisplayName(profile, profileWalletId);
-  verified = Boolean(profile?.verifiedBadge);
-  profileImage = polymarketProfileImage(profile);
+  const profile = await getManagerProfile(profileWalletId);
+  name = managerDisplayName(profile);
+  verified = profile.verified;
+  profileImage = profile.avatarUrl;
 }
 
 const initial = name.trim().charAt(0).toUpperCase() || "?";

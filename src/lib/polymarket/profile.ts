@@ -19,7 +19,15 @@ async function fetchProfileByAddress(
     `https://gamma-api.polymarket.com/public-profile?address=${address}`,
   );
   if (!res.ok) return null;
-  return res.json();
+  const data = (await res.json()) as PolymarketProfile & {
+    type?: string;
+    error?: string;
+  };
+  // Gamma returns 200 + { type: "not found error" } for unknown wallets.
+  if (data?.type === "not found error" || data?.error === "profile not found") {
+    return null;
+  }
+  return data;
 }
 
 async function fetchPolymarketProfileUncached(

@@ -76,19 +76,7 @@ async function replaceUserFund(fund: Fund): Promise<void> {
   await dbUpdateFund(fund);
 }
 
-async function resolveManager(address: string): Promise<FundManager> {
-  const id = address.toLowerCase();
-  const profile = await fetchPolymarketProfile(id);
-  const existing = await dbGetManager(id);
-  const record = await dbMergeManager({
-    id,
-    name: polymarketDisplayName(profile, id),
-    verified: Boolean(profile?.verifiedBadge),
-    // Keep custom avatar; otherwise seed from Polymarket.
-    avatarUrl: existing?.avatarUrl ?? polymarketProfileImage(profile),
-    username: existing?.username,
-    bio: existing?.bio,
-  });
+function toFundManager(record: ManagerRecord): FundManager {
   return {
     id: record.id,
     name: managerDisplayName(record),
@@ -96,44 +84,71 @@ async function resolveManager(address: string): Promise<FundManager> {
   };
 }
 
+/** Upsert canonical manager from Polymarket; never trust fund.manager snapshots. */
+async function resolveManagerRecord(address: string): Promise<ManagerRecord> {
+  const id = address.toLowerCase();
+  const profile = await fetchPolymarketProfile(id);
+  const existing = await dbGetManager(id);
+  return dbMergeManager({
+    id,
+    name: polymarketDisplayName(profile, id),
+    // Only update verified when Polymarket returns a real profile.
+    verified: profile
+      ? Boolean(profile.verifiedBadge)
+      : existing?.verified,
+    // Keep custom avatar; otherwise seed from Polymarket.
+    avatarUrl: existing?.avatarUrl ?? polymarketProfileImage(profile),
+    username: existing?.username,
+    bio: existing?.bio,
+  });
+}
+
+async function resolveManager(address: string): Promise<FundManager> {
+  return toFundManager(await resolveManagerRecord(address));
+}
+
 /** Overlay canonical manager profile onto each fund (name / verified). */
 async function hydrateFunds(funds: Fund[]): Promise<Fund[]> {
   if (funds.length === 0) return funds;
 
-  const ids = funds.map((fund) => fund.manager.id);
-  let byId = await dbBatchGetManagers(ids);
+  const ids = [
+    ...new Set(funds.map((fund) => fund.manager.id.toLowerCase())),
+  ];
+  const byId = await dbBatchGetManagers(ids);
 
-  // Lazy backfill: missing managers are resolved from Polymarket once.
-  const missing = [...new Set(ids.map((id) => id.toLowerCase()))].filter(
-    (id) => !byId.has(id),
+  // Backfill missing rows; keep in-memory results (do not re-read Dynamo).
+  await Promise.all(
+    ids
+      .filter((id) => !byId.has(id))
+      .map(async (id) => {
+        byId.set(id, await resolveManagerRecord(id));
+      }),
   );
-  if (missing.length > 0) {
-    await Promise.all(missing.map((id) => resolveManager(id)));
-    byId = await dbBatchGetManagers(ids);
-  }
 
   return funds.map((fund) => {
     const manager = byId.get(fund.manager.id.toLowerCase());
-    if (!manager) return fund;
-    return {
-      ...fund,
-      manager: {
-        id: manager.id,
-        name: managerDisplayName(manager),
-        verified: manager.verified,
-      },
-    };
+    // ponytail: never fall back to per-fund snapshotted verified/name
+    if (!manager) {
+      return {
+        ...fund,
+        manager: {
+          id: fund.manager.id.toLowerCase(),
+          name: fund.manager.id,
+          verified: false,
+        },
+      };
+    }
+    return { ...fund, manager: toFundManager(manager) };
   });
 }
 
 export async function getManagerProfile(
   address: string,
-): Promise<ManagerRecord | undefined> {
+): Promise<ManagerRecord> {
   const id = address.toLowerCase();
   const existing = await dbGetManager(id);
   if (existing) return existing;
-  await resolveManager(id);
-  return dbGetManager(id);
+  return resolveManagerRecord(id);
 }
 
 export async function updateManagerProfile(

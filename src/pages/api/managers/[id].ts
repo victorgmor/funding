@@ -23,12 +23,6 @@ export const GET: APIRoute = async ({ params }) => {
   }
 
   const profile = await getManagerProfile(address);
-  if (!profile) {
-    return new Response(JSON.stringify({ error: "Not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
 
   return new Response(
     JSON.stringify({

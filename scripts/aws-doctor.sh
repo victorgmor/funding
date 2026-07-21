@@ -44,12 +44,22 @@ echo ""
 
 echo "DynamoDB tables"
 for table in "$FUNDS_TABLE" "$CHALLENGES_TABLE" "$ENTITLEMENTS_TABLE" "$MANDATES_TABLE" "$MANAGERS_TABLE"; do
-  check "$table exists" aws dynamodb describe-table --table-name "$table" --region "$AWS_REGION" >/dev/null 2>&1
+  if aws dynamodb describe-table --table-name "$table" --region "$AWS_REGION" >/dev/null 2>&1; then
+    echo "  OK   $table exists"
+  else
+    echo "  FAIL $table exists"
+    fail=1
+  fi
 done
 echo ""
 
 echo "ECS task role ($TASK_ROLE)"
-check "role exists" aws iam get-role --role-name "$TASK_ROLE" >/dev/null 2>&1
+if aws iam get-role --role-name "$TASK_ROLE" >/dev/null 2>&1; then
+  echo "  OK   role exists"
+else
+  echo "  FAIL role exists"
+  fail=1
+fi
 if aws iam list-attached-role-policies --role-name "$TASK_ROLE" --query 'AttachedPolicies[].PolicyName' --output text 2>/dev/null | grep -q "$POLICY_NAME"; then
   echo "  OK   $POLICY_NAME attached"
 else

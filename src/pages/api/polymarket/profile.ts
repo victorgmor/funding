@@ -1,10 +1,9 @@
 import type { APIRoute } from "astro";
 import {
   fetchPolymarketProfile,
-  polymarketDisplayName,
-  polymarketProfileImage,
 } from "@/lib/polymarket/profile";
-import { dbGetManager, managerDisplayName } from "@/lib/funds/managers-dynamodb";
+import { getManagerProfile } from "@/lib/funds/store";
+import { managerDisplayName } from "@/lib/funds/managers-dynamodb";
 
 export const prerender = false;
 
@@ -20,20 +19,17 @@ export const GET: APIRoute = async ({ url }) => {
   const id = address.toLowerCase();
   const [profile, manager] = await Promise.all([
     fetchPolymarketProfile(id),
-    dbGetManager(id),
+    getManagerProfile(id),
   ]);
-
-  const polymarketName = polymarketDisplayName(profile, id);
-  const polymarketImage = polymarketProfileImage(profile);
 
   return new Response(
     JSON.stringify({
       address: id,
-      name: manager ? managerDisplayName(manager) : polymarketName,
-      username: manager?.username ?? "",
-      bio: manager?.bio ?? "",
-      verified: manager?.verified ?? Boolean(profile?.verifiedBadge),
-      profileImage: manager?.avatarUrl ?? polymarketImage,
+      name: managerDisplayName(manager),
+      username: manager.username,
+      bio: manager.bio,
+      verified: manager.verified,
+      profileImage: manager.avatarUrl,
       proxyWallet: profile?.proxyWallet ?? null,
     }),
     {

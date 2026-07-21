@@ -14,6 +14,7 @@ export type MandateTradeStatus =
   | "skipped";
 export type MarketSide = string;
 
+/** Hydrated view of a manager; name/verified come from carriera-managers on read. */
 export type FundManager = {
   id: string;
   name: string;

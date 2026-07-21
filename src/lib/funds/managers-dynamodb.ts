@@ -1,4 +1,4 @@
-import { DynamoDBClient, ResourceNotFoundException } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   BatchGetCommand,
   DynamoDBDocumentClient,
@@ -46,15 +46,6 @@ function table(): string {
   return managersTableName();
 }
 
-function isMissingTable(error: unknown): boolean {
-  if (error instanceof ResourceNotFoundException) return true;
-  const name =
-    error && typeof error === "object" && "name" in error
-      ? String((error as { name: unknown }).name)
-      : "";
-  return name === "ResourceNotFoundException";
-}
-
 export function managerDisplayName(manager: ManagerRecord): string {
   return manager.username.trim() || manager.name.trim() || manager.id;
 }
@@ -93,18 +84,13 @@ function toItem(manager: ManagerRecord) {
 export async function dbGetManager(
   id: string,
 ): Promise<ManagerRecord | undefined> {
-  try {
-    const row = await docClient().send(
-      new GetCommand({
-        TableName: table(),
-        Key: { id: id.toLowerCase() },
-      }),
-    );
-    return asManager((row.Item ?? {}) as Record<string, unknown>);
-  } catch (error) {
-    if (isMissingTable(error)) return undefined;
-    throw error;
-  }
+  const row = await docClient().send(
+    new GetCommand({
+      TableName: table(),
+      Key: { id: id.toLowerCase() },
+    }),
+  );
+  return asManager((row.Item ?? {}) as Record<string, unknown>);
 }
 
 /** Batch-get managers by wallet id (chunks of 100). */
@@ -118,44 +104,33 @@ export async function dbBatchGetManagers(
   if (unique.length === 0) return out;
 
   const name = table();
-  try {
-    for (let i = 0; i < unique.length; i += 100) {
-      const chunk = unique.slice(i, i + 100);
-      const row = await docClient().send(
-        new BatchGetCommand({
-          RequestItems: {
-            [name]: {
-              Keys: chunk.map((id) => ({ id })),
-            },
+  for (let i = 0; i < unique.length; i += 100) {
+    const chunk = unique.slice(i, i + 100);
+    const row = await docClient().send(
+      new BatchGetCommand({
+        RequestItems: {
+          [name]: {
+            Keys: chunk.map((id) => ({ id })),
           },
-        }),
-      );
-      for (const item of row.Responses?.[name] ?? []) {
-        const manager = asManager(item as Record<string, unknown>);
-        if (manager) out.set(manager.id, manager);
-      }
+        },
+      }),
+    );
+    for (const item of row.Responses?.[name] ?? []) {
+      const manager = asManager(item as Record<string, unknown>);
+      if (manager) out.set(manager.id, manager);
     }
-  } catch (error) {
-    if (isMissingTable(error)) return out;
-    throw error;
   }
   return out;
 }
 
 /** Full replace / upsert of a manager row. */
 export async function dbPutManager(manager: ManagerRecord): Promise<void> {
-  try {
-    await docClient().send(
-      new PutCommand({
-        TableName: table(),
-        Item: toItem({ ...manager, updatedAt: new Date().toISOString() }),
-      }),
-    );
-  } catch (error) {
-    // ponytail: allow deploys before managers table exists
-    if (isMissingTable(error)) return;
-    throw error;
-  }
+  await docClient().send(
+    new PutCommand({
+      TableName: table(),
+      Item: toItem({ ...manager, updatedAt: new Date().toISOString() }),
+    }),
+  );
 }
 
 /** Merge profile fields onto an existing (or empty) manager row. */
