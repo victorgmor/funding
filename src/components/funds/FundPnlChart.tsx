@@ -21,8 +21,10 @@ const W = 640;
 const H = 200;
 const PAD = { top: 10, right: 0, bottom: 10, left: 0 };
 const LINE_COLOR = "#288cbc";
-/** Even samples across the window — value held between real changes. */
-const TARGET_SAMPLES = 64;
+/** Regular samples across the window; value held between real fills. */
+const TARGET_SAMPLES = 80;
+/** Polyline resolution for hover + matching the visible spline. */
+const CURVE_SAMPLES = 200;
 
 function formatTooltipDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -72,7 +74,6 @@ function scaleLinear(
   return r0 + ((value - d0) / (d1 - d0)) * (r1 - r0);
 }
 
-/** Last known PnL at or before `t` (hold-forward). */
 function valueAt(points: PnlPoint[], t: number): PnlPoint {
   const first = points[0]!;
   if (t <= first.t) return first;
@@ -84,10 +85,7 @@ function valueAt(points: PnlPoint[], t: number): PnlPoint {
   return points[index]!;
 }
 
-/**
- * Regular time grid + change times, hold value between fills.
- * Then collapse flat runs so the curve can ease between levels.
- */
+/** Even time grid + change times; hold last PnL between fills. */
 function sampleHoldSeries(points: PnlPoint[]): PnlPoint[] {
   if (points.length < 2) return points;
 
@@ -101,142 +99,110 @@ function sampleHoldSeries(points: PnlPoint[]): PnlPoint[] {
   }
   for (const point of points) times.add(point.t);
 
-  const sampled = [...times].sort((a, b) => a - b).map((t) => {
+  return [...times].sort((a, b) => a - b).map((t) => {
     const held = valueAt(points, t);
     return { t, pnl: held.pnl, iso: held.iso };
   });
-
-  // Keep first/last of each plateau — smooth cubic then eases between levels.
-  const collapsed: PnlPoint[] = [];
-  for (let i = 0; i < sampled.length; i++) {
-    const point = sampled[i]!;
-    const prev = collapsed[collapsed.length - 1];
-    const next = sampled[i + 1];
-    if (
-      !prev ||
-      Math.abs(prev.pnl - point.pnl) > 1e-9 ||
-      !next ||
-      Math.abs(next.pnl - point.pnl) > 1e-9
-    ) {
-      collapsed.push(point);
-    }
-  }
-  return collapsed;
 }
 
-type ScreenPoint = { x: number; y: number };
-type CurveSeg = {
-  x0: number;
-  y0: number;
-  x1: number;
-  y1: number;
-  m0: number;
-  m1: number;
-};
+type Pt = { x: number; y: number };
 
 function toScreen(
   points: PnlPoint[],
   xScale: (t: number) => number,
   yScale: (v: number) => number,
-): ScreenPoint[] {
+): Pt[] {
   return points.map((point) => ({
     x: xScale(point.t),
     y: yScale(point.pnl),
   }));
 }
 
-/** Monotone cubic — smooth curves, no overshoot on flats. */
-function buildCurveSegs(pts: ScreenPoint[]): CurveSeg[] {
-  if (pts.length < 2) return [];
-
-  const n = pts.length;
-  const dx: number[] = [];
-  const m: number[] = [];
-  for (let i = 0; i < n - 1; i++) {
-    const dxi = Math.max(pts[i + 1]!.x - pts[i]!.x, 1e-6);
-    dx[i] = dxi;
-    m[i] = (pts[i + 1]!.y - pts[i]!.y) / dxi;
-  }
-
-  const slopes = new Array<number>(n);
-  slopes[0] = m[0]!;
-  slopes[n - 1] = m[n - 2]!;
-  for (let i = 1; i < n - 1; i++) {
-    slopes[i] =
-      m[i - 1]! * m[i]! <= 0 ? 0 : (m[i - 1]! + m[i]!) / 2;
-  }
-
-  for (let i = 0; i < n - 1; i++) {
-    if (Math.abs(m[i]!) < 1e-12) {
-      slopes[i] = 0;
-      slopes[i + 1] = 0;
-      continue;
-    }
-    const a = slopes[i]! / m[i]!;
-    const b = slopes[i + 1]! / m[i]!;
-    const s = a * a + b * b;
-    if (s > 9) {
-      const t = 3 / Math.sqrt(s);
-      slopes[i] = t * a * m[i]!;
-      slopes[i + 1] = t * b * m[i]!;
-    }
-  }
-
-  const segs: CurveSeg[] = [];
-  for (let i = 0; i < n - 1; i++) {
-    segs.push({
-      x0: pts[i]!.x,
-      y0: pts[i]!.y,
-      x1: pts[i + 1]!.x,
-      y1: pts[i + 1]!.y,
-      m0: slopes[i]!,
-      m1: slopes[i + 1]!,
-    });
-  }
-  return segs;
-}
-
-function yOnCurve(segs: CurveSeg[], x: number): number {
-  if (segs.length === 0) return 0;
-  const first = segs[0]!;
-  const last = segs[segs.length - 1]!;
-  if (x <= first.x0) return first.y0;
-  if (x >= last.x1) return last.y1;
-
-  const seg = segs.find((s) => x >= s.x0 && x <= s.x1) ?? last;
-  const dx = seg.x1 - seg.x0;
-  const t = dx <= 0 ? 0 : (x - seg.x0) / dx;
-  const t2 = t * t;
-  const t3 = t2 * t;
-  return (
-    (2 * t3 - 3 * t2 + 1) * seg.y0 +
-    (t3 - 2 * t2 + t) * dx * seg.m0 +
-    (-2 * t3 + 3 * t2) * seg.y1 +
-    (t3 - t2) * dx * seg.m1
-  );
-}
-
-function smoothLine(segs: CurveSeg[], pts: ScreenPoint[]) {
+/** Catmull-Rom → cubic beziers (soft hills like the reference). */
+function catmullRomLine(pts: Pt[]) {
   if (pts.length === 0) return "";
-  if (pts.length === 1 || segs.length === 0) {
+  if (pts.length === 1) {
     return `M ${pts[0]!.x.toFixed(2)} ${pts[0]!.y.toFixed(2)}`;
   }
-
-  let path = `M ${pts[0]!.x.toFixed(2)} ${pts[0]!.y.toFixed(2)}`;
-  for (const seg of segs) {
-    const dx = seg.x1 - seg.x0;
-    path += ` C ${(seg.x0 + dx / 3).toFixed(2)} ${(seg.y0 + (seg.m0 * dx) / 3).toFixed(2)}, ${(seg.x1 - dx / 3).toFixed(2)} ${(seg.y1 - (seg.m1 * dx) / 3).toFixed(2)}, ${seg.x1.toFixed(2)} ${seg.y1.toFixed(2)}`;
+  if (pts.length === 2) {
+    return `M ${pts[0]!.x.toFixed(2)} ${pts[0]!.y.toFixed(2)} L ${pts[1]!.x.toFixed(2)} ${pts[1]!.y.toFixed(2)}`;
   }
-  return path;
+
+  let d = `M ${pts[0]!.x.toFixed(2)} ${pts[0]!.y.toFixed(2)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i]!;
+    const p1 = pts[i]!;
+    const p2 = pts[i + 1]!;
+    const p3 = pts[i + 2] ?? p2;
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+  }
+  return d;
 }
 
-function smoothArea(segs: CurveSeg[], pts: ScreenPoint[], bottomY: number) {
+/**
+ * Area under the curve down to the chart bottom — always below the line
+ * on screen, whether PnL is above or below zero.
+ */
+function areaUnderCurve(pts: Pt[], bottomY: number) {
   if (pts.length === 0) return "";
-  const line = smoothLine(segs, pts);
   const first = pts[0]!;
   const last = pts[pts.length - 1]!;
-  // Always fill below the line toward the chart bottom (works for +/− PnL).
-  return `${line} L ${last.x.toFixed(2)} ${bottomY.toFixed(2)} L ${first.x.toFixed(2)} ${bottomY.toFixed(2)} Z`;
+  const line = catmullRomLine(pts);
+  // Bottom → up to curve → along curve → down to bottom (always under the line).
+  return `M ${first.x.toFixed(2)} ${bottomY.toFixed(2)} ${line.replace(/^M/, "L")} L ${last.x.toFixed(2)} ${bottomY.toFixed(2)} Z`;
+}
+
+function sampleCurve(pts: Pt[], count: number): Pt[] {
+  if (pts.length < 2) return pts;
+  const out: Pt[] = [];
+  const n = pts.length - 1;
+  for (let i = 0; i < count; i++) {
+    const u = i / (count - 1);
+    const f = u * n;
+    const i0 = Math.min(Math.floor(f), n - 1);
+    const t = f - i0;
+    const p0 = pts[i0 - 1] ?? pts[i0]!;
+    const p1 = pts[i0]!;
+    const p2 = pts[i0 + 1]!;
+    const p3 = pts[i0 + 2] ?? p2;
+    // Catmull-Rom interpolate
+    const t2 = t * t;
+    const t3 = t2 * t;
+    const x =
+      0.5 *
+      (2 * p1.x +
+        (-p0.x + p2.x) * t +
+        (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+        (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
+    const y =
+      0.5 *
+      (2 * p1.y +
+        (-p0.y + p2.y) * t +
+        (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+        (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
+    out.push({ x, y });
+  }
+  return out;
+}
+
+function yOnPolyline(poly: Pt[], x: number): number {
+  if (poly.length === 0) return 0;
+  if (x <= poly[0]!.x) return poly[0]!.y;
+  const last = poly[poly.length - 1]!;
+  if (x >= last.x) return last.y;
+  for (let i = 0; i < poly.length - 1; i++) {
+    const a = poly[i]!;
+    const b = poly[i + 1]!;
+    if (x >= a.x && x <= b.x) {
+      const u = (x - a.x) / Math.max(b.x - a.x, 1e-6);
+      return a.y + (b.y - a.y) * u;
+    }
+  }
+  return last.y;
 }
 
 export default function FundPnlChart({
@@ -270,6 +236,7 @@ export default function FundPnlChart({
   const xMin = points[0]!.t;
   const xMax = points[points.length - 1]!.t;
   const latest = eventPoints[eventPoints.length - 1]!;
+  const bottomY = PAD.top + plotH;
 
   const xScale = (t: number) =>
     scaleLinear(t, [xMin, xMax], [PAD.left, PAD.left + plotW]);
@@ -277,17 +244,18 @@ export default function FundPnlChart({
     scaleLinear(v, [yMin, yMax], [PAD.top + plotH, PAD.top]);
   const yUnscale = (y: number) =>
     scaleLinear(y, [PAD.top + plotH, PAD.top], [yMin, yMax]);
-  const bottomY = PAD.top + plotH;
-  const screen = toScreen(points, xScale, yScale);
-  const segs = buildCurveSegs(screen);
 
-  const scrubHeld = hover ? valueAt(eventPoints, hover.t) : null;
+  const screen = toScreen(points, xScale, yScale);
+  const curvePoly = sampleCurve(screen, CURVE_SAMPLES);
+  const linePath = catmullRomLine(screen);
+  const areaPath = areaUnderCurve(screen, bottomY);
+
   const cursorX = hover?.x ?? null;
-  const cursorY = cursorX != null ? yOnCurve(segs, cursorX) : null;
+  const cursorY = cursorX != null ? yOnPolyline(curvePoly, cursorX) : null;
   const displayPnl =
     cursorY != null ? yUnscale(cursorY) : latest.pnl;
-  const dateLabel = scrubHeld
-    ? formatTooltipDate(new Date(hover!.t).toISOString())
+  const dateLabel = hover
+    ? formatTooltipDate(new Date(hover.t).toISOString())
     : PNL_RANGE_LABELS[range];
 
   function onPointerMove(event: React.PointerEvent<SVGSVGElement>) {
@@ -351,21 +319,26 @@ export default function FundPnlChart({
           onPointerLeave={() => setHover(null)}
         >
           <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={LINE_COLOR} stopOpacity="0.22" />
+            {/* Fade from the line toward the chart bottom (user space). */}
+            <linearGradient
+              id={gradientId}
+              gradientUnits="userSpaceOnUse"
+              x1={0}
+              y1={PAD.top}
+              x2={0}
+              y2={bottomY}
+            >
+              <stop offset="0%" stopColor={LINE_COLOR} stopOpacity="0.28" />
               <stop offset="100%" stopColor={LINE_COLOR} stopOpacity="0" />
             </linearGradient>
           </defs>
 
+          <path d={areaPath} fill={`url(#${gradientId})`} />
           <path
-            d={smoothArea(segs, screen, bottomY)}
-            fill={`url(#${gradientId})`}
-          />
-          <path
-            d={smoothLine(segs, screen)}
+            d={linePath}
             fill="none"
             stroke={LINE_COLOR}
-            strokeWidth={2}
+            strokeWidth={2.5}
             strokeLinejoin="round"
             strokeLinecap="round"
           />
@@ -376,16 +349,16 @@ export default function FundPnlChart({
                 x1={cursorX}
                 x2={cursorX}
                 y1={PAD.top}
-                y2={PAD.top + plotH}
+                y2={bottomY}
                 stroke={LINE_COLOR}
-                strokeOpacity={0.4}
+                strokeOpacity={0.35}
                 strokeDasharray="3 4"
                 vectorEffect="non-scaling-stroke"
               />
               <circle
                 cx={cursorX}
                 cy={cursorY}
-                r={3.5}
+                r={4}
                 fill={LINE_COLOR}
                 stroke="#0f2918"
                 strokeWidth={2}
