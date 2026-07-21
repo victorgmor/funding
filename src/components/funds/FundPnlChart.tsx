@@ -21,9 +21,8 @@ const W = 640;
 const H = 200;
 const PAD = { top: 10, right: 0, bottom: 10, left: 0 };
 const LINE_COLOR = "#288cbc";
-/** Even time samples — turns trade jumps into gentle slopes. */
-const RESAMPLE_COUNT = 48;
-const BLUR_PASSES = 2;
+/** ~one sample per few px — denser windows still look continuous. */
+const TARGET_SAMPLES = 96;
 
 function formatTooltipDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -73,190 +72,79 @@ function scaleLinear(
   return r0 + ((value - d0) / (d1 - d0)) * (r1 - r0);
 }
 
-type ScreenPoint = { x: number; y: number };
+/** Last known PnL at or before `t` (Polymarket-style hold). */
+function valueAt(points: PnlPoint[], t: number): PnlPoint {
+  const first = points[0]!;
+  if (t <= first.t) return first;
+  let index = 0;
+  for (let i = 0; i < points.length; i++) {
+    if (points[i]!.t <= t) index = i;
+    else break;
+  }
+  return points[index]!;
+}
 
-type CurveSeg = {
-  x0: number;
-  y0: number;
-  x1: number;
-  y1: number;
-  m0: number;
-  m1: number;
-};
-
-/** Resample + light blur so sudden fills become soft hills, not spikes. */
-function softenSeries(points: PnlPoint[]): PnlPoint[] {
+/**
+ * Even time grid across the window + exact change times.
+ * Between changes the value is held flat (same PnL for hours if nothing fills).
+ */
+function sampleHoldSeries(points: PnlPoint[]): PnlPoint[] {
   if (points.length < 2) return points;
 
   const t0 = points[0]!.t;
   const t1 = points[points.length - 1]!.t;
   if (t1 <= t0) return points;
 
-  const sampled: PnlPoint[] = [];
-  for (let i = 0; i < RESAMPLE_COUNT; i++) {
-    const t = t0 + ((t1 - t0) * i) / (RESAMPLE_COUNT - 1);
-    let lo = 0;
-    while (lo < points.length - 2 && points[lo + 1]!.t < t) lo += 1;
-    const a = points[lo]!;
-    const b = points[Math.min(lo + 1, points.length - 1)]!;
-    const span = b.t - a.t;
-    const u = span <= 0 ? 0 : (t - a.t) / span;
-    const pnl = a.pnl + (b.pnl - a.pnl) * Math.min(1, Math.max(0, u));
-    sampled.push({
-      t,
-      pnl,
-      iso: u < 0.5 ? a.iso : b.iso,
-    });
+  const times = new Set<number>();
+  for (let i = 0; i < TARGET_SAMPLES; i++) {
+    times.add(t0 + ((t1 - t0) * i) / (TARGET_SAMPLES - 1));
   }
+  for (const point of points) times.add(point.t);
 
-  let blurred = sampled;
-  for (let pass = 0; pass < BLUR_PASSES; pass++) {
-    blurred = blurred.map((point, index, arr) => {
-      if (index === 0 || index === arr.length - 1) return point;
-      const prev = arr[index - 1]!;
-      const next = arr[index + 1]!;
-      return {
-        ...point,
-        pnl: (prev.pnl + point.pnl * 2 + next.pnl) / 4,
-      };
-    });
-  }
-
-  // Keep endpoints exact so latest / origin match real PnL.
-  blurred[0] = { ...blurred[0]!, pnl: points[0]!.pnl, iso: points[0]!.iso };
-  blurred[blurred.length - 1] = {
-    ...blurred[blurred.length - 1]!,
-    pnl: points[points.length - 1]!.pnl,
-    iso: points[points.length - 1]!.iso,
-  };
-
-  return blurred;
+  const sorted = [...times].sort((a, b) => a - b);
+  return sorted.map((t) => {
+    const held = valueAt(points, t);
+    return { t, pnl: held.pnl, iso: held.iso };
+  });
 }
 
-function toScreen(
+/** Step-after path — flat until the next sample, then vertical to the new level. */
+function stepPath(
   points: PnlPoint[],
   xScale: (t: number) => number,
   yScale: (v: number) => number,
-): ScreenPoint[] {
-  return points.map((point) => ({
-    x: xScale(point.t),
-    y: yScale(point.pnl),
-  }));
-}
+) {
+  if (points.length === 0) return "";
+  const first = points[0]!;
+  let path = `M ${xScale(first.t).toFixed(2)} ${yScale(first.pnl).toFixed(2)}`;
 
-function buildCurveSegs(pts: ScreenPoint[]): CurveSeg[] {
-  if (pts.length < 2) return [];
-
-  const n = pts.length;
-  const dx: number[] = [];
-  const m: number[] = [];
-  for (let i = 0; i < n - 1; i++) {
-    const dxi = Math.max(pts[i + 1]!.x - pts[i]!.x, 1e-6);
-    dx[i] = dxi;
-    m[i] = (pts[i + 1]!.y - pts[i]!.y) / dxi;
+  for (let index = 1; index < points.length; index++) {
+    const point = points[index]!;
+    path += ` H ${xScale(point.t).toFixed(2)} V ${yScale(point.pnl).toFixed(2)}`;
   }
 
-  const slopes = new Array<number>(n);
-  slopes[0] = m[0]!;
-  slopes[n - 1] = m[n - 2]!;
-  for (let i = 1; i < n - 1; i++) {
-    slopes[i] =
-      m[i - 1]! * m[i]! <= 0 ? 0 : (m[i - 1]! + m[i]!) / 2;
-  }
-
-  for (let i = 0; i < n - 1; i++) {
-    if (Math.abs(m[i]!) < 1e-12) {
-      slopes[i] = 0;
-      slopes[i + 1] = 0;
-      continue;
-    }
-    const a = slopes[i]! / m[i]!;
-    const b = slopes[i + 1]! / m[i]!;
-    const s = a * a + b * b;
-    if (s > 9) {
-      const t = 3 / Math.sqrt(s);
-      slopes[i] = t * a * m[i]!;
-      slopes[i + 1] = t * b * m[i]!;
-    }
-  }
-
-  // Cap slope so near-vertical trade jumps stay soft visually.
-  const maxSlope = (PAD.top + (H - PAD.top - PAD.bottom)) / 40;
-  for (let i = 0; i < n; i++) {
-    slopes[i] = Math.max(-maxSlope, Math.min(maxSlope, slopes[i]!));
-  }
-
-  const segs: CurveSeg[] = [];
-  for (let i = 0; i < n - 1; i++) {
-    segs.push({
-      x0: pts[i]!.x,
-      y0: pts[i]!.y,
-      x1: pts[i + 1]!.x,
-      y1: pts[i + 1]!.y,
-      m0: slopes[i]!,
-      m1: slopes[i + 1]!,
-    });
-  }
-  return segs;
-}
-
-function yOnCurve(segs: CurveSeg[], x: number): number {
-  if (segs.length === 0) return 0;
-  const first = segs[0]!;
-  const last = segs[segs.length - 1]!;
-  if (x <= first.x0) return first.y0;
-  if (x >= last.x1) return last.y1;
-
-  const seg = segs.find((s) => x >= s.x0 && x <= s.x1) ?? last;
-  const dx = seg.x1 - seg.x0;
-  const t = dx <= 0 ? 0 : (x - seg.x0) / dx;
-  const t2 = t * t;
-  const t3 = t2 * t;
-  const h00 = 2 * t3 - 3 * t2 + 1;
-  const h10 = t3 - 2 * t2 + t;
-  const h01 = -2 * t3 + 3 * t2;
-  const h11 = t3 - t2;
-  return h00 * seg.y0 + h10 * dx * seg.m0 + h01 * seg.y1 + h11 * dx * seg.m1;
-}
-
-function smoothLine(segs: CurveSeg[], pts: ScreenPoint[]) {
-  if (pts.length === 0) return "";
-  if (pts.length === 1 || segs.length === 0) {
-    return `M ${pts[0]!.x.toFixed(2)} ${pts[0]!.y.toFixed(2)}`;
-  }
-
-  let path = `M ${pts[0]!.x.toFixed(2)} ${pts[0]!.y.toFixed(2)}`;
-  for (const seg of segs) {
-    const dx = seg.x1 - seg.x0;
-    path += ` C ${(seg.x0 + dx / 3).toFixed(2)} ${(seg.y0 + (seg.m0 * dx) / 3).toFixed(2)}, ${(seg.x1 - dx / 3).toFixed(2)} ${(seg.y1 - (seg.m1 * dx) / 3).toFixed(2)}, ${seg.x1.toFixed(2)} ${seg.y1.toFixed(2)}`;
-  }
   return path;
 }
 
-function smoothArea(segs: CurveSeg[], pts: ScreenPoint[], zeroY: number) {
-  if (pts.length === 0) return "";
-  const line = smoothLine(segs, pts);
-  const first = pts[0]!;
-  const last = pts[pts.length - 1]!;
-  return `${line} L ${last.x.toFixed(2)} ${zeroY.toFixed(2)} L ${first.x.toFixed(2)} ${zeroY.toFixed(2)} Z`;
-}
-
-function pnlAtTime(points: PnlPoint[], t: number): { pnl: number; iso: string } {
-  if (points.length === 0) return { pnl: 0, iso: new Date().toISOString() };
-  if (t <= points[0]!.t) return { pnl: points[0]!.pnl, iso: points[0]!.iso };
+function stepArea(
+  points: PnlPoint[],
+  xScale: (t: number) => number,
+  yScale: (v: number) => number,
+  zeroY: number,
+) {
+  if (points.length === 0) return "";
+  const first = points[0]!;
   const last = points[points.length - 1]!;
-  if (t >= last.t) return { pnl: last.pnl, iso: last.iso };
+  const x0 = xScale(first.t);
+  const y0 = yScale(first.pnl);
 
-  let lo = 0;
-  while (lo < points.length - 2 && points[lo + 1]!.t < t) lo += 1;
-  const a = points[lo]!;
-  const b = points[lo + 1]!;
-  const span = b.t - a.t;
-  const u = span <= 0 ? 0 : (t - a.t) / span;
-  return {
-    pnl: a.pnl + (b.pnl - a.pnl) * u,
-    iso: u < 0.5 ? a.iso : b.iso,
-  };
+  let path = `M ${x0.toFixed(2)} ${zeroY.toFixed(2)} L ${x0.toFixed(2)} ${y0.toFixed(2)}`;
+  for (let index = 1; index < points.length; index++) {
+    const point = points[index]!;
+    path += ` H ${xScale(point.t).toFixed(2)} V ${yScale(point.pnl).toFixed(2)}`;
+  }
+  path += ` L ${xScale(last.t).toFixed(2)} ${zeroY.toFixed(2)} Z`;
+  return path;
 }
 
 export default function FundPnlChart({
@@ -273,49 +161,41 @@ export default function FundPnlChart({
   const [hover, setHover] = useState<{ x: number; t: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const points = useMemo(
+  const eventPoints = useMemo(
     () => filterPnlSeries(series, range),
     [series, range],
   );
-  const drawPoints = useMemo(() => softenSeries(points), [points]);
+  const points = useMemo(
+    () => sampleHoldSeries(eventPoints),
+    [eventPoints],
+  );
 
   if (series.length < 2) return null;
 
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
-  const { min: yMin, max: yMax } = buildYScale(drawPoints);
-  const xMin = drawPoints[0]!.t;
-  const xMax = drawPoints[drawPoints.length - 1]!.t;
-  const latest = points[points.length - 1]!;
+  const { min: yMin, max: yMax } = buildYScale(points);
+  const xMin = points[0]!.t;
+  const xMax = points[points.length - 1]!.t;
+  const latest = eventPoints[eventPoints.length - 1]!;
 
   const xScale = (t: number) =>
     scaleLinear(t, [xMin, xMax], [PAD.left, PAD.left + plotW]);
   const yScale = (v: number) =>
     scaleLinear(v, [yMin, yMax], [PAD.top + plotH, PAD.top]);
-  const yUnscale = (y: number) =>
-    scaleLinear(y, [PAD.top + plotH, PAD.top], [yMin, yMax]);
   const zeroY = yScale(0);
-  const screen = toScreen(drawPoints, xScale, yScale);
-  const segs = buildCurveSegs(screen);
 
-  const cursorX = hover?.x ?? null;
-  const cursorY = cursorX != null ? yOnCurve(segs, cursorX) : null;
-  const scrub =
-    hover != null
-      ? {
-          ...pnlAtTime(points, hover.t),
-          // Match the visible line (softened) for the headline while scrubbing.
-          pnl: yUnscale(yOnCurve(segs, hover.x)),
-        }
-      : null;
+  const scrub = hover ? valueAt(eventPoints, hover.t) : null;
   const displayPnl = scrub?.pnl ?? latest.pnl;
   const dateLabel = scrub
     ? formatTooltipDate(new Date(hover!.t).toISOString())
     : PNL_RANGE_LABELS[range];
+  const cursorX = hover?.x ?? null;
+  const cursorY = scrub ? yScale(scrub.pnl) : null;
 
   function onPointerMove(event: React.PointerEvent<SVGSVGElement>) {
     const svg = svgRef.current;
-    if (!svg || drawPoints.length === 0) return;
+    if (!svg || points.length === 0) return;
 
     const rect = svg.getBoundingClientRect();
     const rawX = ((event.clientX - rect.left) / rect.width) * W;
@@ -381,11 +261,11 @@ export default function FundPnlChart({
           </defs>
 
           <path
-            d={smoothArea(segs, screen, zeroY)}
+            d={stepArea(points, xScale, yScale, zeroY)}
             fill={`url(#${gradientId})`}
           />
           <path
-            d={smoothLine(segs, screen)}
+            d={stepPath(points, xScale, yScale)}
             fill="none"
             stroke={LINE_COLOR}
             strokeWidth={2}
