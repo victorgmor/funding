@@ -151,10 +151,6 @@ export default function FundPnlChart({
   const displayPoint = activePoint ?? latest;
   const lineColor = latest.pnl >= 0 ? "#179e63" : "#ef4444";
   const cursorX = hover?.x ?? null;
-  const cursorT =
-    cursorX != null
-      ? scaleLinear(cursorX, [PAD.left, PAD.left + plotW], [xMin, xMax])
-      : null;
 
   function onPointerMove(event: React.PointerEvent<SVGSVGElement>) {
     const svg = svgRef.current;
@@ -184,13 +180,18 @@ export default function FundPnlChart({
               P&L
             </span>
           )}
-          <p
-            className={`font-mono text-base tabular-nums ${
-              displayPoint.pnl >= 0 ? "text-profit" : "text-red-500"
-            }`}
-          >
-            {formatUsdExact(displayPoint.pnl, true)}
-          </p>
+          <div className="min-w-0">
+            <p
+              className={`font-mono text-2xl tabular-nums tracking-tight ${
+                displayPoint.pnl >= 0 ? "text-profit" : "text-red-500"
+              }`}
+            >
+              {formatUsdExact(displayPoint.pnl, true)}
+            </p>
+            <p className="text-primary/50 text-xs">
+              {formatTooltipDate(new Date(displayPoint.t).toISOString())}
+            </p>
+          </div>
         </div>
 
         <div className="text-primary/45 flex shrink-0 items-center gap-1 text-xs">
@@ -264,28 +265,6 @@ export default function FundPnlChart({
             </>
           )}
         </svg>
-
-        {activePoint && cursorX != null && cursorT != null && (
-          <div
-            className="border-primary/10 bg-secondary/90 pointer-events-none absolute z-10 rounded-md border px-2.5 py-1.5 text-xs shadow-sm backdrop-blur-sm"
-            style={{
-              left: `${Math.min(Math.max((cursorX / W) * 100, 12), 88)}%`,
-              top: 28,
-              transform: "translateX(-50%)",
-            }}
-          >
-            <p className="text-primary/50">
-              {formatTooltipDate(new Date(cursorT).toISOString())}
-            </p>
-            <p
-              className={`font-mono tabular-nums ${
-                activePoint.pnl >= 0 ? "text-profit" : "text-red-500"
-              }`}
-            >
-              {formatUsdExact(activePoint.pnl, true)}
-            </p>
-          </div>
-        )}
       </div>
     </>
   );
