@@ -294,6 +294,10 @@ export default function FundPoolOverview({ fund }: Props) {
 
   if (!pool) return null;
 
+  // AUM is mark-to-market; deployable can't exceed it when losses sit in the cash ledger.
+  const aumUsdc = performance?.aumUsdc ?? pool.totalNotional;
+  const deployableUsdc = Math.max(0, Math.min(pool.totalCash, aumUsdc));
+
   return (
     <div>
       <div className="space-y-2">
@@ -311,11 +315,11 @@ export default function FundPoolOverview({ fund }: Props) {
 
       <p className="text-primary/45 mt-2.5 font-mono text-xs tabular-nums">
         <span className="text-primary/70 font-medium">
-          {formatUsdExact(pool.totalNotional)}
+          {formatUsdExact(aumUsdc)}
         </span>{" "}
         AUM ·{" "}
         <span className="text-primary/70 font-medium">
-          {formatUsdExact(pool.totalCash)}
+          {formatUsdExact(deployableUsdc)}
         </span>{" "}
         deployable · {pool.mandateCount}{" "}
         {pool.mandateCount === 1 ? "investor" : "investors"}
