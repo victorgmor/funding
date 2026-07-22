@@ -14,7 +14,7 @@ import SealCheck from "@/components/fundations/icons/SealCheck.astro";
 import { getFund } from "@/lib/funds/store";
 import { creatorPath, isCreatorWallet } from "@/lib/funds/creator";
 import { formatPublishedAgo } from "@/lib/funds/format";
-import { computeFundPerformance } from "@/lib/funds/performance";
+import { computeFundPoolPerformance } from "@/lib/funds/performance";
 
 const slug = Astro.params.slug;
 if (!slug) {
@@ -26,7 +26,7 @@ if (!fund) {
   return Astro.redirect("/404");
 }
 
-const performance = await computeFundPerformance(fund);
+const performance = await computeFundPoolPerformance(fund);
 const published = formatPublishedAgo(fund.createdAt);
 const showAvatar = isCreatorWallet(fund.manager.id);
 ---

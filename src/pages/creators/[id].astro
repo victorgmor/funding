@@ -14,7 +14,7 @@ import { getFundsByCreator, getManagerProfile } from "@/lib/funds/store";
 import { isCreatorWallet } from "@/lib/funds/creator";
 import { sumCreatorProfit } from "@/lib/funds/creators";
 import {
-  computeFundPerformance,
+  computeFundPoolPerformance,
   type PoolTotalEntry,
 } from "@/lib/funds/performance";
 import { formatPercent, formatUsd } from "@/lib/funds/format";
@@ -51,7 +51,7 @@ const initial = name.trim().charAt(0).toUpperCase() || "?";
 const performanceEntries = await Promise.all(
   funds.map(async (fund) => [
     fund.slug,
-    await computeFundPerformance(fund),
+    await computeFundPoolPerformance(fund),
   ] as const),
 );
 const profitByFundSlug = Object.fromEntries(
