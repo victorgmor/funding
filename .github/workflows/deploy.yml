@@ -65,8 +65,8 @@ jobs:
           context: .
           push: true
           tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Fresh build — GHA cache was serving stale Astro bundles after mandate fixes.
+          no-cache: true
           build-args: |
             PUBLIC_POLY_BUILDER_CODE=${{ secrets.PUBLIC_POLY_BUILDER_CODE }}
             PUBLIC_PRIVY_APP_ID=${{ secrets.PUBLIC_PRIVY_APP_ID }}

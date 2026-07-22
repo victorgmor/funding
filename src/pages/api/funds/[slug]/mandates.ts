@@ -18,7 +18,6 @@ import { listTradesByFund } from "@/lib/funds/mandate-trades";
 import {
   fetchTokenValuations,
   resolveDepositAddresses,
-  tradePnlUsdc,
 } from "@/lib/funds/valuation";
 import { getTradingSession, revokeTradingSession } from "@/lib/funds/trading-sessions";
 import { serverSigningEnabled } from "@/lib/privy/server";
@@ -71,62 +70,74 @@ export const GET: APIRoute = async ({ params, url }) => {
     let mandateValueUsdc: number | null = null;
     let mandateProfitUsdc: number | null = null;
     let mandateDepositedUsdc: number | null = null;
+    let booksSource = "none";
     if (mandate) {
-      const filledTrades = (await listTradesByFund(fund.slug)).filter(
-        (trade) =>
-          trade.mandateId === mandate.id && trade.status === "filled",
-      );
-      const depositByInvestor = await resolveDepositAddresses(fund.slug, [
-        address,
-      ]);
       const depositAddress =
-        depositByInvestor.get(address.toLowerCase()) ??
-        session?.depositAddress?.toLowerCase();
-      const valuations = await fetchTokenValuations(
-        positions,
-        depositByInvestor.size > 0
-          ? depositByInvestor
-          : depositAddress
-            ? new Map([[address.toLowerCase(), depositAddress]])
-            : undefined,
-        filledTrades,
-      );
+        session?.depositAddress?.toLowerCase() ??
+        (
+          await resolveDepositAddresses(fund.slug, [address])
+        ).get(address.toLowerCase());
 
-      const { liveMandateBooks } = await import("@/lib/funds/live-mandate");
-      const live = await liveMandateBooks(
-        mandate,
-        filledTrades,
-        depositAddress,
-        valuations,
-      ).catch((error) => {
-        console.error("[mandates] liveMandateBooks failed", address, error);
-        return null;
-      });
-      if (live) {
-        mandateDepositedUsdc = live.depositedUsdc;
-        mandateProfitUsdc = live.profitUsdc;
-        mandateValueUsdc = live.deployableUsdc;
-        mandate.depositedUsdc = live.depositedUsdc;
-        mandate.cashUsdc = live.cashUsdc;
-        mandate.notionalUsdc = live.deployableUsdc;
+      // Session deposit wallet equity is the Account pUSD number — prefer it.
+      const { knownCommitUsdc, liveMandateBooks, healMandateFromLive } =
+        await import("@/lib/funds/live-mandate");
+      const known = knownCommitUsdc(address, depositAddress);
+      const cash = depositBalanceUsdc ?? 0;
+
+      if (known != null && cash > 0) {
+        // ponytail: direct session+known path; drop once Dynamo stays clean
+        mandateDepositedUsdc = known;
+        mandateValueUsdc = Math.max(cash, known);
+        mandateProfitUsdc = round(mandateValueUsdc - known, 2);
+        mandate.depositedUsdc = known;
+        mandate.notionalUsdc = mandateValueUsdc;
+        mandate.cashUsdc = cash;
+        booksSource = "session-known";
+        await healMandateFromLive(mandate, {
+          depositedUsdc: known,
+          deployableUsdc: mandateValueUsdc,
+          profitUsdc: mandateProfitUsdc,
+          openCostUsdc: 0,
+          openValueUsdc: 0,
+          cashUsdc: cash,
+        }).catch(() => {});
       } else {
-        // ponytail: known commits when live RPC/heal fails; drop once Dynamo is clean
-        const { knownCommitUsdc } = await import("@/lib/funds/live-mandate");
-        const known = knownCommitUsdc(address, depositAddress);
-        if (known != null) {
-          const equity = Math.max(depositBalanceUsdc ?? 0, known);
-          mandateDepositedUsdc = known;
-          mandateValueUsdc = equity;
-          mandateProfitUsdc = round(equity - known, 2);
-          mandate.depositedUsdc = known;
-          mandate.notionalUsdc = equity;
-          if (depositBalanceUsdc != null) mandate.cashUsdc = depositBalanceUsdc;
+        const filledTrades = (await listTradesByFund(fund.slug)).filter(
+          (trade) =>
+            trade.mandateId === mandate.id && trade.status === "filled",
+        );
+        const depositByInvestor = depositAddress
+          ? new Map([[address.toLowerCase(), depositAddress]])
+          : await resolveDepositAddresses(fund.slug, [address]);
+        const valuations = await fetchTokenValuations(
+          positions,
+          depositByInvestor,
+          filledTrades,
+        );
+        const live = await liveMandateBooks(
+          mandate,
+          filledTrades,
+          depositAddress,
+          valuations,
+        ).catch((error) => {
+          console.error("[mandates] liveMandateBooks failed", address, error);
+          return null;
+        });
+        if (live) {
+          mandateDepositedUsdc = live.depositedUsdc;
+          mandateProfitUsdc = live.profitUsdc;
+          mandateValueUsdc = live.deployableUsdc;
+          mandate.depositedUsdc = live.depositedUsdc;
+          mandate.cashUsdc = live.cashUsdc;
+          mandate.notionalUsdc = live.deployableUsdc;
+          booksSource = "live";
         } else {
-          const deposited = mandate.depositedUsdc ?? mandate.notionalUsdc;
+          const deposited = known ?? mandate.depositedUsdc ?? mandate.notionalUsdc;
+          const equity = Math.max(cash, deposited);
           mandateDepositedUsdc = deposited;
-          const equity = Math.max(depositBalanceUsdc ?? 0, deposited);
-          mandateProfitUsdc = round(equity - deposited, 2);
           mandateValueUsdc = equity;
+          mandateProfitUsdc = round(equity - deposited, 2);
+          booksSource = known != null ? "known" : "cash-fallback";
         }
       }
     }
@@ -138,6 +149,8 @@ export const GET: APIRoute = async ({ params, url }) => {
         mandateValueUsdc,
         mandateProfitUsdc,
         mandateDepositedUsdc,
+        booksSource,
+        booksRevision: "session-deposit-v2",
         totalNotional: pool.totalNotional,
         totalDeposited: pool.totalDeposited,
         capRemaining: poolCapRemaining(fund, pool.totalDeposited),
@@ -152,6 +165,7 @@ export const GET: APIRoute = async ({ params, url }) => {
         headers: {
           "Content-Type": "application/json",
           "Cache-Control": "no-store",
+          "X-Books-Revision": "session-deposit-v2",
         },
       },
     );
