@@ -25,22 +25,23 @@ function round(n: number, d: number) {
 
 /**
  * Original commits for wallets corrupted by earlier heals.
- * Keys may be Privy EOA or Polymarket deposit/proxy — both are checked.
+ * Keys may be Privy EOA, Safe/proxy (mandate.investorWallet), or session depositAddress.
  */
 export const KNOWN_COMMIT_USDC: Record<string, number> = {
   "0xdc3b7020ae12ff2ace2a38612b32ad7dd1b4b50f": 16.4,
   "0x78ff1189b36cd929946027b35376a3a9ca556e56": 32.6,
+  // mandate investorWallet (Safe) for the two above
+  "0xb04565e0cb96c48d67d5c3468c9e0a15172b6ccc": 16.4,
+  "0xa8b34fd3931544a6796cde8a0978bd483a4e36f1": 32.6,
 };
 
 export function knownCommitUsdc(
-  owner: string,
-  deposit?: string | null,
+  ...wallets: Array<string | null | undefined>
 ): number | undefined {
-  const o = owner.toLowerCase();
-  if (KNOWN_COMMIT_USDC[o] != null) return KNOWN_COMMIT_USDC[o];
-  if (deposit) {
-    const d = deposit.toLowerCase();
-    if (KNOWN_COMMIT_USDC[d] != null) return KNOWN_COMMIT_USDC[d];
+  for (const w of wallets) {
+    if (!w) continue;
+    const v = KNOWN_COMMIT_USDC[w.toLowerCase()];
+    if (v != null) return v;
   }
   return undefined;
 }
@@ -54,49 +55,56 @@ async function safeCollateral(addr: Address): Promise<number> {
 }
 
 /**
- * deployable = live equity on the funded wallet (matches Account pUSD)
- * deposited  = original commit (known map first — works even when RPC fails)
+ * deployable = live equity on the funded wallet (session depositAddress / Account pUSD)
+ * deposited  = original commit (known map first)
+ *
+ * Mandate.investorWallet is often the Safe; pUSD sits on session.depositAddress.
  */
 export async function liveMandateBooks(
   mandate: Mandate,
   _filledTrades: MandateTrade[] = [],
-  _depositAddress?: string,
+  depositAddress?: string,
   _valuations: Map<string, number> = new Map(),
 ): Promise<LiveMandateBooks | null> {
   void _filledTrades;
-  void _depositAddress;
   void _valuations;
 
   const owner = mandate.investorWallet as Address;
+  const sessionDeposit = depositAddress?.trim()
+    ? (depositAddress.trim() as Address)
+    : null;
 
-  let deposit = owner;
+  let derived = owner;
   try {
-    deposit = await deriveDepositWalletAddress(owner);
+    derived = await deriveDepositWalletAddress(owner);
   } catch {
     /* keep owner */
   }
 
-  const known = knownCommitUsdc(owner, deposit);
+  const known = knownCommitUsdc(owner, sessionDeposit, derived);
 
-  const [onOwner, onDeposit] = await Promise.all([
-    safeCollateral(owner),
-    safeCollateral(deposit),
-  ]);
+  const candidates = [
+    ...new Set(
+      [owner, sessionDeposit, derived]
+        .filter(Boolean)
+        .map((a) => (a as string).toLowerCase()),
+    ),
+  ] as Address[];
 
-  // Also probe known commit addresses directly (covers proxy-as-investor).
-  let knownCash = 0;
-  for (const addr of Object.keys(KNOWN_COMMIT_USDC)) {
-    if (
-      addr === owner.toLowerCase() ||
-      addr === deposit.toLowerCase()
-    ) {
-      knownCash = Math.max(knownCash, await safeCollateral(addr as Address));
+  const balances = await Promise.all(
+    candidates.map((addr) => safeCollateral(addr)),
+  );
+  const cashUsdc = Math.max(0, ...balances);
+
+  // Prefer the wallet that actually holds cash (matches Account).
+  let positionWallet = owner;
+  let best = -1;
+  for (let i = 0; i < candidates.length; i++) {
+    if (balances[i]! >= best) {
+      best = balances[i]!;
+      positionWallet = candidates[i]!;
     }
   }
-
-  const cashUsdc = Math.max(onOwner, onDeposit, knownCash);
-  const positionWallet =
-    onDeposit >= onOwner && onDeposit > 0 ? deposit : owner;
 
   let openValueUsdc = 0;
   let openPnlUsdc = 0;
@@ -116,7 +124,12 @@ export async function liveMandateBooks(
   let depositedUsdc: number;
   if (known != null) {
     depositedUsdc = known;
-  } else if (stored != null && stored > 0 && liveEquity > 0 && stored <= liveEquity + 0.01) {
+  } else if (
+    stored != null &&
+    stored > 0 &&
+    liveEquity > 0 &&
+    stored <= liveEquity + 0.01
+  ) {
     depositedUsdc = round(stored, 2);
   } else if (liveEquity > 0) {
     depositedUsdc = round(Math.max(0, liveEquity - openPnlUsdc), 2);
@@ -126,11 +139,7 @@ export async function liveMandateBooks(
     return null;
   }
 
-  // Deployable is live wallet equity; never below deposited for these books.
-  const deployableUsdc = round(
-    Math.max(liveEquity, depositedUsdc),
-    2,
-  );
+  const deployableUsdc = round(Math.max(liveEquity, depositedUsdc), 2);
   const profitUsdc = round(deployableUsdc - depositedUsdc, 2);
 
   return {

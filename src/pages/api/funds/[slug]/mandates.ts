@@ -49,15 +49,6 @@ export const GET: APIRoute = async ({ params, url }) => {
       (m) => m.investorWallet === address.toLowerCase(),
     );
 
-    let depositBalanceUsdc: number | null = null;
-    try {
-      depositBalanceUsdc = await readInvestorCollateralUsdc(
-        address as `0x${string}`,
-      );
-    } catch {
-      depositBalanceUsdc = null;
-    }
-
     const [positions, session, mandateSettlement] = await Promise.all([
       mandate
         ? reconcileMandatePositions(fund.slug, mandate.id)
@@ -67,6 +58,15 @@ export const GET: APIRoute = async ({ params, url }) => {
         ? getMandateSettlement(fund.slug, address)
         : Promise.resolve(undefined),
     ]);
+
+    // pUSD sits on session.depositAddress (EOA); mandate.investorWallet is often the Safe.
+    const fundedWallet = (session?.depositAddress ?? address) as `0x${string}`;
+    let depositBalanceUsdc: number | null = null;
+    try {
+      depositBalanceUsdc = await readInvestorCollateralUsdc(fundedWallet);
+    } catch {
+      depositBalanceUsdc = null;
+    }
 
     let mandateValueUsdc: number | null = null;
     let mandateProfitUsdc: number | null = null;
@@ -106,7 +106,6 @@ export const GET: APIRoute = async ({ params, url }) => {
         mandateDepositedUsdc = live.depositedUsdc;
         mandateProfitUsdc = live.profitUsdc;
         mandateValueUsdc = live.deployableUsdc;
-        // Surface healed deposited on the mandate payload for the UI.
         mandate.depositedUsdc = live.depositedUsdc;
         mandate.cashUsdc = live.cashUsdc;
         mandate.notionalUsdc = live.deployableUsdc;
@@ -125,14 +124,9 @@ export const GET: APIRoute = async ({ params, url }) => {
         } else {
           const deposited = mandate.depositedUsdc ?? mandate.notionalUsdc;
           mandateDepositedUsdc = deposited;
-          mandateProfitUsdc = round(
-            filledTrades.reduce((sum, trade) => {
-              const pnl = tradePnlUsdc(trade, valuations);
-              return sum + (pnl ?? 0);
-            }, 0),
-            2,
-          );
-          mandateValueUsdc = round(deposited + mandateProfitUsdc, 2);
+          const equity = Math.max(depositBalanceUsdc ?? 0, deposited);
+          mandateProfitUsdc = round(equity - deposited, 2);
+          mandateValueUsdc = equity;
         }
       }
     }
