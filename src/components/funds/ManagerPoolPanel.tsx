@@ -3,7 +3,6 @@ import ConnectWallet from "@/components/app/ConnectWallet";
 import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import { isFundOwner } from "@/lib/funds/editable";
 import { formatUsdExact } from "@/lib/funds/format";
-import type { FundPoolPerformance } from "@/lib/funds/performance";
 import type { Fund, FanoutSlice, VirtualPool } from "@/lib/funds/types";
 import type { MarketSide } from "@/lib/funds/types";
 import {
@@ -35,9 +34,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
   const { address, walletAddress, isConnected, loading: walletLoading } = useWalletGate();
   const isOwner = isFundOwner(fund, walletAddress);
 
-  const [pool, setPool] = useState<
-    (VirtualPool & { performance?: FundPoolPerformance | null }) | null
-  >(null);
+  const [pool, setPool] = useState<VirtualPool | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,11 +50,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
   const [signing, setSigning] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const aumUsdc = pool?.performance?.aumUsdc;
-  const deployable = Math.max(
-    0,
-    Math.min(pool?.totalCash ?? 0, aumUsdc ?? pool?.totalCash ?? 0),
-  );
+  const deployable = Math.max(0, pool?.totalCash ?? 0);
   const queuedTotal = useMemo(
     () => previewQueue.reduce((sum, trade) => sum + trade.totalUsdc, 0),
     [previewQueue],

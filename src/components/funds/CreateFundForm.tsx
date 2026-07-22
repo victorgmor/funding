@@ -6,6 +6,7 @@ import { defaultLifecycleDate } from "@/lib/funds/lifecycle";
 import { MAX_POOL_CAP_USDC } from "@/lib/funds/store";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletGate } from "@/lib/wagmi/useWalletGate";
+import { walletNavButtonClass } from "@/lib/walletNavChrome";
 
 export default function CreateFundForm() {
   return (
@@ -230,7 +231,7 @@ function CreateFundFormInner() {
         type="button"
         onClick={publish}
         disabled={!canPublish || publishing || signing}
-        className="bg-accent text-secondary hover:bg-accent/80 disabled:bg-accent/40 flex h-11 items-center justify-center rounded-full px-5 text-base font-medium transition-all disabled:cursor-not-allowed"
+        className={`${walletNavButtonClass} disabled:cursor-not-allowed disabled:opacity-50`}
       >
         {signing
           ? "Sign in wallet…"

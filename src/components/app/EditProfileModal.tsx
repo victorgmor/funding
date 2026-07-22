@@ -5,6 +5,7 @@ import {
   readLocalProfile,
   writeLocalProfile,
 } from "@/lib/local-profile";
+import { walletNavButtonClass, walletNavRadius } from "@/lib/walletNavChrome";
 
 type Props = {
   open: boolean;
@@ -280,14 +281,14 @@ export default function EditProfileModal({
             <button
               type="button"
               onClick={save}
-              className="bg-accent text-secondary flex-1 rounded-full px-4 py-2.5 text-sm font-medium transition-opacity hover:opacity-90"
+              className={`${walletNavButtonClass} flex-1 border border-white/20`}
             >
               Save Changes
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-full border border-white/25 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
+              className={`flex-1 border border-white/25 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10 ${walletNavRadius}`}
             >
               Cancel
             </button>

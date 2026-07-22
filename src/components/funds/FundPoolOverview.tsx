@@ -360,9 +360,11 @@ export default function FundPoolOverview({ fund }: Props) {
 
   if (!pool) return null;
 
-  // AUM is mark-to-market; deployable can't exceed it when losses sit in the cash ledger.
+  // Deposited (PoolCapBar) = commitment — only changes on deposit/withdraw.
+  // AUM = mark-to-market pool value (moves with wins/losses).
+  // Deployable = mandate cash ready to trade (can exceed deposited after wins).
   const aumUsdc = performance?.aumUsdc ?? pool.totalNotional;
-  const deployableUsdc = Math.max(0, Math.min(pool.totalCash, aumUsdc));
+  const deployableUsdc = Math.max(0, pool.totalCash);
 
   return (
     <div>

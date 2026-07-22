@@ -6,6 +6,7 @@ import { isFundOwner, isUserFund } from "@/lib/funds/editable";
 import type { Fund } from "@/lib/funds/types";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletGate } from "@/lib/wagmi/useWalletGate";
+import { walletNavButtonClass } from "@/lib/walletNavChrome";
 
 type Props = {
   fund: Fund;
@@ -241,7 +242,7 @@ export function FundOwnerControlsInner({ fund }: Props) {
               type="button"
               onClick={() => setManaging(true)}
               disabled={busy}
-              className="border-primary/10 text-primary hover:bg-primary/10 rounded-full border px-4 py-1.5 text-xs font-medium uppercase"
+              className={`${walletNavButtonClass} !px-4 !py-1.5 text-xs uppercase`}
             >
               Manage
             </button>
@@ -249,7 +250,7 @@ export function FundOwnerControlsInner({ fund }: Props) {
               type="button"
               onClick={closeFund}
               disabled={busy || signing}
-              className="border-red-500/30 text-red-300 hover:bg-red-500/10 rounded-full border px-4 py-1.5 text-xs font-medium uppercase"
+              className="border-red-500/30 text-red-300 hover:bg-red-500/10 rounded-[12px] border px-4 py-1.5 text-xs font-medium uppercase"
             >
               {signing ? "Sign…" : busy ? "Closing…" : "Close"}
             </button>
@@ -265,7 +266,7 @@ export function FundOwnerControlsInner({ fund }: Props) {
               type="button"
               onClick={restoreFund}
               disabled={busy || signing}
-              className="bg-accent text-secondary hover:bg-accent/80 disabled:bg-accent/40 rounded-full px-4 py-1.5 text-xs font-medium uppercase"
+              className={`${walletNavButtonClass} !px-4 !py-1.5 text-xs uppercase disabled:opacity-50`}
             >
               {signing ? "Sign…" : busy ? "Restoring…" : "Restore"}
             </button>
@@ -310,7 +311,7 @@ export function FundOwnerControlsInner({ fund }: Props) {
                   type="button"
                   onClick={saveChanges}
                   disabled={!canSave || busy || signing}
-                  className="bg-accent text-secondary hover:bg-accent/80 disabled:bg-accent/40 rounded-full px-4 py-2 text-sm font-medium disabled:cursor-not-allowed"
+                  className={`${walletNavButtonClass} disabled:cursor-not-allowed disabled:opacity-50`}
                 >
                   {signing
                     ? "Sign in wallet…"

@@ -11,6 +11,7 @@ import type { Fund } from "@/lib/funds/types";
 import { usePoolTotals } from "@/lib/funds/usePoolTotals";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletGate } from "@/lib/wagmi/useWalletGate";
+import { walletNavButtonClass } from "@/lib/walletNavChrome";
 
 type Props = { fund: Fund };
 
@@ -125,7 +126,7 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
               type="button"
               disabled={busy || signing}
               onClick={() => setStage("trading")}
-              className="bg-accent text-secondary hover:bg-accent/80 disabled:bg-accent/40 mt-2 rounded-full px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed"
+              className={`${walletNavButtonClass} mt-2 disabled:cursor-not-allowed disabled:opacity-50`}
             >
               {signing
                 ? "Sign in wallet…"
@@ -145,8 +146,8 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
                   onClick={() => setStage(stage.id)}
                   className={
                     active
-                      ? "bg-accent/20 text-accent border-accent/40 rounded-full border px-3 py-1 text-xs font-medium"
-                      : "border-primary/15 text-primary/70 hover:bg-primary/10 rounded-full border px-3 py-1 text-xs font-medium disabled:opacity-40"
+                      ? `${walletNavButtonClass} !px-3 !py-1 text-xs`
+                      : `border-primary/15 text-primary/70 hover:bg-primary/10 rounded-[12px] border px-3 py-1 text-xs font-medium disabled:opacity-40`
                   }
                 >
                   {stage.label}

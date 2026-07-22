@@ -29,6 +29,7 @@ import { wagmiConfig } from "@/lib/wagmi/config";
 import { useEnsurePolygon } from "@/lib/wagmi/useEnsurePolygon";
 import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
+import { walletNavButtonClass } from "@/lib/walletNavChrome";
 
 type Props = { fund: Fund };
 
@@ -469,7 +470,7 @@ export default function MandatePanel({ fund }: Props) {
                 type="button"
                 disabled={committing || signing || (isWithdraw && deployable <= 0)}
                 onClick={commit}
-                className="bg-accent text-secondary hover:opacity-90 mt-3 w-full rounded-full py-2.5 text-sm font-medium disabled:opacity-50"
+                className={`${walletNavButtonClass} mt-3 w-full disabled:opacity-50`}
               >
                 {signing
                   ? "Sign in wallet…"
