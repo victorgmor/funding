@@ -90,15 +90,7 @@ export function buildPnlSeries(
     }
   }
 
-  const last = points[points.length - 1]!;
-  if (Date.now() - last.t > 60_000) {
-    points.push({
-      t: Date.now(),
-      pnl: cumulative,
-      iso: new Date().toISOString(),
-    });
-  }
-
+  // Stop at the last fill — no hold-forward to "now" across empty time.
   return points;
 }
 
