@@ -1,10 +1,9 @@
-import { adjustMandateCash } from "@/lib/funds/mandates";
+import { creditMandateRedeem } from "@/lib/funds/mandates";
 import {
   listAllPositionsByFund,
   savePositionRecord,
 } from "@/lib/funds/mandate-positions";
 import type { MandatePosition } from "@/lib/funds/types";
-import { getAllFunds } from "@/lib/funds/store";
 import { fetchMarketByTokenId } from "@/lib/polymarket/gamma";
 import { submitResolvedPositionRedemption } from "@/lib/polymarket/redeem";
 import { getRelayBuilderConfig } from "@/lib/polymarket/builder-server";
@@ -64,28 +63,6 @@ export async function runRedemptionsForFund(
   return results;
 }
 
-/** Redeem resolved positions for an investor across every fund. */
-export async function runRedemptionsForInvestor(
-  investorWallet: string,
-): Promise<Array<RedeemRun & { fundSlug: string }>> {
-  if (!serverSigningEnabled()) {
-    throw new Error("Server signing not configured");
-  }
-
-  const normalized = investorWallet.toLowerCase();
-  const funds = await getAllFunds();
-  const results: Array<RedeemRun & { fundSlug: string }> = [];
-
-  for (const fund of funds) {
-    const runs = await runRedemptionsForFund(fund.slug, normalized);
-    for (const run of runs) {
-      results.push({ ...run, fundSlug: fund.slug });
-    }
-  }
-
-  return results;
-}
-
 async function redeemSinglePosition(
   fundSlug: string,
   position: MandatePosition,
@@ -127,7 +104,12 @@ async function redeemSinglePosition(
         ? round(position.shares * market.settlementPrice, 2)
         : 0;
     if (estimatedProceeds > 0 && position.costUsdc > 0) {
-      await adjustMandateCash(position.mandateId, fundSlug, estimatedProceeds);
+      await creditMandateRedeem(
+        position.mandateId,
+        fundSlug,
+        estimatedProceeds,
+        position.costUsdc,
+      );
     }
     await markPositionRedeemed(position);
     return {
@@ -176,7 +158,12 @@ async function redeemSinglePosition(
       },
     );
 
-    await adjustMandateCash(position.mandateId, fundSlug, proceedsUsdc);
+    await creditMandateRedeem(
+      position.mandateId,
+      fundSlug,
+      proceedsUsdc,
+      position.costUsdc,
+    );
     await markPositionRedeemed(position);
 
     return {

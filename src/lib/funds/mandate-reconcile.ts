@@ -1,4 +1,4 @@
-import { adjustMandateCash, listMandatesByFund } from "@/lib/funds/mandates";
+import { adjustMandateCash, listMandatesByFund, saveMandateRecord } from "@/lib/funds/mandates";
 import {
   deletePositionsForMandate,
   listAllPositionsByMandate,
@@ -136,17 +136,41 @@ export async function reconcileMandateCash(
   mandate: Mandate,
   positions: MandatePosition[],
 ): Promise<Mandate> {
-  const expected = expectedMandateCash(mandate, positions);
-  const delta = round(expected - mandate.cashUsdc, 2);
-  if (Math.abs(delta) < 0.01) return mandate;
+  let current = mandate;
+  const open = positions.filter(
+    (pos) => pos.mandateId === mandate.id && !pos.redeemedAt && pos.shares > 0,
+  );
+
+  // Heal older mandates: pin depositedUsdc, fold idle redeem cash into notional.
+  const depositedUsdc = current.depositedUsdc ?? current.notionalUsdc;
+  const notionalUsdc =
+    open.length === 0
+      ? round(Math.max(current.notionalUsdc, current.cashUsdc), 2)
+      : current.notionalUsdc;
+  if (
+    current.depositedUsdc == null ||
+    notionalUsdc !== current.notionalUsdc
+  ) {
+    current = {
+      ...current,
+      depositedUsdc,
+      notionalUsdc,
+      updatedAt: new Date().toISOString(),
+    };
+    await saveMandateRecord(current);
+  }
+
+  const expected = expectedMandateCash(current, positions);
+  const delta = round(expected - current.cashUsdc, 2);
+  if (Math.abs(delta) < 0.01) return current;
   // Never claw back cash above deployable floor — keeps redeem proceeds / realized wins.
-  if (delta < 0 && mandate.cashUsdc > expected) return mandate;
+  if (delta < 0 && current.cashUsdc > expected) return current;
 
   try {
-    const updated = await adjustMandateCash(mandate.id, fundSlug, delta);
-    return updated ?? mandate;
+    const updated = await adjustMandateCash(current.id, fundSlug, delta);
+    return updated ?? current;
   } catch {
-    return mandate;
+    return current;
   }
 }
 

@@ -360,11 +360,11 @@ export default function FundPoolOverview({ fund }: Props) {
 
   if (!pool) return null;
 
-  // Deposited (PoolCapBar) = commitment — only changes on deposit/withdraw.
-  // AUM = mark-to-market pool value (moves with wins/losses).
-  // Deployable = mandate cash ready to trade (can exceed deposited after wins).
+  // Deposited (PoolCapBar) = external commitments (notional, compounds on redeem).
+  // AUM = mark-to-market pool value.
+  // Deployable tracks AUM — profits stay in the pool / mandate.
   const aumUsdc = performance?.aumUsdc ?? pool.totalNotional;
-  const deployableUsdc = Math.max(0, pool.totalCash);
+  const deployableUsdc = Math.max(0, aumUsdc);
 
   return (
     <div>

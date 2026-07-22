@@ -38,10 +38,7 @@ export function redactPoolForInvestor(
   return {
     ...pool,
     mandates: own,
-    recentInstructions: pool.recentInstructions,
-    recentTrades: pool.recentTrades.filter(
-      (t) => t.investorWallet === normalized,
-    ),
+    // recentTrades stay fund-wide — Performance chart is pool PnL, not one mandate.
   };
 }
 

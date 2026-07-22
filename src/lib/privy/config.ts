@@ -12,9 +12,9 @@ export const privySignerQuorumId = PUBLIC_PRIVY_SIGNER_QUORUM_ID?.trim() || "";
 export const privyConfig: PrivyClientConfig = {
   loginMethods: ["email", "google"],
   appearance: {
-    // Brand: sage surface + charcoal actions (matches site / wallet chrome)
-    theme: "#d6dfc9",
-    accentColor: "#181709",
+    // Brand: charcoal surface (wallet chrome) + sage accent
+    theme: "#181709",
+    accentColor: "#d6dfc9",
     landingHeader: "Log in to PolyFund",
     showWalletLoginFirst: false,
     walletList: [],

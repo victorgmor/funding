@@ -42,8 +42,6 @@ export type Fund = {
   capUsdc?: number | null;
   /** Manager share of mandate profits on close (0–50) */
   managerProfitSharePct?: number;
-  /** @deprecated legacy field — ignored */
-  fundValue?: number;
   deposited?: number;
   cap?: number | null;
   investors?: number;
@@ -71,7 +69,13 @@ export type Mandate = {
   id: string;
   fundSlug: string;
   investorWallet: string;
+  /** Committed capital including compounded realized PnL. */
   notionalUsdc: number;
+  /**
+   * External deposits only (join / add capital). Never grows on redeem.
+   * Caps withdraw so realized profits stay locked in the mandate.
+   */
+  depositedUsdc?: number;
   cashUsdc: number;
   status: MandateStatus;
   createdAt: string;

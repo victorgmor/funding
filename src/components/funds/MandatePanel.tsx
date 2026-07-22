@@ -34,6 +34,8 @@ type Props = { fund: Fund };
 
 type MandateSummary = {
   mandate: Mandate | null;
+  mandateValueUsdc?: number | null;
+  mandateProfitUsdc?: number | null;
   totalNotional: number;
   capRemaining: number | null;
   raiseOpen: boolean;
@@ -65,8 +67,17 @@ export default function MandatePanel({ fund }: Props) {
 
   const closed = fund.status === "closed";
   const hasMandate = (summary?.mandate?.notionalUsdc ?? 0) > 0;
-  const deployable = summary?.mandate?.cashUsdc ?? 0;
-  const canWithdraw = hasMandate && deployable > 0;
+  const mandateValue =
+    summary?.mandateValueUsdc ?? summary?.mandate?.notionalUsdc ?? 0;
+  const depositedUsdc =
+    summary?.mandate?.depositedUsdc ?? summary?.mandate?.notionalUsdc ?? 0;
+  const cashUsdc = summary?.mandate?.cashUsdc ?? 0;
+  // Realized profits stay committed — only external deposits can leave.
+  const withdrawable = Math.max(
+    0,
+    Math.min(cashUsdc, depositedUsdc, summary?.mandate?.notionalUsdc ?? 0),
+  );
+  const canWithdraw = hasMandate && withdrawable > 0;
   const isWithdraw = mode === "withdraw" && canWithdraw;
   const serverSignerActive = summary?.session?.serverSigner === true;
   const ensuringSigner = useRef(false);
@@ -246,9 +257,9 @@ export default function MandatePanel({ fund }: Props) {
     }
 
     if (isWithdraw) {
-      if (amountUsdc > deployable) {
+      if (amountUsdc > withdrawable) {
         setError(
-          `Only ${formatUsdExact(deployable)} deployable — cannot withdraw ${formatUsdExact(amountUsdc)}`,
+          `Only ${formatUsdExact(withdrawable)} withdrawable — cannot withdraw ${formatUsdExact(amountUsdc)}`,
         );
         return;
       }
@@ -352,12 +363,12 @@ export default function MandatePanel({ fund }: Props) {
           {hasMandate && summary?.mandate && (
             <>
               <p className="text-primary mt-2 font-mono text-lg font-semibold tabular-nums">
-                {formatUsdExact(summary.mandate.notionalUsdc)}
+                {formatUsdExact(mandateValue)}
               </p>
               <p className="text-primary/45 mt-1 font-mono text-xs tabular-nums">
                 Deployable{" "}
                 <span className="text-primary/70 font-mono tabular-nums">
-                  {formatUsdExact(summary.mandate.cashUsdc)}
+                  {formatUsdExact(mandateValue)}
                 </span>
                 {" · "}
                 Pool{" "}
@@ -395,8 +406,8 @@ export default function MandatePanel({ fund }: Props) {
                       type="button"
                       onClick={() => {
                         setMode("withdraw");
-                        if (Number(amount) > deployable) {
-                          setAmount(String(Math.floor(deployable * 100) / 100));
+                        if (Number(amount) > withdrawable) {
+                          setAmount(String(Math.floor(withdrawable * 100) / 100));
                         }
                       }}
                       className={
@@ -417,11 +428,11 @@ export default function MandatePanel({ fund }: Props) {
                   <button
                     type="button"
                     onClick={() =>
-                      setAmount(String(Math.floor(deployable * 100) / 100))
+                      setAmount(String(Math.floor(withdrawable * 100) / 100))
                     }
                     className="text-primary/50 hover:text-primary/70 text-sm tabular-nums"
                   >
-                    {formatUsdExact(deployable)} available
+                    {formatUsdExact(withdrawable)} available
                   </button>
                 ) : (
                   depositBalance != null && (
@@ -458,7 +469,7 @@ export default function MandatePanel({ fund }: Props) {
                   min={isWithdraw ? 0.01 : 5}
                   max={
                     isWithdraw
-                      ? deployable
+                      ? withdrawable
                       : depositBalance != null
                         ? Math.min(
                             depositBalance,
@@ -474,12 +485,12 @@ export default function MandatePanel({ fund }: Props) {
               </div>
               <p className="text-primary/40 mt-2 text-xs">
                 {isWithdraw
-                  ? "Withdraw unused deployable capital back to your deposit wallet while the raise is open. Capital in open positions stays locked."
+                  ? "Withdraw unused external deposits while the raise is open. Realized profits stay committed to the mandate."
                   : "Commitment is backed by pUSD in your Polymarket deposit wallet. Auto-trading is enabled when you join."}
               </p>
               <button
                 type="button"
-                disabled={committing || signing || (isWithdraw && deployable <= 0)}
+                disabled={committing || signing || (isWithdraw && withdrawable <= 0)}
                 onClick={commit}
                 className={`${walletNavButtonClass} mt-3 w-full disabled:opacity-50`}
               >

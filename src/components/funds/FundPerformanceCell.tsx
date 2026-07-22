@@ -58,8 +58,11 @@ function FundPerformanceHeader({
   roi: number | null;
   since?: string;
 }) {
-  const { mandate, committed } = useMandate(fundSlug);
-  const position = committed && mandate ? mandate.notionalUsdc : null;
+  const { mandate, mandateValueUsdc, committed } = useMandate(fundSlug);
+  const position =
+    committed && mandate
+      ? (mandateValueUsdc ?? mandate.notionalUsdc)
+      : null;
 
   if (roi == null && position == null) return null;
 

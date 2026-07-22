@@ -79,6 +79,10 @@ export async function upsertMandateCommitment(
     ? {
         ...existing,
         notionalUsdc: round(existing.notionalUsdc + amountUsdc, 2),
+        depositedUsdc: round(
+          (existing.depositedUsdc ?? existing.notionalUsdc) + amountUsdc,
+          2,
+        ),
         cashUsdc: round(existing.cashUsdc + amountUsdc, 2),
         status: existing.status === "closed" ? "active" : existing.status,
         updatedAt: now,
@@ -88,6 +92,7 @@ export async function upsertMandateCommitment(
         fundSlug,
         investorWallet: normalized,
         notionalUsdc: round(amountUsdc, 2),
+        depositedUsdc: round(amountUsdc, 2),
         cashUsdc: round(amountUsdc, 2),
         status: "active",
         createdAt: now,
@@ -110,16 +115,22 @@ export async function reduceMandateCommitment(
   if (!existing) throw new Error("No mandate to withdraw from");
   if (existing.status === "closed") throw new Error("Mandate is closed");
 
-  const maxWithdraw = round(Math.min(existing.cashUsdc, existing.notionalUsdc), 2);
+  // Profits stay locked — only external deposits can leave.
+  const deposited = existing.depositedUsdc ?? existing.notionalUsdc;
+  const maxWithdraw = round(
+    Math.min(existing.cashUsdc, deposited, existing.notionalUsdc),
+    2,
+  );
   if (amountUsdc > maxWithdraw) {
     throw new Error(
-      `Only $${maxWithdraw.toFixed(2)} deployable — cannot withdraw $${amountUsdc.toFixed(2)}`,
+      `Only $${maxWithdraw.toFixed(2)} withdrawable — realized profits stay committed`,
     );
   }
 
   const mandate: Mandate = {
     ...existing,
     notionalUsdc: round(existing.notionalUsdc - amountUsdc, 2),
+    depositedUsdc: round(deposited - amountUsdc, 2),
     cashUsdc: round(existing.cashUsdc - amountUsdc, 2),
     updatedAt: new Date().toISOString(),
   };
@@ -180,6 +191,30 @@ export async function adjustMandateCash(
   }
 }
 
+/** Credit redeem proceeds to cash and compound realized PnL into notional. */
+export async function creditMandateRedeem(
+  mandateId: string,
+  fundSlug: string,
+  proceedsUsdc: number,
+  costUsdc: number,
+): Promise<Mandate | undefined> {
+  const mandates = await listMandatesByFund(fundSlug);
+  const mandate = mandates.find((m) => m.id === mandateId);
+  if (!mandate) return undefined;
+
+  const profit = round(proceedsUsdc - costUsdc, 2);
+  const next: Mandate = {
+    ...mandate,
+    cashUsdc: round(mandate.cashUsdc + proceedsUsdc, 2),
+    notionalUsdc: round(Math.max(0, mandate.notionalUsdc + profit), 2),
+    depositedUsdc: mandate.depositedUsdc ?? mandate.notionalUsdc,
+    updatedAt: new Date().toISOString(),
+  };
+
+  await saveMandate(next);
+  return next;
+}
+
 async function saveMandate(mandate: Mandate): Promise<void> {
   await mandateDocClient().send(
     new PutCommand({
@@ -191,6 +226,11 @@ async function saveMandate(mandate: Mandate): Promise<void> {
       },
     }),
   );
+}
+
+/** Persist mandate fields after compounding / deposit tracking heals. */
+export async function saveMandateRecord(mandate: Mandate): Promise<void> {
+  await saveMandate(mandate);
 }
 
 export async function setMandateStatus(

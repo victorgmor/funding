@@ -5,11 +5,13 @@ import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 export function useMandate(fundSlug: string, refreshKey = 0) {
   const { address } = useWalletSession();
   const [mandate, setMandate] = useState<Mandate | null>(null);
+  const [mandateValueUsdc, setMandateValueUsdc] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!address) {
       setMandate(null);
+      setMandateValueUsdc(null);
       return;
     }
 
@@ -25,8 +27,16 @@ export function useMandate(fundSlug: string, refreshKey = 0) {
         if (cancelled) return;
         if (!res.ok) throw new Error(data.error ?? "Load failed");
         setMandate(data.mandate ?? null);
+        setMandateValueUsdc(
+          typeof data.mandateValueUsdc === "number"
+            ? data.mandateValueUsdc
+            : null,
+        );
       } catch {
-        if (!cancelled) setMandate(null);
+        if (!cancelled) {
+          setMandate(null);
+          setMandateValueUsdc(null);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -40,5 +50,5 @@ export function useMandate(fundSlug: string, refreshKey = 0) {
 
   const committed = (mandate?.notionalUsdc ?? 0) > 0;
 
-  return { mandate, committed, loading };
+  return { mandate, mandateValueUsdc, committed, loading };
 }
