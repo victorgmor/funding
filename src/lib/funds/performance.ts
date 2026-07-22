@@ -8,14 +8,15 @@ import { buildVirtualPool } from "@/lib/funds/pool";
 import { getFundSettlement } from "@/lib/funds/settlement";
 import {
   fetchTokenValuations,
-  mandateMarkValue,
   resolveDepositAddresses,
+  tradePnlUsdc,
 } from "@/lib/funds/valuation";
 import type { Fund } from "@/lib/funds/types";
 
 export type FundPerformance = {
   roi: number;
   profitUsdc: number;
+  /** deposited + profit — capital available in the pool. */
   aumUsdc: number;
   depositedUsdc: number;
 };
@@ -75,22 +76,15 @@ async function computeFundPoolPerformanceUncached(
     filledTrades,
   );
 
-  // AUM = Σ mandate marks (cash + open MTM). Do not add trade PnL on top of notional.
-  const aumUsdc = round(
-    pool.mandates.reduce(
-      (sum, mandate) =>
-        sum +
-        mandateMarkValue(
-          mandate,
-          positions.filter((pos) => pos.mandateId === mandate.id),
-          valuations,
-          filledTrades,
-        ),
-      0,
-    ),
+  // Deployable = deposited ± Σ trade marks (same basis as the performance chart).
+  const profitUsdc = round(
+    filledTrades.reduce((sum, trade) => {
+      const pnl = tradePnlUsdc(trade, valuations);
+      return sum + (pnl ?? 0);
+    }, 0),
     2,
   );
-  const profitUsdc = round(aumUsdc - depositedUsdc, 2);
+  const aumUsdc = round(depositedUsdc + profitUsdc, 2);
   const roi = round((profitUsdc / depositedUsdc) * 100, 2);
 
   return { roi, profitUsdc, aumUsdc, depositedUsdc };

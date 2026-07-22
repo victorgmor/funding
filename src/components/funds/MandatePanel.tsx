@@ -367,16 +367,14 @@ export default function MandatePanel({ fund }: Props) {
                 {formatUsdExact(mandateValue)}
               </p>
               <p className="text-primary/45 mt-1 font-mono text-xs tabular-nums">
+                Deposited{" "}
+                <span className="text-primary/70 font-mono tabular-nums">
+                  {formatUsdExact(depositedUsdc)}
+                </span>
+                {" · "}
                 Deployable{" "}
                 <span className="text-primary/70 font-mono tabular-nums">
                   {formatUsdExact(mandateValue)}
-                </span>
-                {" · "}
-                Pool{" "}
-                <span className="text-primary/70 font-mono tabular-nums">
-                  {formatUsdExact(
-                    summary.totalDeposited ?? summary.totalNotional,
-                  )}
                 </span>
               </p>
             </>

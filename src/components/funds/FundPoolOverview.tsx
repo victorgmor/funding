@@ -361,10 +361,12 @@ export default function FundPoolOverview({ fund }: Props) {
 
   if (!pool) return null;
 
-  // Deposited = external capital only. AUM / deployable = mark-to-market.
+  // Deposited = external capital. Deployable = deposited ± pool PnL (mark total).
   const depositedUsdc = pool.totalDeposited ?? pool.totalNotional;
-  const aumUsdc = performance?.aumUsdc ?? pool.totalNotional;
-  const deployableUsdc = Math.max(0, aumUsdc);
+  const deployableUsdc = Math.max(
+    0,
+    performance?.aumUsdc ?? depositedUsdc + (pnlAmount ?? 0),
+  );
 
   return (
     <div>
@@ -382,10 +384,6 @@ export default function FundPoolOverview({ fund }: Props) {
       </div>
 
       <p className="text-primary/45 mt-2.5 font-mono text-xs tabular-nums">
-        <span className="text-primary/70 font-medium">
-          {formatUsdExact(aumUsdc)}
-        </span>{" "}
-        AUM ·{" "}
         <span className="text-primary/70 font-medium">
           {formatUsdExact(deployableUsdc)}
         </span>{" "}

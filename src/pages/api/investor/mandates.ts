@@ -5,8 +5,8 @@ import { listMandatesForInvestor } from "@/lib/funds/mandates";
 import { getFund } from "@/lib/funds/store";
 import {
   fetchTokenValuations,
-  mandateMarkValue,
   resolveDepositAddresses,
+  tradePnlUsdc,
 } from "@/lib/funds/valuation";
 import type { Fund, Mandate } from "@/lib/funds/types";
 
@@ -54,14 +54,11 @@ export const GET: APIRoute = async ({ url }) => {
           depositByInvestor,
           filledTrades,
         );
-        const mandateValueUsdc = mandateMarkValue(
-          mandate,
-          positions,
-          valuations,
-          filledTrades,
-        );
         mandateProfitUsdc = round(
-          mandateValueUsdc - (mandate.depositedUsdc ?? mandate.notionalUsdc),
+          filledTrades.reduce((sum, trade) => {
+            const pnl = tradePnlUsdc(trade, valuations);
+            return sum + (pnl ?? 0);
+          }, 0),
           2,
         );
       } catch {

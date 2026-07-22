@@ -116,15 +116,14 @@ export function expectedMandateCash(
 }
 
 /**
- * deposited = external capital; notional = deposited + realized; cash = notional − open cost.
- * Optional on-chain cash heals deposited when it was pinned to an inflated notional.
+ * deposited = external capital (immutable once set);
+ * notional = deposited + realized; cash = notional − open cost.
  */
 export function rebuildMandateBooks(
   mandate: Mandate,
   openPositions: MandatePosition[],
   filledTrades: MandateTrade[],
   valuations: Map<string, number>,
-  onChainCashUsdc?: number,
 ): Mandate {
   const open = openPositions.filter(
     (pos) =>
@@ -144,24 +143,10 @@ export function rebuildMandateBooks(
     if (pnl != null) realizedPnl = round(realizedPnl + pnl, 2);
   }
 
-  let deposited = mandate.depositedUsdc;
-  if (deposited == null) {
-    deposited = round(Math.max(0, mandate.notionalUsdc - realizedPnl), 2);
-  }
-
-  // ponytail: heal only when deposited was pinned (== notional) above on-chain backing
-  if (onChainCashUsdc != null) {
-    const inferred = round(
-      Math.max(0, onChainCashUsdc + openCost - realizedPnl),
-      2,
-    );
-    const pinned =
-      Math.abs(deposited - mandate.notionalUsdc) < 0.02 ||
-      deposited > openCost + mandate.cashUsdc + 0.5;
-    if (pinned && inferred + 0.5 < deposited) {
-      deposited = inferred;
-    }
-  }
+  // Never rewrite deposited — commits own this field.
+  const deposited =
+    mandate.depositedUsdc ??
+    round(Math.max(0, mandate.notionalUsdc - realizedPnl), 2);
 
   const notionalUsdc = round(Math.max(0, deposited + realizedPnl), 2);
   const cashUsdc = round(Math.max(0, notionalUsdc - openCost), 2);
@@ -205,20 +190,18 @@ export async function reconcileMandateCash(
   positions: MandatePosition[],
   filledTrades: MandateTrade[] = [],
   valuations: Map<string, number> = new Map(),
-  onChainCashUsdc?: number,
 ): Promise<Mandate> {
   const open = positions.filter(
     (pos) =>
       pos.mandateId === mandate.id && !pos.redeemedAt && pos.shares > 0,
   );
 
-  if (filledTrades.length > 0 || valuations.size > 0 || onChainCashUsdc != null) {
+  if (filledTrades.length > 0 || valuations.size > 0) {
     const rebuilt = rebuildMandateBooks(
       mandate,
       open,
       filledTrades,
       valuations,
-      onChainCashUsdc,
     );
     if (
       rebuilt.depositedUsdc !== mandate.depositedUsdc ||
@@ -277,14 +260,6 @@ export async function reconcileFundMandates(fundSlug: string): Promise<Mandate[]
   for (const mandate of mandates) {
     const positions = await reconcileMandatePositions(fundSlug, mandate.id);
     const marks = await loadValuations();
-    let onChain: number | undefined;
-    try {
-      onChain = await readDepositWalletBalanceUsdc(
-        mandate.investorWallet as Address,
-      );
-    } catch {
-      onChain = undefined;
-    }
     reconciled.push(
       await reconcileMandateCash(
         fundSlug,
@@ -292,7 +267,6 @@ export async function reconcileFundMandates(fundSlug: string): Promise<Mandate[]
         positions,
         allTrades,
         marks,
-        onChain,
       ),
     );
   }

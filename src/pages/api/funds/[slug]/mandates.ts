@@ -17,13 +17,18 @@ import { reconcileMandatePositions, investorMandateBacking } from "@/lib/funds/m
 import { listTradesByFund } from "@/lib/funds/mandate-trades";
 import {
   fetchTokenValuations,
-  mandateMarkValue,
   resolveDepositAddresses,
+  tradePnlUsdc,
 } from "@/lib/funds/valuation";
 import { getTradingSession, revokeTradingSession } from "@/lib/funds/trading-sessions";
 import { serverSigningEnabled } from "@/lib/privy/server";
 
 export const prerender = false;
+
+function round(n: number, d: number) {
+  const f = 10 ** d;
+  return Math.round(n * f) / f;
+}
 
 export const GET: APIRoute = async ({ params, url }) => {
   const fund = await getFund(params.slug!);
@@ -82,18 +87,16 @@ export const GET: APIRoute = async ({ params, url }) => {
             : undefined,
         filledTrades,
       );
-      mandateValueUsdc = mandateMarkValue(
-        mandate,
-        positions,
-        valuations,
-        filledTrades,
+      const deposited = mandate.depositedUsdc ?? mandate.notionalUsdc;
+      mandateProfitUsdc = round(
+        filledTrades.reduce((sum, trade) => {
+          const pnl = tradePnlUsdc(trade, valuations);
+          return sum + (pnl ?? 0);
+        }, 0),
+        2,
       );
-      mandateProfitUsdc =
-        Math.round(
-          (mandateValueUsdc -
-            (mandate.depositedUsdc ?? mandate.notionalUsdc)) *
-            100,
-        ) / 100;
+      // Mandate = your deposit ± your trade PnL (same basis as pool deployable).
+      mandateValueUsdc = round(deposited + mandateProfitUsdc, 2);
     }
 
     return new Response(
@@ -266,8 +269,3 @@ export const POST: APIRoute = async ({ params, request }) => {
     return new Response(JSON.stringify({ error: message }), { status: 500 });
   }
 };
-
-function round(n: number, d: number) {
-  const f = 10 ** d;
-  return Math.round(n * f) / f;
-}
