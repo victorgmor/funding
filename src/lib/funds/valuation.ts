@@ -39,21 +39,6 @@ export async function resolveDepositAddresses(
   return map;
 }
 
-function filledTradesByToken(
-  trades: MandateTrade[],
-  mandateId: string,
-): Map<string, { shares: number; costUsdc: number }> {
-  const map = new Map<string, { shares: number; costUsdc: number }>();
-  for (const trade of trades) {
-    if (trade.mandateId !== mandateId || trade.status !== "filled") continue;
-    const current = map.get(trade.tokenId) ?? { shares: 0, costUsdc: 0 };
-    current.shares = round(current.shares + trade.shares, 4);
-    current.costUsdc = round(current.costUsdc + trade.usdcAmount, 2);
-    map.set(trade.tokenId, current);
-  }
-  return map;
-}
-
 /** Mark-to-market price per outcome token ($/share). */
 export async function fetchTokenValuations(
   positions: MandatePosition[],
@@ -137,46 +122,27 @@ export function positionMarkValue(
   valuations: Map<string, number>,
 ): number {
   const price = valuations.get(position.tokenId);
-  if (price == null) return position.costUsdc;
+  // Unknown mark → 0, not cost. Cost fallback hid losses on resolved markets.
+  if (price == null) return 0;
   return round(position.shares * price, 2);
-}
-
-/** Realized/unrealized PnL from filled trades whose tokens are no longer open. */
-function closedTradePnl(
-  filledByToken: Map<string, { shares: number; costUsdc: number }>,
-  openTokens: Set<string>,
-  valuations: Map<string, number>,
-): number {
-  let pnl = 0;
-  for (const [tokenId, agg] of filledByToken) {
-    if (openTokens.has(tokenId)) continue;
-    const price = valuations.get(tokenId);
-    if (price == null) continue;
-    pnl += round(agg.shares * price - agg.costUsdc, 2);
-  }
-  return pnl;
 }
 
 export function mandateMarkValue(
   mandate: Mandate,
   positions: MandatePosition[],
   valuations: Map<string, number>,
-  filledTrades: MandateTrade[] = [],
+  _filledTrades: MandateTrade[] = [],
 ): number {
-  const mandateOpen = positions.filter(
-    (pos) =>
-      pos.mandateId === mandate.id && !pos.redeemedAt && pos.shares > 0,
-  );
-  const openTokens = new Set(mandateOpen.map((pos) => pos.tokenId));
-  const openValue = mandateOpen.reduce(
-    (sum, pos) => sum + positionMarkValue(pos, valuations),
-    0,
-  );
+  void _filledTrades;
+  const openValue = positions
+    .filter(
+      (pos) =>
+        pos.mandateId === mandate.id && !pos.redeemedAt && pos.shares > 0,
+    )
+    .reduce((sum, pos) => sum + positionMarkValue(pos, valuations), 0);
 
-  const filledByToken = filledTradesByToken(filledTrades, mandate.id);
-  const realizedPnl = closedTradePnl(filledByToken, openTokens, valuations);
-
-  return round(mandate.cashUsdc + openValue + realizedPnl, 2);
+  // Cash already reflects buys/redeems — do not add closed-trade PnL on top.
+  return round(mandate.cashUsdc + openValue, 2);
 }
 
 /** Per-trade PnL from current/settlement price when available. */

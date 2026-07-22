@@ -630,6 +630,6 @@ export async function fetchMarkPriceByTokenId(
 
   const { fetchTokenMidPrice } = await import("@/lib/polymarket/clob-prices");
   const mid = await fetchTokenMidPrice(tokenId);
-  markPriceCache.set(tokenId, mid);
+  if (mid != null) markPriceCache.set(tokenId, mid);
   return mid;
 }

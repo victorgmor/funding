@@ -61,13 +61,14 @@ export default function EditProfileModal({
           avatarUrl?: string | null;
           polymarketName?: string | null;
           name?: string | null;
+          proxyWallet?: string | null;
         };
         if (cancelled || !res.ok) return;
         setPolyName(data.polymarketName ?? data.name ?? null);
         if (data.avatarUrl) setPolyImage(data.avatarUrl);
         if (!local?.username && data.username) setUsername(data.username);
-        else if (!local?.username && data.polymarketName) {
-          setUsername(data.polymarketName);
+        else if (!local?.username && data.proxyWallet) {
+          setUsername(data.proxyWallet);
         }
         if (!local?.bio && data.bio) setBio(data.bio);
         if (!local?.avatarDataUrl && data.avatarUrl) {
@@ -247,8 +248,8 @@ export default function EditProfileModal({
                 type="text"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
-                placeholder={polyName ?? "Choose a username"}
-                maxLength={40}
+                placeholder={polyName ?? "Polymarket wallet address"}
+                maxLength={42}
                 className={field}
               />
             </div>

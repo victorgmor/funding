@@ -89,6 +89,40 @@ export async function markTradeStatus(
   return updated;
 }
 
+/** Re-lock cash and put a failed fan-out slice back to pending for another FOK attempt. */
+export async function requeueFailedTrade(
+  fundSlug: string,
+  tradeId: string,
+): Promise<MandateTrade> {
+  const trades = await listTradesByFund(fundSlug);
+  const trade = trades.find((row) => row.id === tradeId);
+  if (!trade) throw new Error("Trade not found");
+  if (trade.status !== "failed") {
+    throw new Error("Only failed trades can be retried");
+  }
+
+  const { adjustMandateCash } = await import("@/lib/funds/mandates");
+  const mandate = await adjustMandateCash(
+    trade.mandateId,
+    fundSlug,
+    -trade.usdcAmount,
+  );
+  if (!mandate) {
+    throw new Error(
+      `Not enough deployable cash to retry $${trade.usdcAmount.toFixed(2)}`,
+    );
+  }
+
+  const updated: MandateTrade = {
+    ...trade,
+    status: "pending",
+    detail: undefined,
+    filledAt: undefined,
+  };
+  await saveTrade(updated);
+  return updated;
+}
+
 /** Atomically lock a pending trade before CLOB execution. */
 export async function lockPendingTradeForExecution(
   fundSlug: string,

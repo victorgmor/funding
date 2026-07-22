@@ -9,8 +9,9 @@ import ProfitShareLabel from "@/components/funds/ProfitShareLabel";
 import CreatorName from "@/components/creators/CreatorName";
 import { formatUsdExact } from "@/lib/funds/format";
 import { creatorPath } from "@/lib/funds/creator";
+import { isFundOwner } from "@/lib/funds/editable";
 import { addressDisplayFallback } from "@/lib/polymarket/profile";
-import { POOL_UPDATED_EVENT } from "@/lib/funds/pool-events";
+import { notifyPoolUpdated, POOL_UPDATED_EVENT } from "@/lib/funds/pool-events";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 type Props = { fund: Fund };
@@ -28,7 +29,20 @@ const sizeClass =
 const depositSummaryClass =
   "text-primary/70 shrink-0 text-right font-mono text-sm tabular-nums";
 
-function PredictionsList({ trades }: { trades: MandateTrade[] }) {
+function PredictionsList({
+  trades,
+  fundSlug,
+  managerAddress,
+  canRetry,
+}: {
+  trades: MandateTrade[];
+  fundSlug: string;
+  managerAddress?: string;
+  canRetry: boolean;
+}) {
+  const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [retryError, setRetryError] = useState<string | null>(null);
+
   if (trades.length === 0) {
     return (
       <p className="text-primary/45 py-8 text-center text-sm">
@@ -37,8 +51,31 @@ function PredictionsList({ trades }: { trades: MandateTrade[] }) {
     );
   }
 
+  async function retryTrade(tradeId: string) {
+    if (!managerAddress || retryingId) return;
+    setRetryingId(tradeId);
+    setRetryError(null);
+    try {
+      const res = await fetch(`/api/funds/${fundSlug}/trades/retry`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tradeId, address: managerAddress }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Retry failed");
+      notifyPoolUpdated(fundSlug);
+    } catch (e) {
+      setRetryError(e instanceof Error ? e.message : "Retry failed");
+    } finally {
+      setRetryingId(null);
+    }
+  }
+
   return (
     <>
+      {retryError && (
+        <p className="text-red-400 mb-2 text-xs">{retryError}</p>
+      )}
       {trades.map((trade) => {
         const failed = trade.status === "failed";
 
@@ -52,19 +89,31 @@ function PredictionsList({ trades }: { trades: MandateTrade[] }) {
                 className={`min-w-0 flex-1 truncate text-sm ${
                   failed ? "text-red-400" : "text-primary/80"
                 }`}
-                title={trade.question}
+                title={trade.detail ? `${trade.question} — ${trade.detail}` : trade.question}
               >
                 {trade.question}
               </p>
 
-              <p
-                className={`${sizeClass} ${
-                  failed ? "text-red-400" : "text-primary/70"
-                }`}
-              >
-                {formatUsdExact(trade.usdcAmount)}{" "}
-                {failed ? "FAILED" : trade.side}
-              </p>
+              <div className="flex shrink-0 items-center gap-2">
+                {failed && canRetry && (
+                  <button
+                    type="button"
+                    disabled={retryingId === trade.id}
+                    onClick={() => void retryTrade(trade.id)}
+                    className="text-primary/60 hover:text-primary text-xs font-medium uppercase tracking-wide disabled:opacity-50"
+                  >
+                    {retryingId === trade.id ? "Retrying…" : "Retry"}
+                  </button>
+                )}
+                <p
+                  className={`${sizeClass} ${
+                    failed ? "text-red-400" : "text-primary/70"
+                  }`}
+                >
+                  {formatUsdExact(trade.usdcAmount)}{" "}
+                  {failed ? "FAILED" : trade.side}
+                </p>
+              </div>
             </div>
           </article>
         );
@@ -131,10 +180,14 @@ function FundActivityTabs({
   fund,
   pool,
   closed,
+  managerAddress,
+  canRetry,
 }: {
   fund: Fund;
   pool: PoolState;
   closed: boolean;
+  managerAddress?: string;
+  canRetry: boolean;
 }) {
   const allTrades = pool.recentTrades ?? [];
   const chartTrades = allTrades.filter((trade) => trade.status === "filled");
@@ -205,7 +258,14 @@ function FundActivityTabs({
               Not enough trade history for a performance chart yet.
             </p>
           ))}
-        {tab === "predictions" && <PredictionsList trades={predictions} />}
+        {tab === "predictions" && (
+          <PredictionsList
+            trades={predictions}
+            fundSlug={fund.slug}
+            managerAddress={managerAddress}
+            canRetry={canRetry}
+          />
+        )}
         {tab === "depositors" && (
           <DepositorsList
             depositors={depositors}
@@ -229,6 +289,7 @@ export default function FundPoolOverview({ fund }: Props) {
   const profitShare = fund.managerProfitSharePct ?? 0;
   const performance = pool?.performance ?? null;
   const pnlAmount = performance?.profitUsdc ?? null;
+  const canRetry = !closed && isFundOwner(fund, address);
 
   useEffect(() => {
     const onUpdate = (event: Event) => {
@@ -344,7 +405,13 @@ export default function FundPoolOverview({ fund }: Props) {
         </div>
       )}
 
-      <FundActivityTabs fund={fund} pool={pool} closed={closed} />
+      <FundActivityTabs
+        fund={fund}
+        pool={pool}
+        closed={closed}
+        managerAddress={address}
+        canRetry={canRetry}
+      />
     </div>
   );
 }

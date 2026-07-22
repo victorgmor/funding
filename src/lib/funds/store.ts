@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
+import type { Address } from "viem";
 import {
   fetchPolymarketProfile,
   polymarketDisplayName,
   polymarketProfileImage,
 } from "@/lib/polymarket/profile";
+import { deriveDepositWalletAddress } from "@/lib/polymarket/positions";
 import {
   dbGetFund,
   dbListFunds,
@@ -38,6 +40,18 @@ export const MAX_POOL_CAP_USDC = 15_000;
 /** Published funds are permanent — creators may close but not delete. */
 export const PUBLISHED_FUND_CANNOT_DELETE =
   "Published funds cannot be deleted";
+
+const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/i;
+
+/** Polymarket deposit/proxy wallet — default username for new accounts. */
+async function polymarketWalletAddress(
+  owner: string,
+  proxyWallet?: string | null,
+): Promise<string> {
+  const proxy = proxyWallet?.trim();
+  if (proxy && ADDRESS_RE.test(proxy)) return proxy.toLowerCase();
+  return (await deriveDepositWalletAddress(owner as Address)).toLowerCase();
+}
 
 export type UpdateFundInput = {
   name: string;
@@ -89,6 +103,10 @@ async function resolveManagerRecord(address: string): Promise<ManagerRecord> {
   const id = address.toLowerCase();
   const profile = await fetchPolymarketProfile(id);
   const existing = await dbGetManager(id);
+  const username = existing
+    ? existing.username
+    : await polymarketWalletAddress(id, profile?.proxyWallet);
+
   return dbMergeManager({
     id,
     name: polymarketDisplayName(profile, id),
@@ -98,7 +116,7 @@ async function resolveManagerRecord(address: string): Promise<ManagerRecord> {
       : existing?.verified,
     // Keep custom avatar; otherwise seed from Polymarket.
     avatarUrl: existing?.avatarUrl ?? polymarketProfileImage(profile),
-    username: existing?.username,
+    username,
     bio: existing?.bio,
   });
 }
@@ -245,15 +263,6 @@ export async function closeFund(
   const settlement = await settleFund(updated);
 
   return { fund: updated, settlement };
-}
-
-export async function deleteFund(
-  slug: string,
-  input: CloseFundInput,
-): Promise<never> {
-  void slug;
-  void input;
-  throw new Error(PUBLISHED_FUND_CANNOT_DELETE);
 }
 
 /** Auto-archive a fund that reached trading with $0 raised (called by cron). */

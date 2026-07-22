@@ -59,7 +59,10 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
       );
     }
 
-    const label = displayName || addressDisplayFallback(address);
+    const raw = displayName || addressDisplayFallback(address);
+    const label = /^0x[a-fA-F0-9]{40}$/i.test(raw)
+      ? addressDisplayFallback(raw)
+      : raw;
 
     return (
       <WalletAccountMenu

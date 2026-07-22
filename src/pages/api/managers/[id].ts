@@ -4,12 +4,14 @@ import {
   updateManagerProfile,
 } from "@/lib/funds/store";
 import { managerDisplayName } from "@/lib/funds/managers-dynamodb";
+import { fetchPolymarketProfile } from "@/lib/polymarket/profile";
 
 export const prerender = false;
 
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 const BIO_MAX = 160;
-const USERNAME_MAX = 40;
+/** Fits a full EVM address (0x + 40 hex). */
+const USERNAME_MAX = 42;
 /** DynamoDB item soft cap — keep avatars small. */
 const AVATAR_MAX_CHARS = 350_000;
 
@@ -22,7 +24,10 @@ export const GET: APIRoute = async ({ params }) => {
     });
   }
 
-  const profile = await getManagerProfile(address);
+  const [profile, poly] = await Promise.all([
+    getManagerProfile(address),
+    fetchPolymarketProfile(address.toLowerCase()),
+  ]);
 
   return new Response(
     JSON.stringify({
@@ -33,6 +38,7 @@ export const GET: APIRoute = async ({ params }) => {
       avatarUrl: profile.avatarUrl,
       verified: profile.verified,
       polymarketName: profile.name,
+      proxyWallet: poly?.proxyWallet ?? null,
     }),
     {
       headers: {

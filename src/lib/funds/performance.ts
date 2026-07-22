@@ -8,8 +8,8 @@ import { buildVirtualPool } from "@/lib/funds/pool";
 import { getFundSettlement } from "@/lib/funds/settlement";
 import {
   fetchTokenValuations,
-  mandateMarkValue,
   resolveDepositAddresses,
+  tradePnlUsdc,
 } from "@/lib/funds/valuation";
 import type { Fund } from "@/lib/funds/types";
 
@@ -28,7 +28,7 @@ export type PoolTotalEntry = {
   roiPct: number | null;
 };
 
-const PERF_TTL_MS = 30_000;
+const PERF_TTL_MS = 5_000;
 const perfCache = createTtlCache<FundPoolPerformance | null>(PERF_TTL_MS);
 
 function round(n: number, d: number) {
@@ -74,16 +74,16 @@ async function computeFundPoolPerformanceUncached(
     depositByInvestor,
     filledTrades,
   );
-  const aumUsdc = round(
-    pool.mandates.reduce(
-      (sum, mandate) =>
-        sum +
-        mandateMarkValue(mandate, positions, valuations, filledTrades),
-      0,
-    ),
+
+  // Same marks as the performance chart — deposited + Σ trade PnL.
+  const profitUsdc = round(
+    filledTrades.reduce((sum, trade) => {
+      const pnl = tradePnlUsdc(trade, valuations);
+      return sum + (pnl ?? 0);
+    }, 0),
     2,
   );
-  const profitUsdc = round(aumUsdc - depositedUsdc, 2);
+  const aumUsdc = round(depositedUsdc + profitUsdc, 2);
   const roi = round((profitUsdc / depositedUsdc) * 100, 2);
 
   return { roi, profitUsdc, aumUsdc, depositedUsdc };
@@ -145,13 +145,4 @@ export async function computeProfitByFundSlug(
       }),
     ),
   );
-}
-
-/** @deprecated alias — use computeFundPoolPerformance */
-export async function computeFundPerformance(
-  fund: Fund,
-): Promise<FundPerformance | null> {
-  const perf = await computeFundPoolPerformance(fund);
-  if (!perf) return null;
-  return perf;
 }
