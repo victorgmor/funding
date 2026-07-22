@@ -6,16 +6,10 @@ import { getFund } from "@/lib/funds/store";
 import {
   fetchTokenValuations,
   resolveDepositAddresses,
-  tradePnlUsdc,
 } from "@/lib/funds/valuation";
 import type { Fund, Mandate } from "@/lib/funds/types";
 
 export const prerender = false;
-
-function round(n: number, d: number) {
-  const f = 10 ** d;
-  return Math.round(n * f) / f;
-}
 
 type MandateEntry = {
   fund: Fund;
@@ -40,6 +34,7 @@ export const GET: APIRoute = async ({ url }) => {
       if (!fund) continue;
 
       let mandateProfitUsdc: number | null = null;
+      let healed = mandate;
       try {
         const positions = await reconcileMandatePositions(fund.slug, mandate.id);
         const filledTrades = (await listTradesByFund(fund.slug)).filter(
@@ -54,18 +49,24 @@ export const GET: APIRoute = async ({ url }) => {
           depositByInvestor,
           filledTrades,
         );
-        mandateProfitUsdc = round(
-          filledTrades.reduce((sum, trade) => {
-            const pnl = tradePnlUsdc(trade, valuations);
-            return sum + (pnl ?? 0);
-          }, 0),
-          2,
+        const { liveMandateBooks, healMandateFromLive } = await import(
+          "@/lib/funds/live-mandate"
         );
+        const live = await liveMandateBooks(
+          mandate,
+          filledTrades,
+          depositByInvestor.get(address.toLowerCase()),
+          valuations,
+        );
+        if (live) {
+          healed = await healMandateFromLive(mandate, live);
+          mandateProfitUsdc = live.profitUsdc;
+        }
       } catch {
         mandateProfitUsdc = null;
       }
 
-      entries.push({ fund, mandate, mandateProfitUsdc });
+      entries.push({ fund, mandate: healed, mandateProfitUsdc });
     }
 
     return new Response(JSON.stringify({ mandates: entries }), {

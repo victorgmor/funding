@@ -190,11 +190,28 @@ export async function reconcileMandateCash(
   positions: MandatePosition[],
   filledTrades: MandateTrade[] = [],
   valuations: Map<string, number> = new Map(),
+  depositAddress?: string,
 ): Promise<Mandate> {
   const open = positions.filter(
     (pos) =>
       pos.mandateId === mandate.id && !pos.redeemedAt && pos.shares > 0,
   );
+
+  // Prefer live Polymarket books — Dynamo depositedUsdc may be corrupted.
+  if (depositAddress || filledTrades.some((t) => t.mandateId === mandate.id)) {
+    const { healMandateFromLive, liveMandateBooks } = await import(
+      "@/lib/funds/live-mandate"
+    );
+    const live = await liveMandateBooks(
+      mandate,
+      filledTrades,
+      depositAddress,
+      valuations,
+    );
+    if (live && (live.deployableUsdc > 0 || live.depositedUsdc > 0)) {
+      return healMandateFromLive(mandate, live);
+    }
+  }
 
   if (filledTrades.length > 0 || valuations.size > 0) {
     const rebuilt = rebuildMandateBooks(
@@ -232,41 +249,36 @@ export async function reconcileFundMandates(fundSlug: string): Promise<Mandate[]
     (trade) => trade.status === "filled",
   );
 
-  let valuations: Map<string, number> | null = null;
-  const loadValuations = async () => {
-    if (valuations) return valuations;
-    const { fetchTokenValuations, resolveDepositAddresses } = await import(
-      "@/lib/funds/valuation"
-    );
-    const positions = (
-      await Promise.all(
-        mandates.map((m) => listAllPositionsByMandate(fundSlug, m.id)),
-      )
-    ).flat();
-    const depositByInvestor = await resolveDepositAddresses(
-      fundSlug,
-      mandates.map((m) => m.investorWallet),
-    );
-    valuations = await fetchTokenValuations(
-      positions,
-      depositByInvestor,
-      allTrades,
-    );
-    return valuations;
-  };
+  const { fetchTokenValuations, resolveDepositAddresses } = await import(
+    "@/lib/funds/valuation"
+  );
+  const depositByInvestor = await resolveDepositAddresses(
+    fundSlug,
+    mandates.map((m) => m.investorWallet),
+  );
+  const positions = (
+    await Promise.all(
+      mandates.map((m) => listAllPositionsByMandate(fundSlug, m.id)),
+    )
+  ).flat();
+  const valuations = await fetchTokenValuations(
+    positions,
+    depositByInvestor,
+    allTrades,
+  );
 
   const reconciled: Mandate[] = [];
 
   for (const mandate of mandates) {
-    const positions = await reconcileMandatePositions(fundSlug, mandate.id);
-    const marks = await loadValuations();
+    const openPositions = await reconcileMandatePositions(fundSlug, mandate.id);
     reconciled.push(
       await reconcileMandateCash(
         fundSlug,
         mandate,
-        positions,
+        openPositions,
         allTrades,
-        marks,
+        valuations,
+        depositByInvestor.get(mandate.investorWallet),
       ),
     );
   }

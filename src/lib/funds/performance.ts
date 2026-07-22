@@ -1,16 +1,9 @@
 import { createTtlCache } from "@/lib/cache/ttl";
 import { resolveLifecycleStage } from "@/lib/funds/lifecycle";
-import { listPositionsByFund } from "@/lib/funds/mandate-positions";
-import { listTradesByFund } from "@/lib/funds/mandate-trades";
 import { totalPoolDeposited } from "@/lib/funds/fanout";
 import { listMandatesByFund } from "@/lib/funds/mandates";
 import { buildVirtualPool } from "@/lib/funds/pool";
 import { getFundSettlement } from "@/lib/funds/settlement";
-import {
-  fetchTokenValuations,
-  resolveDepositAddresses,
-  tradePnlUsdc,
-} from "@/lib/funds/valuation";
 import type { Fund } from "@/lib/funds/types";
 
 export type FundPerformance = {
@@ -42,6 +35,7 @@ async function computeFundPoolPerformanceUncached(
 ): Promise<FundPoolPerformance | null> {
   const stage = resolveLifecycleStage(fund);
 
+  // buildVirtualPool reconciles from live Polymarket books first.
   const pool = await buildVirtualPool(fund);
   const depositedUsdc = round(pool.totalDeposited, 2);
   if (depositedUsdc <= 0) return null;
@@ -59,32 +53,9 @@ async function computeFundPoolPerformanceUncached(
     }
   }
 
-  const positions = await listPositionsByFund(fund.slug);
-  const filledTrades = (await listTradesByFund(fund.slug)).filter(
-    (trade) => trade.status === "filled",
-  );
-  const depositByInvestor = await resolveDepositAddresses(
-    fund.slug,
-    [
-      ...pool.mandates.map((mandate) => mandate.investorWallet),
-      ...filledTrades.map((trade) => trade.investorWallet),
-    ],
-  );
-  const valuations = await fetchTokenValuations(
-    positions,
-    depositByInvestor,
-    filledTrades,
-  );
-
-  // Deployable = deposited ± Σ trade marks (same basis as the performance chart).
-  const profitUsdc = round(
-    filledTrades.reduce((sum, trade) => {
-      const pnl = tradePnlUsdc(trade, valuations);
-      return sum + (pnl ?? 0);
-    }, 0),
-    2,
-  );
-  const aumUsdc = round(depositedUsdc + profitUsdc, 2);
+  // After live heal, notional == deployable and deposited is reconstructed.
+  const aumUsdc = round(pool.totalNotional, 2);
+  const profitUsdc = round(aumUsdc - depositedUsdc, 2);
   const roi = round((profitUsdc / depositedUsdc) * 100, 2);
 
   return { roi, profitUsdc, aumUsdc, depositedUsdc };

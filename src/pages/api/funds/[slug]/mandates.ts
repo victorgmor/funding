@@ -70,6 +70,7 @@ export const GET: APIRoute = async ({ params, url }) => {
 
     let mandateValueUsdc: number | null = null;
     let mandateProfitUsdc: number | null = null;
+    let mandateDepositedUsdc: number | null = null;
     if (mandate) {
       const filledTrades = (await listTradesByFund(fund.slug)).filter(
         (trade) =>
@@ -78,25 +79,46 @@ export const GET: APIRoute = async ({ params, url }) => {
       const depositByInvestor = await resolveDepositAddresses(fund.slug, [
         address,
       ]);
+      const depositAddress =
+        depositByInvestor.get(address.toLowerCase()) ??
+        session?.depositAddress?.toLowerCase();
       const valuations = await fetchTokenValuations(
         positions,
         depositByInvestor.size > 0
           ? depositByInvestor
-          : session?.depositAddress
-            ? new Map([[address.toLowerCase(), session.depositAddress.toLowerCase()]])
+          : depositAddress
+            ? new Map([[address.toLowerCase(), depositAddress]])
             : undefined,
         filledTrades,
       );
-      const deposited = mandate.depositedUsdc ?? mandate.notionalUsdc;
-      mandateProfitUsdc = round(
-        filledTrades.reduce((sum, trade) => {
-          const pnl = tradePnlUsdc(trade, valuations);
-          return sum + (pnl ?? 0);
-        }, 0),
-        2,
+
+      const { liveMandateBooks } = await import("@/lib/funds/live-mandate");
+      const live = await liveMandateBooks(
+        mandate,
+        filledTrades,
+        depositAddress,
+        valuations,
       );
-      // Mandate = your deposit ± your trade PnL (same basis as pool deployable).
-      mandateValueUsdc = round(deposited + mandateProfitUsdc, 2);
+      if (live) {
+        mandateDepositedUsdc = live.depositedUsdc;
+        mandateProfitUsdc = live.profitUsdc;
+        mandateValueUsdc = live.deployableUsdc;
+        // Surface healed deposited on the mandate payload for the UI.
+        mandate.depositedUsdc = live.depositedUsdc;
+        mandate.cashUsdc = live.cashUsdc;
+        mandate.notionalUsdc = live.deployableUsdc;
+      } else {
+        const deposited = mandate.depositedUsdc ?? mandate.notionalUsdc;
+        mandateDepositedUsdc = deposited;
+        mandateProfitUsdc = round(
+          filledTrades.reduce((sum, trade) => {
+            const pnl = tradePnlUsdc(trade, valuations);
+            return sum + (pnl ?? 0);
+          }, 0),
+          2,
+        );
+        mandateValueUsdc = round(deposited + mandateProfitUsdc, 2);
+      }
     }
 
     return new Response(
@@ -105,6 +127,7 @@ export const GET: APIRoute = async ({ params, url }) => {
         mandate: mandate ?? null,
         mandateValueUsdc,
         mandateProfitUsdc,
+        mandateDepositedUsdc,
         totalNotional: pool.totalNotional,
         totalDeposited: pool.totalDeposited,
         capRemaining: poolCapRemaining(fund, pool.totalDeposited),
