@@ -89,7 +89,7 @@ function PredictionsList({
                 className={`min-w-0 flex-1 truncate text-sm ${
                   failed ? "text-red-400" : "text-primary/80"
                 }`}
-                title={trade.detail ? `${trade.question} — ${trade.detail}` : trade.question}
+                title={trade.question}
               >
                 {trade.question}
               </p>
@@ -115,6 +115,11 @@ function PredictionsList({
                 </p>
               </div>
             </div>
+            {failed && trade.detail && (
+              <p className="text-red-400/80 mt-1.5 text-xs" title={trade.detail}>
+                {trade.detail}
+              </p>
+            )}
           </article>
         );
       })}
