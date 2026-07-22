@@ -89,7 +89,11 @@ export const GET: APIRoute = async ({ params, url }) => {
         filledTrades,
       );
       mandateProfitUsdc =
-        Math.round((mandateValueUsdc - mandate.notionalUsdc) * 100) / 100;
+        Math.round(
+          (mandateValueUsdc -
+            (mandate.depositedUsdc ?? mandate.notionalUsdc)) *
+            100,
+        ) / 100;
     }
 
     return new Response(
@@ -99,8 +103,9 @@ export const GET: APIRoute = async ({ params, url }) => {
         mandateValueUsdc,
         mandateProfitUsdc,
         totalNotional: pool.totalNotional,
-        capRemaining: poolCapRemaining(fund, pool.totalNotional),
-        raiseOpen: poolRaiseOpen(fund, pool.totalNotional),
+        totalDeposited: pool.totalDeposited,
+        capRemaining: poolCapRemaining(fund, pool.totalDeposited),
+        raiseOpen: poolRaiseOpen(fund, pool.totalDeposited),
         depositBalanceUsdc,
         positions,
         session: session ?? null,
@@ -140,7 +145,7 @@ export const POST: APIRoute = async ({ params, request }) => {
 
     const pool = await buildVirtualPool(fund);
 
-    if (!poolRaiseOpen(fund, pool.totalNotional)) {
+    if (!poolRaiseOpen(fund, pool.totalDeposited)) {
       return new Response(JSON.stringify({ error: "Raise window is closed" }), {
         status: 400,
       });
@@ -204,7 +209,7 @@ export const POST: APIRoute = async ({ params, request }) => {
       );
     }
 
-    const capRemaining = poolCapRemaining(fund, pool.totalNotional);
+    const capRemaining = poolCapRemaining(fund, pool.totalDeposited);
     if (capRemaining != null && amountUsdc > capRemaining) {
       return new Response(
         JSON.stringify({
@@ -215,8 +220,9 @@ export const POST: APIRoute = async ({ params, request }) => {
     }
 
     const existing = await getMandate(fund.slug, address);
-    const existingNotional = existing?.notionalUsdc ?? 0;
-    const nextNotional = existingNotional + amountUsdc;
+    const existingDeposited =
+      existing?.depositedUsdc ?? existing?.notionalUsdc ?? 0;
+    const nextDeposited = existingDeposited + amountUsdc;
 
     const backing = await investorMandateBacking(
       fund.slug,
@@ -233,12 +239,15 @@ export const POST: APIRoute = async ({ params, request }) => {
       );
     }
 
-    if (backing.totalUsdc < nextNotional) {
-      const maxAdd = Math.max(0, round(backing.totalUsdc - existingNotional, 2));
+    if (backing.totalUsdc < nextDeposited) {
+      const maxAdd = Math.max(
+        0,
+        round(backing.totalUsdc - existingDeposited, 2),
+      );
       const detail =
         maxAdd >= 5
           ? `You have $${backing.totalUsdc.toFixed(2)} backing this mandate ($${backing.liquidUsdc.toFixed(2)} liquid + $${backing.deployedUsdc.toFixed(2)} in positions) — maximum add right now is $${maxAdd.toFixed(2)}`
-          : `You have $${backing.totalUsdc.toFixed(2)} backing this mandate ($${backing.liquidUsdc.toFixed(2)} liquid + $${backing.deployedUsdc.toFixed(2)} in positions) — deposit more pUSD before increasing your $${existingNotional.toFixed(2)} commitment`;
+          : `You have $${backing.totalUsdc.toFixed(2)} backing this mandate ($${backing.liquidUsdc.toFixed(2)} liquid + $${backing.deployedUsdc.toFixed(2)} in positions) — deposit more pUSD before increasing your $${existingDeposited.toFixed(2)} commitment`;
       return new Response(JSON.stringify({ error: detail }), { status: 400 });
     }
 

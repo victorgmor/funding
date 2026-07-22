@@ -3,7 +3,11 @@ import { listInstructionsByFund } from "@/lib/funds/instructions";
 import { reconcileFundMandates } from "@/lib/funds/mandate-reconcile";
 import { listPositionsByFund } from "@/lib/funds/mandate-positions";
 import { listTradesByFund } from "@/lib/funds/mandate-trades";
-import { totalPoolCash, totalPoolNotional } from "@/lib/funds/fanout";
+import {
+  totalPoolCash,
+  totalPoolDeposited,
+  totalPoolNotional,
+} from "@/lib/funds/fanout";
 import type { Fund, Mandate, VirtualPool } from "@/lib/funds/types";
 
 export async function buildVirtualPool(fund: Fund): Promise<VirtualPool> {
@@ -17,6 +21,7 @@ export async function buildVirtualPool(fund: Fund): Promise<VirtualPool> {
   return {
     fundSlug: fund.slug,
     totalNotional: totalPoolNotional(mandates),
+    totalDeposited: totalPoolDeposited(mandates),
     totalCash: totalPoolCash(mandates),
     mandateCount: mandates.filter((m) => m.status === "active").length,
     mandates,

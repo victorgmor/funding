@@ -2,14 +2,14 @@ import { createTtlCache } from "@/lib/cache/ttl";
 import { resolveLifecycleStage } from "@/lib/funds/lifecycle";
 import { listPositionsByFund } from "@/lib/funds/mandate-positions";
 import { listTradesByFund } from "@/lib/funds/mandate-trades";
-import { totalPoolNotional } from "@/lib/funds/fanout";
+import { totalPoolDeposited } from "@/lib/funds/fanout";
 import { listMandatesByFund } from "@/lib/funds/mandates";
 import { buildVirtualPool } from "@/lib/funds/pool";
 import { getFundSettlement } from "@/lib/funds/settlement";
 import {
   fetchTokenValuations,
+  mandateMarkValue,
   resolveDepositAddresses,
-  tradePnlUsdc,
 } from "@/lib/funds/valuation";
 import type { Fund } from "@/lib/funds/types";
 
@@ -42,7 +42,7 @@ async function computeFundPoolPerformanceUncached(
   const stage = resolveLifecycleStage(fund);
 
   const pool = await buildVirtualPool(fund);
-  const depositedUsdc = round(pool.totalNotional, 2);
+  const depositedUsdc = round(pool.totalDeposited, 2);
   if (depositedUsdc <= 0) return null;
 
   if (stage === "closed") {
@@ -75,15 +75,22 @@ async function computeFundPoolPerformanceUncached(
     filledTrades,
   );
 
-  // Same marks as the performance chart — deposited + Σ trade PnL.
-  const profitUsdc = round(
-    filledTrades.reduce((sum, trade) => {
-      const pnl = tradePnlUsdc(trade, valuations);
-      return sum + (pnl ?? 0);
-    }, 0),
+  // AUM = Σ mandate marks (cash + open MTM). Do not add trade PnL on top of notional.
+  const aumUsdc = round(
+    pool.mandates.reduce(
+      (sum, mandate) =>
+        sum +
+        mandateMarkValue(
+          mandate,
+          positions.filter((pos) => pos.mandateId === mandate.id),
+          valuations,
+          filledTrades,
+        ),
+      0,
+    ),
     2,
   );
-  const aumUsdc = round(depositedUsdc + profitUsdc, 2);
+  const profitUsdc = round(aumUsdc - depositedUsdc, 2);
   const roi = round((profitUsdc / depositedUsdc) * 100, 2);
 
   return { roi, profitUsdc, aumUsdc, depositedUsdc };
@@ -127,7 +134,7 @@ export async function computeDepositedByFundSlug(
     await Promise.all(
       funds.map(async (fund) => {
         const mandates = await listMandatesByFund(fund.slug);
-        return [fund.slug, round(totalPoolNotional(mandates), 2)] as const;
+        return [fund.slug, round(totalPoolDeposited(mandates), 2)] as const;
       }),
     ),
   );

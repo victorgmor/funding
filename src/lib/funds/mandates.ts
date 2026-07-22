@@ -207,7 +207,8 @@ export async function creditMandateRedeem(
     ...mandate,
     cashUsdc: round(mandate.cashUsdc + proceedsUsdc, 2),
     notionalUsdc: round(Math.max(0, mandate.notionalUsdc + profit), 2),
-    depositedUsdc: mandate.depositedUsdc ?? mandate.notionalUsdc,
+    // Never pin deposited from notional — reconcile owns ledger truth.
+    depositedUsdc: mandate.depositedUsdc,
     updatedAt: new Date().toISOString(),
   };
 

@@ -60,7 +60,10 @@ export const GET: APIRoute = async ({ url }) => {
           valuations,
           filledTrades,
         );
-        mandateProfitUsdc = round(mandateValueUsdc - mandate.notionalUsdc, 2);
+        mandateProfitUsdc = round(
+          mandateValueUsdc - (mandate.depositedUsdc ?? mandate.notionalUsdc),
+          2,
+        );
       } catch {
         mandateProfitUsdc = null;
       }

@@ -157,6 +157,8 @@ export type TradingSession = {
 export type VirtualPool = {
   fundSlug: string;
   totalNotional: number;
+  /** Σ depositedUsdc — external capital for raise/cap display. */
+  totalDeposited: number;
   totalCash: number;
   mandateCount: number;
   mandates: Mandate[];

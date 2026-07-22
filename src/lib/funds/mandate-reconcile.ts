@@ -1,4 +1,8 @@
-import { adjustMandateCash, listMandatesByFund, saveMandateRecord } from "@/lib/funds/mandates";
+import {
+  adjustMandateCash,
+  listMandatesByFund,
+  saveMandateRecord,
+} from "@/lib/funds/mandates";
 import {
   deletePositionsForMandate,
   listAllPositionsByMandate,
@@ -8,6 +12,7 @@ import {
 } from "@/lib/funds/mandate-positions";
 import { listTradesByFund } from "@/lib/funds/mandate-trades";
 import type { Mandate, MandatePosition, MandateTrade } from "@/lib/funds/types";
+import { tradePnlUsdc } from "@/lib/funds/valuation";
 import { readDepositWalletBalanceUsdc } from "@/lib/polymarket/deposit-balance";
 import type { Address } from "viem";
 
@@ -102,9 +107,72 @@ export function expectedMandateCash(
   positions: MandatePosition[],
 ): number {
   const deployed = positions
-    .filter((pos) => pos.mandateId === mandate.id)
+    .filter(
+      (pos) =>
+        pos.mandateId === mandate.id && !pos.redeemedAt && pos.shares > 0,
+    )
     .reduce((sum, pos) => sum + pos.costUsdc, 0);
   return Math.max(0, round(mandate.notionalUsdc - deployed, 2));
+}
+
+/**
+ * deposited = external capital; notional = deposited + realized; cash = notional − open cost.
+ * Optional on-chain cash heals deposited when it was pinned to an inflated notional.
+ */
+export function rebuildMandateBooks(
+  mandate: Mandate,
+  openPositions: MandatePosition[],
+  filledTrades: MandateTrade[],
+  valuations: Map<string, number>,
+  onChainCashUsdc?: number,
+): Mandate {
+  const open = openPositions.filter(
+    (pos) =>
+      pos.mandateId === mandate.id && !pos.redeemedAt && pos.shares > 0,
+  );
+  const openTokens = new Set(open.map((pos) => pos.tokenId));
+  const openCost = round(
+    open.reduce((sum, pos) => sum + pos.costUsdc, 0),
+    2,
+  );
+
+  let realizedPnl = 0;
+  for (const trade of filledTrades) {
+    if (trade.mandateId !== mandate.id || trade.status !== "filled") continue;
+    if (openTokens.has(trade.tokenId)) continue;
+    const pnl = tradePnlUsdc(trade, valuations);
+    if (pnl != null) realizedPnl = round(realizedPnl + pnl, 2);
+  }
+
+  let deposited = mandate.depositedUsdc;
+  if (deposited == null) {
+    deposited = round(Math.max(0, mandate.notionalUsdc - realizedPnl), 2);
+  }
+
+  // ponytail: heal only when deposited was pinned (== notional) above on-chain backing
+  if (onChainCashUsdc != null) {
+    const inferred = round(
+      Math.max(0, onChainCashUsdc + openCost - realizedPnl),
+      2,
+    );
+    const pinned =
+      Math.abs(deposited - mandate.notionalUsdc) < 0.02 ||
+      deposited > openCost + mandate.cashUsdc + 0.5;
+    if (pinned && inferred + 0.5 < deposited) {
+      deposited = inferred;
+    }
+  }
+
+  const notionalUsdc = round(Math.max(0, deposited + realizedPnl), 2);
+  const cashUsdc = round(Math.max(0, notionalUsdc - openCost), 2);
+
+  return {
+    ...mandate,
+    depositedUsdc: round(deposited, 2),
+    notionalUsdc,
+    cashUsdc,
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 /** Liquid deposit wallet + open position cost for mandate backing checks. */
@@ -135,53 +203,98 @@ export async function reconcileMandateCash(
   fundSlug: string,
   mandate: Mandate,
   positions: MandatePosition[],
+  filledTrades: MandateTrade[] = [],
+  valuations: Map<string, number> = new Map(),
+  onChainCashUsdc?: number,
 ): Promise<Mandate> {
-  let current = mandate;
   const open = positions.filter(
-    (pos) => pos.mandateId === mandate.id && !pos.redeemedAt && pos.shares > 0,
+    (pos) =>
+      pos.mandateId === mandate.id && !pos.redeemedAt && pos.shares > 0,
   );
 
-  // Heal older mandates: pin depositedUsdc, fold idle redeem cash into notional.
-  const depositedUsdc = current.depositedUsdc ?? current.notionalUsdc;
-  const notionalUsdc =
-    open.length === 0
-      ? round(Math.max(current.notionalUsdc, current.cashUsdc), 2)
-      : current.notionalUsdc;
-  if (
-    current.depositedUsdc == null ||
-    notionalUsdc !== current.notionalUsdc
-  ) {
-    current = {
-      ...current,
-      depositedUsdc,
-      notionalUsdc,
-      updatedAt: new Date().toISOString(),
-    };
-    await saveMandateRecord(current);
+  if (filledTrades.length > 0 || valuations.size > 0 || onChainCashUsdc != null) {
+    const rebuilt = rebuildMandateBooks(
+      mandate,
+      open,
+      filledTrades,
+      valuations,
+      onChainCashUsdc,
+    );
+    if (
+      rebuilt.depositedUsdc !== mandate.depositedUsdc ||
+      rebuilt.notionalUsdc !== mandate.notionalUsdc ||
+      Math.abs(rebuilt.cashUsdc - mandate.cashUsdc) >= 0.01
+    ) {
+      await saveMandateRecord(rebuilt);
+      return rebuilt;
+    }
   }
 
-  const expected = expectedMandateCash(current, positions);
-  const delta = round(expected - current.cashUsdc, 2);
-  if (Math.abs(delta) < 0.01) return current;
-  // Never claw back cash above deployable floor — keeps redeem proceeds / realized wins.
-  if (delta < 0 && current.cashUsdc > expected) return current;
+  const expected = expectedMandateCash(mandate, open);
+  const delta = round(expected - mandate.cashUsdc, 2);
+  if (Math.abs(delta) < 0.01) return mandate;
 
   try {
-    const updated = await adjustMandateCash(current.id, fundSlug, delta);
-    return updated ?? current;
+    const updated = await adjustMandateCash(mandate.id, fundSlug, delta);
+    return updated ?? mandate;
   } catch {
-    return current;
+    return mandate;
   }
 }
 
 /** Heal drifted cash and positions for every mandate in a fund. */
 export async function reconcileFundMandates(fundSlug: string): Promise<Mandate[]> {
   const mandates = await listMandatesByFund(fundSlug);
+  const allTrades = (await listTradesByFund(fundSlug)).filter(
+    (trade) => trade.status === "filled",
+  );
+
+  let valuations: Map<string, number> | null = null;
+  const loadValuations = async () => {
+    if (valuations) return valuations;
+    const { fetchTokenValuations, resolveDepositAddresses } = await import(
+      "@/lib/funds/valuation"
+    );
+    const positions = (
+      await Promise.all(
+        mandates.map((m) => listAllPositionsByMandate(fundSlug, m.id)),
+      )
+    ).flat();
+    const depositByInvestor = await resolveDepositAddresses(
+      fundSlug,
+      mandates.map((m) => m.investorWallet),
+    );
+    valuations = await fetchTokenValuations(
+      positions,
+      depositByInvestor,
+      allTrades,
+    );
+    return valuations;
+  };
+
   const reconciled: Mandate[] = [];
 
   for (const mandate of mandates) {
     const positions = await reconcileMandatePositions(fundSlug, mandate.id);
-    reconciled.push(await reconcileMandateCash(fundSlug, mandate, positions));
+    const marks = await loadValuations();
+    let onChain: number | undefined;
+    try {
+      onChain = await readDepositWalletBalanceUsdc(
+        mandate.investorWallet as Address,
+      );
+    } catch {
+      onChain = undefined;
+    }
+    reconciled.push(
+      await reconcileMandateCash(
+        fundSlug,
+        mandate,
+        positions,
+        allTrades,
+        marks,
+        onChain,
+      ),
+    );
   }
 
   return reconciled;

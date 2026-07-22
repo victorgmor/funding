@@ -15,6 +15,16 @@ export function totalPoolNotional(mandates: Mandate[]): number {
   );
 }
 
+/** External deposits only — use for raise/cap bars, not compounded notional. */
+export function totalPoolDeposited(mandates: Mandate[]): number {
+  return round(
+    mandates
+      .filter((m) => m.status === "active")
+      .reduce((sum, m) => sum + (m.depositedUsdc ?? m.notionalUsdc), 0),
+    2,
+  );
+}
+
 export function totalPoolCash(mandates: Mandate[]): number {
   return round(
     mandates

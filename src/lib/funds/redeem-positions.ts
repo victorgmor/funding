@@ -98,20 +98,30 @@ async function redeemSinglePosition(
     position.tokenId,
   );
 
+  if (position.redeemedAt) {
+    return {
+      positionId: position.id,
+      status: "skipped",
+      detail: "Already redeemed",
+    };
+  }
+
   if (onChainBalance === 0n) {
     const estimatedProceeds =
       market.settlementPrice != null
         ? round(position.shares * market.settlementPrice, 2)
         : 0;
-    if (estimatedProceeds > 0 && position.costUsdc > 0) {
+    const costUsdc = position.costUsdc;
+    // Mark first so retries never double-credit cash.
+    await markPositionRedeemed(position);
+    if (estimatedProceeds > 0 && costUsdc > 0) {
       await creditMandateRedeem(
         position.mandateId,
         fundSlug,
         estimatedProceeds,
-        position.costUsdc,
+        costUsdc,
       );
     }
-    await markPositionRedeemed(position);
     return {
       positionId: position.id,
       status: "redeemed",
@@ -158,13 +168,14 @@ async function redeemSinglePosition(
       },
     );
 
+    const costUsdc = position.costUsdc;
+    await markPositionRedeemed(position);
     await creditMandateRedeem(
       position.mandateId,
       fundSlug,
       proceedsUsdc,
-      position.costUsdc,
+      costUsdc,
     );
-    await markPositionRedeemed(position);
 
     return {
       positionId: position.id,

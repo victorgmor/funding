@@ -129,10 +129,10 @@ function PredictionsList({
 
 function DepositorsList({
   depositors,
-  totalNotional,
+  totalDeposited,
 }: {
   depositors: (Mandate & { profileId: string })[];
-  totalNotional: number;
+  totalDeposited: number;
 }) {
   if (depositors.length === 0) {
     return (
@@ -145,9 +145,10 @@ function DepositorsList({
   return (
     <>
       {depositors.map((mandate) => {
+        const deposited = mandate.depositedUsdc ?? mandate.notionalUsdc;
         const share =
-          totalNotional > 0
-            ? Math.round((mandate.notionalUsdc / totalNotional) * 100)
+          totalDeposited > 0
+            ? Math.round((deposited / totalDeposited) * 100)
             : 0;
 
         return (
@@ -170,7 +171,7 @@ function DepositorsList({
                 />
               </a>
               <p className={depositSummaryClass}>
-                {formatUsdExact(mandate.notionalUsdc)}
+                {formatUsdExact(deposited)}
                 <span className="text-primary/45 ml-2">{share}%</span>
               </p>
             </div>
@@ -274,7 +275,7 @@ function FundActivityTabs({
         {tab === "depositors" && (
           <DepositorsList
             depositors={depositors}
-            totalNotional={pool.totalNotional}
+            totalDeposited={pool.totalDeposited ?? pool.totalNotional}
           />
         )}
       </div>
@@ -360,9 +361,8 @@ export default function FundPoolOverview({ fund }: Props) {
 
   if (!pool) return null;
 
-  // Deposited (PoolCapBar) = external commitments (notional, compounds on redeem).
-  // AUM = mark-to-market pool value.
-  // Deployable tracks AUM — profits stay in the pool / mandate.
+  // Deposited = external capital only. AUM / deployable = mark-to-market.
+  const depositedUsdc = pool.totalDeposited ?? pool.totalNotional;
   const aumUsdc = performance?.aumUsdc ?? pool.totalNotional;
   const deployableUsdc = Math.max(0, aumUsdc);
 
@@ -372,10 +372,10 @@ export default function FundPoolOverview({ fund }: Props) {
         <FundStageMetricsRow
           fund={fund}
           profitUsdc={pnlAmount}
-          totalNotional={pool.totalNotional}
+          totalNotional={depositedUsdc}
         />
         <PoolCapBar
-          deposited={pool.totalNotional}
+          deposited={depositedUsdc}
           capUsdc={fund.capUsdc}
           trailing={<ProfitShareLabel pct={profitShare} />}
         />

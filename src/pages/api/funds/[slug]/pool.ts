@@ -29,7 +29,11 @@ export const GET: APIRoute = async ({ params, url }) => {
         ...maskMandateWallet(mandate),
         profileId: mandate.investorWallet,
       }))
-      .sort((a, b) => b.notionalUsdc - a.notionalUsdc);
+      .sort(
+        (a, b) =>
+          (b.depositedUsdc ?? b.notionalUsdc) -
+          (a.depositedUsdc ?? a.notionalUsdc),
+      );
 
     if (isOwner) {
       pool = {

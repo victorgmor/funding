@@ -37,6 +37,7 @@ type MandateSummary = {
   mandateValueUsdc?: number | null;
   mandateProfitUsdc?: number | null;
   totalNotional: number;
+  totalDeposited?: number;
   capRemaining: number | null;
   raiseOpen: boolean;
   depositBalanceUsdc: number | null;
@@ -373,7 +374,9 @@ export default function MandatePanel({ fund }: Props) {
                 {" · "}
                 Pool{" "}
                 <span className="text-primary/70 font-mono tabular-nums">
-                  {formatUsdExact(summary.totalNotional)}
+                  {formatUsdExact(
+                    summary.totalDeposited ?? summary.totalNotional,
+                  )}
                 </span>
               </p>
             </>
