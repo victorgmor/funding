@@ -413,9 +413,28 @@ export default function MandatePanel({ fund }: Props) {
                   </button>
                 ) : (
                   depositBalance != null && (
-                    <span className="text-primary/50 text-sm tabular-nums">
-                      {formatUsdExact(depositBalance)} deposit wallet
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-primary/50 text-sm tabular-nums">
+                        {formatUsdExact(depositBalance)} deposit wallet
+                      </span>
+                      <button
+                        type="button"
+                        disabled={depositBalance <= 0}
+                        onClick={() => {
+                          const cap = summary?.capRemaining;
+                          const max = Math.min(
+                            depositBalance,
+                            cap != null ? cap : depositBalance,
+                          );
+                          setAmount(
+                            String(Math.floor(Math.max(0, max) * 100) / 100),
+                          );
+                        }}
+                        className="text-primary/70 hover:text-primary text-xs font-medium uppercase tracking-wide disabled:opacity-40"
+                      >
+                        Max
+                      </button>
+                    </div>
                   )
                 )}
               </div>
@@ -425,7 +444,16 @@ export default function MandatePanel({ fund }: Props) {
                   id="mandate-amount"
                   type="number"
                   min={isWithdraw ? 0.01 : 5}
-                  max={isWithdraw ? deployable : undefined}
+                  max={
+                    isWithdraw
+                      ? deployable
+                      : depositBalance != null
+                        ? Math.min(
+                            depositBalance,
+                            summary?.capRemaining ?? depositBalance,
+                          )
+                        : undefined
+                  }
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   className="text-primary w-full border-0 bg-transparent py-1.5 text-sm font-medium tabular-nums [appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
