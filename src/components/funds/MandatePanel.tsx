@@ -36,6 +36,7 @@ type MandateSummary = {
   mandate: Mandate | null;
   mandateValueUsdc?: number | null;
   mandateProfitUsdc?: number | null;
+  mandateDepositedUsdc?: number | null;
   totalNotional: number;
   totalDeposited?: number;
   capRemaining: number | null;
@@ -71,7 +72,10 @@ export default function MandatePanel({ fund }: Props) {
   const mandateValue =
     summary?.mandateValueUsdc ?? summary?.mandate?.notionalUsdc ?? 0;
   const depositedUsdc =
-    summary?.mandate?.depositedUsdc ?? summary?.mandate?.notionalUsdc ?? 0;
+    summary?.mandateDepositedUsdc ??
+    summary?.mandate?.depositedUsdc ??
+    summary?.mandate?.notionalUsdc ??
+    0;
   const cashUsdc = summary?.mandate?.cashUsdc ?? 0;
   // Realized profits stay committed — only external deposits can leave.
   const withdrawable = Math.max(
