@@ -7,7 +7,6 @@ import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import FundTradeAutopilot from "@/components/funds/FundTradeAutopilot";
 import { privySignerQuorumId } from "@/lib/privy/config";
 import {
-  embeddedPrivyWallet,
   isEmbeddedPrivyAddress,
   privyWalletIdForAddress,
 } from "@/lib/privy/wallet";
@@ -131,18 +130,17 @@ export default function MandatePanel({ fund }: Props) {
       throw new Error("PUBLIC_PRIVY_SIGNER_QUORUM_ID is not configured");
     }
 
-    const alreadyDelegated =
-      embeddedPrivyWallet(user, address)?.delegated === true;
-    if (!alreadyDelegated) {
-      try {
-        await addSigners({
-          address,
-          signers: [{ signerId: privySignerQuorumId, policyIds: [] }],
-        });
-      } catch (e) {
-        const message = e instanceof Error ? e.message : String(e);
-        if (!/duplicate signer/i.test(message)) throw e;
-      }
+    // Always attach our quorum — `delegated` only means *some* signer exists,
+    // often an old/rotated one, which is why new-fund joins kept failing with
+    // PRIVY_AUTHORIZATION_PRIVATE_KEY mismatch after a prior authorization.
+    try {
+      await addSigners({
+        address,
+        signers: [{ signerId: privySignerQuorumId, policyIds: [] }],
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      if (!/duplicate signer/i.test(message)) throw e;
     }
 
     const privyWalletId = privyWalletIdForAddress(user, address);
@@ -225,6 +223,19 @@ export default function MandatePanel({ fund }: Props) {
     serverSignerActive,
     ensureServerSigner,
   ]);
+
+  // Heal sessions authorized while we skipped addSigners: attach current quorum.
+  useEffect(() => {
+    if (!address || !onPolygon || !serverSignerActive || !privySignerQuorumId) {
+      return;
+    }
+    void addSigners({
+      address,
+      signers: [{ signerId: privySignerQuorumId, policyIds: [] }],
+    }).catch(() => {
+      /* duplicate / user dismissed — trades still surface a real error */
+    });
+  }, [address, onPolygon, serverSignerActive, privySignerQuorumId, addSigners]);
 
   async function commit() {
     if (!address || committing || closed) return;
