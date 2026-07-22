@@ -303,7 +303,7 @@ export default function WalletAccountMenu({
                           ? "…"
                           : !registered
                             ? "Setting up…"
-                            : `${formatUsdExact(info?.depositCollateral ?? 0)} pUSD`}
+                            : `${formatUsdExact(info?.totalCollateral ?? info?.depositCollateral ?? 0)} pUSD`}
                       </p>
                     </div>
                     <button

@@ -27,7 +27,10 @@ async function tokenBalance(token: Address, holder: Address): Promise<bigint> {
   });
 }
 
-async function readCollateralBalanceUsdc(holder: Address): Promise<number> {
+/** pUSD/USDC/bridged-USDC at an exact address (no deposit derivation). */
+export async function readCollateralAtAddressUsdc(
+  holder: Address,
+): Promise<number> {
   let total = 0n;
   for (const token of GIFT_TOKEN_ADDRESSES) {
     total += await tokenBalance(token, holder);
@@ -45,19 +48,32 @@ export async function readPusdBalanceUsdc(holder: Address): Promise<number> {
   return round(Number(formatUnits(wei, 6)), 2);
 }
 
-/** Spendable pUSD/USDC on the investor's Polymarket deposit wallet. */
+/** Spendable pUSD/USDC on the derived Polymarket deposit wallet only. */
 export async function readDepositWalletBalanceUsdc(
   owner: Address,
 ): Promise<number> {
   const deposit = await deriveDepositWalletAddress(owner);
-  return readCollateralBalanceUsdc(deposit);
+  return readCollateralAtAddressUsdc(deposit);
 }
 
 /** pUSD/USDC sitting on the Privy EOA (not yet in the deposit wallet). */
 export async function readOwnerCollateralBalanceUsdc(
   owner: Address,
 ): Promise<number> {
-  return readCollateralBalanceUsdc(owner);
+  return readCollateralAtAddressUsdc(owner);
+}
+
+/**
+ * Live capital for an investor for Account display.
+ * Prefer the owner/proxy balance when non-zero (matches Account screenshots);
+ * otherwise the derived deposit wallet. Do not sum Safe+EOA.
+ */
+export async function readInvestorCollateralUsdc(
+  owner: Address,
+): Promise<number> {
+  const onOwner = await readCollateralAtAddressUsdc(owner);
+  if (onOwner >= 0.01) return onOwner;
+  return readDepositWalletBalanceUsdc(owner);
 }
 
 function round(n: number, d: number) {

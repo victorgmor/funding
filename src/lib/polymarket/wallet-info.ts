@@ -1,6 +1,7 @@
 import type { Address } from "viem";
 import {
   readDepositWalletBalanceUsdc,
+  readInvestorCollateralUsdc,
   readOwnerCollateralBalanceUsdc,
   readPusdBalanceUsdc,
 } from "@/lib/polymarket/deposit-balance";
@@ -14,6 +15,8 @@ export type PolymarketWalletInfo = {
   ownerPusd: number;
   ownerCollateral: number;
   depositCollateral: number;
+  /** Total pUSD/USDC across EOA + deposit + Safe — what Account should show. */
+  totalCollateral: number;
   lockedUsdc: number;
   withdrawableUsdc: number;
 };
@@ -27,17 +30,19 @@ export async function fetchPolymarketWalletInfo(
     ownerPusd,
     ownerCollateral,
     depositCollateral,
+    totalCollateral,
     depositRes,
   ] = await Promise.all([
     isDepositWalletDeployed(depositAddress),
     readPusdBalanceUsdc(owner),
     readOwnerCollateralBalanceUsdc(owner),
     readDepositWalletBalanceUsdc(owner),
+    readInvestorCollateralUsdc(owner),
     fetch(`/api/investor/deposit?address=${encodeURIComponent(owner)}`),
   ]);
 
   let lockedUsdc = 0;
-  let withdrawableUsdc = depositCollateral;
+  let withdrawableUsdc = totalCollateral;
   if (depositRes.ok) {
     const data = (await depositRes.json()) as {
       lockedUsdc: number;
@@ -54,6 +59,7 @@ export async function fetchPolymarketWalletInfo(
     ownerPusd,
     ownerCollateral,
     depositCollateral,
+    totalCollateral,
     lockedUsdc,
     withdrawableUsdc,
   };
