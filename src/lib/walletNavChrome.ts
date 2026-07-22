@@ -3,4 +3,4 @@ export const walletNavRadius = "rounded-[12px]";
 export const walletNavPad = "px-3 py-2";
 
 /** One chip for Log in / Loading / connected — only the label changes. */
-export const walletNavButtonClass = `inline-flex items-center justify-center gap-2 ${walletNavPad} ${walletNavRadius} bg-[#181709] text-sm font-medium text-white/80 transition-colors hover:text-white disabled:cursor-wait disabled:opacity-100 disabled:bg-[#181709]/30 disabled:text-white/80`;
+export const walletNavButtonClass = `inline-flex items-center justify-center gap-2 ${walletNavPad} ${walletNavRadius} bg-[#181709] text-sm font-medium text-white/80 transition-colors hover:text-white disabled:cursor-wait disabled:opacity-100 disabled:bg-[color-mix(in oklab, var(--color-primary) 15%, transparent)] disabled:text-white/80`;
