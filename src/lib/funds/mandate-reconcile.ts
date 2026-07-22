@@ -13,7 +13,7 @@ import {
 import { listTradesByFund } from "@/lib/funds/mandate-trades";
 import type { Mandate, MandatePosition, MandateTrade } from "@/lib/funds/types";
 import { tradePnlUsdc } from "@/lib/funds/valuation";
-import { readDepositWalletBalanceUsdc } from "@/lib/polymarket/deposit-balance";
+import { readInvestorCollateralUsdc } from "@/lib/polymarket/deposit-balance";
 import type { Address } from "viem";
 
 function round(n: number, d: number) {
@@ -166,7 +166,7 @@ export async function investorMandateBacking(
   investorWallet: string,
   mandateId?: string,
 ): Promise<{ liquidUsdc: number; deployedUsdc: number; totalUsdc: number }> {
-  const liquidUsdc = await readDepositWalletBalanceUsdc(
+  const liquidUsdc = await readInvestorCollateralUsdc(
     investorWallet as Address,
   );
   let positions = await listPositionsByWallet(fundSlug, investorWallet);
