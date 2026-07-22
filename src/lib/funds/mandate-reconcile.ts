@@ -1,7 +1,6 @@
 import {
   adjustMandateCash,
   listMandatesByFund,
-  saveMandateRecord,
 } from "@/lib/funds/mandates";
 import {
   deletePositionsForMandate,
@@ -198,7 +197,8 @@ export async function reconcileMandateCash(
   );
 
   // Always try live books — Dynamo depositedUsdc may be corrupted.
-  {
+  // Never fall through to rebuildMandateBooks for these (it re-corrupts deposits).
+  try {
     const { healMandateFromLive, liveMandateBooks } = await import(
       "@/lib/funds/live-mandate"
     );
@@ -211,25 +211,15 @@ export async function reconcileMandateCash(
     if (live && (live.deployableUsdc > 0 || live.depositedUsdc > 0)) {
       return healMandateFromLive(mandate, live);
     }
-  }
-
-  if (filledTrades.length > 0 || valuations.size > 0) {
-    const rebuilt = rebuildMandateBooks(
-      mandate,
-      open,
-      filledTrades,
-      valuations,
+  } catch (error) {
+    console.error(
+      "[reconcile] liveMandateBooks failed",
+      mandate.investorWallet,
+      error,
     );
-    if (
-      rebuilt.depositedUsdc !== mandate.depositedUsdc ||
-      rebuilt.notionalUsdc !== mandate.notionalUsdc ||
-      Math.abs(rebuilt.cashUsdc - mandate.cashUsdc) >= 0.01
-    ) {
-      await saveMandateRecord(rebuilt);
-      return rebuilt;
-    }
   }
 
+  // Soft cash adjust only — do not rewrite deposited/notional from trade math.
   const expected = expectedMandateCash(mandate, open);
   const delta = round(expected - mandate.cashUsdc, 2);
   if (Math.abs(delta) < 0.01) return mandate;

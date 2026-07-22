@@ -361,11 +361,12 @@ export default function FundPoolOverview({ fund }: Props) {
 
   if (!pool) return null;
 
-  // Deposited = external capital. Deployable = deposited ± pool PnL (mark total).
-  const depositedUsdc = pool.totalDeposited ?? pool.totalNotional;
+  // Deposited = external capital. Deployable = live pool mark (not deposited + chart PnL).
+  const depositedUsdc =
+    performance?.depositedUsdc ?? pool.totalDeposited ?? pool.totalNotional;
   const deployableUsdc = Math.max(
     0,
-    performance?.aumUsdc ?? depositedUsdc + (pnlAmount ?? 0),
+    performance?.aumUsdc ?? pool.totalNotional ?? depositedUsdc,
   );
 
   return (

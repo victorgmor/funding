@@ -95,9 +95,11 @@ export default function MandatePanel({ fund }: Props) {
       const [mandateRes, tradesRes] = await Promise.all([
         fetch(
           `/api/funds/${fund.slug}/mandates?address=${encodeURIComponent(address)}`,
+          { cache: "no-store" },
         ),
         fetch(
           `/api/funds/${fund.slug}/trades?address=${encodeURIComponent(address)}&pending=1`,
+          { cache: "no-store" },
         ),
       ]);
       const mandateData = await mandateRes.json();

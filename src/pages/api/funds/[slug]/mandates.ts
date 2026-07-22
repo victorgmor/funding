@@ -98,7 +98,10 @@ export const GET: APIRoute = async ({ params, url }) => {
         filledTrades,
         depositAddress,
         valuations,
-      );
+      ).catch((error) => {
+        console.error("[mandates] liveMandateBooks failed", address, error);
+        return null;
+      });
       if (live) {
         mandateDepositedUsdc = live.depositedUsdc;
         mandateProfitUsdc = live.profitUsdc;
@@ -108,16 +111,29 @@ export const GET: APIRoute = async ({ params, url }) => {
         mandate.cashUsdc = live.cashUsdc;
         mandate.notionalUsdc = live.deployableUsdc;
       } else {
-        const deposited = mandate.depositedUsdc ?? mandate.notionalUsdc;
-        mandateDepositedUsdc = deposited;
-        mandateProfitUsdc = round(
-          filledTrades.reduce((sum, trade) => {
-            const pnl = tradePnlUsdc(trade, valuations);
-            return sum + (pnl ?? 0);
-          }, 0),
-          2,
-        );
-        mandateValueUsdc = round(deposited + mandateProfitUsdc, 2);
+        // ponytail: known commits when live RPC/heal fails; drop once Dynamo is clean
+        const { knownCommitUsdc } = await import("@/lib/funds/live-mandate");
+        const known = knownCommitUsdc(address, depositAddress);
+        if (known != null) {
+          const equity = Math.max(depositBalanceUsdc ?? 0, known);
+          mandateDepositedUsdc = known;
+          mandateValueUsdc = equity;
+          mandateProfitUsdc = round(equity - known, 2);
+          mandate.depositedUsdc = known;
+          mandate.notionalUsdc = equity;
+          if (depositBalanceUsdc != null) mandate.cashUsdc = depositBalanceUsdc;
+        } else {
+          const deposited = mandate.depositedUsdc ?? mandate.notionalUsdc;
+          mandateDepositedUsdc = deposited;
+          mandateProfitUsdc = round(
+            filledTrades.reduce((sum, trade) => {
+              const pnl = tradePnlUsdc(trade, valuations);
+              return sum + (pnl ?? 0);
+            }, 0),
+            2,
+          );
+          mandateValueUsdc = round(deposited + mandateProfitUsdc, 2);
+        }
       }
     }
 
@@ -138,7 +154,12 @@ export const GET: APIRoute = async ({ params, url }) => {
         serverSigningEnabled: serverSigningEnabled(),
         mandateSettlement: mandateSettlement ?? null,
       }),
-      { headers: { "Content-Type": "application/json" } },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+        },
+      },
     );
   } catch (e) {
     const message = e instanceof Error ? e.message : "Mandate read failed";

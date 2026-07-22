@@ -59,7 +59,12 @@ export const GET: APIRoute = async ({ params, url }) => {
 
     return new Response(
       JSON.stringify({ ...pool, depositors, recentTrades, performance }),
-      { headers: { "Content-Type": "application/json" } },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+        },
+      },
     );
   } catch (e) {
     const message = e instanceof Error ? e.message : "Pool read failed";

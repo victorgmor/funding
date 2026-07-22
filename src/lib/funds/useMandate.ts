@@ -22,6 +22,7 @@ export function useMandate(fundSlug: string, refreshKey = 0) {
       try {
         const res = await fetch(
           `/api/funds/${fundSlug}/mandates?address=${encodeURIComponent(address)}`,
+          { cache: "no-store" },
         );
         const data = await res.json();
         if (cancelled) return;

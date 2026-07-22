@@ -1,4 +1,4 @@
-import { createPublicClient, formatUnits, http, type Address } from "viem";
+import { createPublicClient, fallback, formatUnits, http, type Address } from "viem";
 import { polygon } from "wagmi/chains";
 import { deriveDepositWalletAddress } from "@/lib/polymarket/positions";
 import { GIFT_TOKEN_ADDRESSES, PUSD_ADDRESS } from "@/lib/polygon/usdc";
@@ -13,9 +13,21 @@ const balanceAbi = [
   },
 ] as const;
 
+function polygonTransport() {
+  const urls = [
+    process.env.POLYGON_RPC_URL?.trim(),
+    "https://polygon-bor.publicnode.com",
+    "https://rpc.ankr.com/polygon",
+    "https://1rpc.io/matic",
+    "https://polygon-rpc.com",
+  ].filter(Boolean) as string[];
+
+  return fallback(urls.map((url) => http(url, { timeout: 8_000 })));
+}
+
 const publicClient = createPublicClient({
   chain: polygon,
-  transport: http(),
+  transport: polygonTransport(),
 });
 
 async function tokenBalance(token: Address, holder: Address): Promise<bigint> {
@@ -71,8 +83,10 @@ export async function readInvestorCollateralUsdc(
   owner: Address,
 ): Promise<number> {
   const deposit = await deriveDepositWalletAddress(owner);
-  const onOwner = await readCollateralAtAddressUsdc(owner);
-  const onDeposit = await readCollateralAtAddressUsdc(deposit);
+  const [onOwner, onDeposit] = await Promise.all([
+    readCollateralAtAddressUsdc(owner).catch(() => 0),
+    readCollateralAtAddressUsdc(deposit).catch(() => 0),
+  ]);
   return Math.max(onOwner, onDeposit);
 }
 
