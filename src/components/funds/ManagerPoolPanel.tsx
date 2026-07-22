@@ -3,6 +3,7 @@ import ConnectWallet from "@/components/app/ConnectWallet";
 import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import { isFundOwner } from "@/lib/funds/editable";
 import { formatUsdExact } from "@/lib/funds/format";
+import { notifyPoolUpdated } from "@/lib/funds/pool-events";
 import type { Fund, FanoutSlice, VirtualPool } from "@/lib/funds/types";
 import type { MarketSide } from "@/lib/funds/types";
 import {
@@ -235,6 +236,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
       );
       const poolData = await poolRes.json();
       if (poolRes.ok) setPool(poolData);
+      notifyPoolUpdated(fund.slug);
 
       const execSummary = data.summary as {
         count?: number;
@@ -248,6 +250,8 @@ export default function ManagerPoolPanel({ fund }: Props) {
             ? `${execSummary.count ?? tradeCount} instruction(s) recorded — ${execSummary.pending} slice(s) queued. ${execSummary.withoutSession} investor(s) need to authorize auto-trading.`
             : `${execSummary.count ?? tradeCount} instruction(s) recorded — ${execSummary.pending} slice(s) queued for autopilot.`,
         );
+        // Autopilot fills async — refresh again so Predictions catch filled/failed.
+        window.setTimeout(() => notifyPoolUpdated(fund.slug), 4000);
       } else {
         setNotice(`${execSummary?.count ?? tradeCount} instruction(s) recorded.`);
       }
