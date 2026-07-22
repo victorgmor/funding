@@ -22,11 +22,51 @@ import type { StoredClobCreds } from "@/lib/funds/trading-sessions";
 
 const HOST = "https://clob.polymarket.com";
 const CHAIN = 137;
+/** FOK book misses / races — retry before settling failed. */
+const FOK_ATTEMPTS = 3;
+const FOK_RETRY_MS = 400;
 
 function orderError(resp: unknown): string | undefined {
   if (!resp || typeof resp !== "object") return undefined;
   const r = resp as { error?: string; errorMsg?: string; status?: number };
   return r.error ?? r.errorMsg;
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Liquidity / transient CLOB failures — worth another FOK attempt. */
+function isRetryableFokError(e: unknown): boolean {
+  if (isWalletBusyError(e)) return false;
+  const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
+  if (
+    msg.includes("balance") ||
+    msg.includes("insufficient") ||
+    msg.includes("allowance") ||
+    msg.includes("api key") ||
+    msg.includes("maker address") ||
+    msg.includes("builder not configured") ||
+    msg.includes("deposit wallet") ||
+    msg.includes("authorization signature") ||
+    msg.includes("no valid authorization")
+  ) {
+    return false;
+  }
+  return (
+    msg.includes("no match") ||
+    msg.includes("couldn't be fully filled") ||
+    msg.includes("could not be fully filled") ||
+    msg.includes("fully filled") ||
+    msg.includes("fok") ||
+    msg.includes("orderbook") ||
+    msg.includes("timeout") ||
+    msg.includes("429") ||
+    msg.includes("503") ||
+    msg.includes("econnreset") ||
+    msg.includes("fetch failed") ||
+    msg.includes("network")
+  );
 }
 
 export async function createTradingClient(
@@ -67,51 +107,6 @@ export async function createTradingClient(
   return { client, trading, creds: creds as StoredClobCreds };
 }
 
-export async function executeBuyQuote(
-  walletClient: WalletClient,
-  quote: BasketQuote,
-  onStatus?: (message: string) => void,
-  storedCreds?: StoredClobCreds,
-): Promise<LegResult[]> {
-  const { client, trading } = await createTradingClient(
-    walletClient,
-    onStatus,
-    storedCreds,
-  );
-  const results: LegResult[] = [];
-
-  for (const leg of quote.legs) {
-    results.push(await executeLeg(client, leg, trading));
-  }
-
-  return results;
-}
-
-export async function executeMandateTrade(
-  walletClient: WalletClient,
-  trade: MandateTrade,
-  onStatus?: (message: string) => void,
-  storedCreds?: StoredClobCreds,
-): Promise<LegResult> {
-  const { client, trading } = await createTradingClient(
-    walletClient,
-    onStatus,
-    storedCreds,
-  );
-
-  return executeLeg(
-    client,
-    {
-      tokenId: trade.tokenId,
-      question: trade.question,
-      side: trade.side,
-      usdcAmount: trade.usdcAmount,
-      price: trade.price,
-      shares: trade.shares,
-    },
-    trading,
-  );
-}
 
 /** Server-side fan-out: use stored deposit wallet + CLOB creds (no browser relayer). */
 export async function executeMandateTradeWithSession(
@@ -167,26 +162,34 @@ async function executeLeg(
   leg: BasketQuote["legs"][number],
   trading: TradingWallet,
 ): Promise<LegResult> {
-  try {
-    const resp = await client.createAndPostMarketOrder(
-      {
-        tokenID: leg.tokenId,
-        amount: leg.usdcAmount,
-        side: Side.BUY,
-      },
-      {},
-      OrderType.FOK,
-    );
-    const err = orderError(resp);
-    if (err) throw new Error(err);
-    return { question: leg.question, status: "filled" };
-  } catch (e) {
-    return {
-      question: leg.question,
-      status: "failed",
-      detail: formatTradeError(e, trading),
-    };
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= FOK_ATTEMPTS; attempt++) {
+    try {
+      const resp = await client.createAndPostMarketOrder(
+        {
+          tokenID: leg.tokenId,
+          amount: leg.usdcAmount,
+          side: Side.BUY,
+        },
+        {},
+        OrderType.FOK,
+      );
+      const err = orderError(resp);
+      if (err) throw new Error(err);
+      return { question: leg.question, status: "filled" };
+    } catch (e) {
+      lastError = e;
+      if (!isRetryableFokError(e) || attempt === FOK_ATTEMPTS) break;
+      await sleep(FOK_RETRY_MS * attempt);
+    }
   }
+
+  return {
+    question: leg.question,
+    status: "failed",
+    detail: formatTradeError(lastError, trading),
+  };
 }
 
 function formatTradeError(
@@ -214,6 +217,14 @@ function formatTradeError(
 
   if (lower.includes("wallet busy")) {
     return WALLET_BUSY_MESSAGE;
+  }
+
+  if (
+    lower.includes("authorization signature") ||
+    lower.includes("no valid authorization") ||
+    (lower.includes("401") && lower.includes("privy"))
+  ) {
+    return "Server Privy authorization key mismatch — check PRIVY_AUTHORIZATION_PRIVATE_KEY matches the signer quorum (PUBLIC_PRIVY_SIGNER_QUORUM_ID), then have the investor revoke and re-authorize auto-trading";
   }
 
   if (lower.includes("builder not configured")) {
