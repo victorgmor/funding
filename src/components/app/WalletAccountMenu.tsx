@@ -17,6 +17,7 @@ import { getWalletClient } from "@wagmi/core";
 import { polygon } from "wagmi/chains";
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
 import EditProfileModal from "@/components/app/EditProfileModal";
+import WithdrawFundsModal from "@/components/app/WithdrawFundsModal";
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { formatUsdExact } from "@/lib/funds/format";
 import { walletNavButtonClass } from "@/lib/walletNavChrome";
@@ -106,6 +107,7 @@ export default function WalletAccountMenu({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
 
   const { refs, floatingStyles, context } = useFloating({
     open,
@@ -367,6 +369,19 @@ export default function WalletAccountMenu({
                   className={rowBtnClass}
                   onClick={() => {
                     setOpen(false);
+                    setWithdrawOpen(true);
+                  }}
+                >
+                  <span aria-hidden>↗</span>
+                  Withdraw funds
+                </button>
+
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={rowBtnClass}
+                  onClick={() => {
+                    setOpen(false);
                     onLogout();
                   }}
                 >
@@ -413,6 +428,11 @@ export default function WalletAccountMenu({
         open={editOpen}
         address={address}
         onClose={() => setEditOpen(false)}
+      />
+      <WithdrawFundsModal
+        open={withdrawOpen}
+        address={address}
+        onClose={() => setWithdrawOpen(false)}
       />
     </>
   );

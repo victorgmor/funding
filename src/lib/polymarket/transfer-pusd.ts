@@ -71,6 +71,8 @@ async function submitDepositWalletPusdTransfer(
   walletClient: WalletClient,
   depositAddress: Address,
   ownerAddress: Address,
+  to: Address,
+  amountUsdc: number | undefined,
   builderConfig: BuilderConfig,
 ): Promise<void> {
   const [balanceWei, withdrawableUsdc] = await Promise.all([
@@ -85,7 +87,21 @@ async function submitDepositWalletPusdTransfer(
   }
 
   const maxWei = parseUnits(withdrawableUsdc.toFixed(6), 6);
-  const amount = balanceWei < maxWei ? balanceWei : maxWei;
+  const capped = balanceWei < maxWei ? balanceWei : maxWei;
+  const amount =
+    amountUsdc == null
+      ? capped
+      : (() => {
+          if (!(amountUsdc > 0)) throw new Error("Enter a positive amount");
+          const requested = parseUnits(amountUsdc.toFixed(6), 6);
+          if (requested > capped) {
+            throw new Error(
+              `Only $${withdrawableUsdc.toFixed(2)} withdrawable`,
+            );
+          }
+          return requested;
+        })();
+
   if (amount <= 0n) {
     throw new Error("No pUSD in your deposit wallet to move");
   }
@@ -96,7 +112,7 @@ async function submitDepositWalletPusdTransfer(
     data: encodeFunctionData({
       abi: transferAbi,
       functionName: "transfer",
-      args: [ownerAddress, amount],
+      args: [to, amount],
     }),
   };
 
@@ -127,6 +143,33 @@ export async function transferPusdFromDepositWallet(
     walletClient,
     depositAddress,
     ownerAddress,
+    ownerAddress,
+    undefined,
+    builderConfig,
+  );
+}
+
+/** Send withdrawable deposit pUSD to an arbitrary Polygon address. */
+export async function transferPusdFromDepositWalletTo(
+  walletClient: WalletClient,
+  depositAddress: Address,
+  ownerAddress: Address,
+  to: Address,
+  amountUsdc: number,
+): Promise<void> {
+  const builderConfig = getClientRelayBuilderConfig();
+  if (!builderConfig) {
+    throw new Error(
+      "Polymarket builder keys not configured — deposit wallet transfers unavailable",
+    );
+  }
+
+  await submitDepositWalletPusdTransfer(
+    walletClient,
+    depositAddress,
+    ownerAddress,
+    to,
+    amountUsdc,
     builderConfig,
   );
 }
