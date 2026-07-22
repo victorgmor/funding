@@ -11,7 +11,7 @@ import {
   poolRaiseOpen,
 } from "@/lib/funds/pool";
 import { getFund } from "@/lib/funds/store";
-import { readDepositWalletBalanceUsdc } from "@/lib/polymarket/deposit-balance";
+import { readInvestorCollateralUsdc } from "@/lib/polymarket/deposit-balance";
 import { getMandateSettlement } from "@/lib/funds/settlement";
 import { reconcileMandatePositions, investorMandateBacking } from "@/lib/funds/mandate-reconcile";
 import { listTradesByFund } from "@/lib/funds/mandate-trades";
@@ -51,7 +51,7 @@ export const GET: APIRoute = async ({ params, url }) => {
 
     let depositBalanceUsdc: number | null = null;
     try {
-      depositBalanceUsdc = await readDepositWalletBalanceUsdc(
+      depositBalanceUsdc = await readInvestorCollateralUsdc(
         address as `0x${string}`,
       );
     } catch {

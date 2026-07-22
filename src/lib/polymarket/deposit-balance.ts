@@ -64,16 +64,16 @@ export async function readOwnerCollateralBalanceUsdc(
 }
 
 /**
- * Live capital for an investor for Account display.
- * Prefer the owner/proxy balance when non-zero (matches Account screenshots);
- * otherwise the derived deposit wallet. Do not sum Safe+EOA.
+ * Live capital for an investor for Account / mandate display.
+ * Prefer the wallet that actually holds funds (EOA vs derived deposit).
  */
 export async function readInvestorCollateralUsdc(
   owner: Address,
 ): Promise<number> {
+  const deposit = await deriveDepositWalletAddress(owner);
   const onOwner = await readCollateralAtAddressUsdc(owner);
-  if (onOwner >= 0.01) return onOwner;
-  return readDepositWalletBalanceUsdc(owner);
+  const onDeposit = await readCollateralAtAddressUsdc(deposit);
+  return Math.max(onOwner, onDeposit);
 }
 
 function round(n: number, d: number) {

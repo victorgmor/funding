@@ -197,8 +197,8 @@ export async function reconcileMandateCash(
       pos.mandateId === mandate.id && !pos.redeemedAt && pos.shares > 0,
   );
 
-  // Prefer live Polymarket books — Dynamo depositedUsdc may be corrupted.
-  if (depositAddress || filledTrades.some((t) => t.mandateId === mandate.id)) {
+  // Always try live books — Dynamo depositedUsdc may be corrupted.
+  {
     const { healMandateFromLive, liveMandateBooks } = await import(
       "@/lib/funds/live-mandate"
     );

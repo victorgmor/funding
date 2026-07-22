@@ -1,15 +1,11 @@
 import { saveMandateRecord } from "@/lib/funds/mandates";
-import {
-  readCollateralAtAddressUsdc,
-  readDepositWalletBalanceUsdc,
-} from "@/lib/polymarket/deposit-balance";
+import { readCollateralAtAddressUsdc } from "@/lib/polymarket/deposit-balance";
 import {
   fetchPolymarketPositions,
   fetchPolymarketPositionsValue,
   positionPnlUsdc,
 } from "@/lib/polymarket/portfolio";
 import { deriveDepositWalletAddress } from "@/lib/polymarket/positions";
-import { tradePnlUsdc } from "@/lib/funds/valuation";
 import type { Mandate, MandateTrade } from "@/lib/funds/types";
 import type { Address } from "viem";
 
@@ -27,56 +23,66 @@ function round(n: number, d: number) {
   return Math.round(n * f) / f;
 }
 
-// ponytail: one-shot repair for deposits corrupted by earlier heals; remove once Dynamo is clean
+/**
+ * Original commits for wallets corrupted by earlier heals.
+ * Keys may be Privy EOA or Polymarket deposit/proxy — both are checked.
+ */
 const KNOWN_COMMIT_USDC: Record<string, number> = {
   "0xdc3b7020ae12ff2ace2a38612b32ad7dd1b4b50f": 16.4,
   "0x78ff1189b36cd929946027b35376a3a9ca556e56": 32.6,
 };
 
-/**
- * Cash backing this investor: prefer the mandate wallet itself (matches Account),
- * then the derived deposit child. Never sum Safe+EOA (double-counts).
- */
 async function readMandateCashUsdc(owner: Address): Promise<{
   cashUsdc: number;
   positionWallet: Address;
+  deposit: Address;
 }> {
-  const onOwner = await readCollateralAtAddressUsdc(owner);
-  if (onOwner >= 0.01) {
-    return { cashUsdc: onOwner, positionWallet: owner };
-  }
-
   const deposit = await deriveDepositWalletAddress(owner);
+  const onOwner = await readCollateralAtAddressUsdc(owner);
   const onDeposit = await readCollateralAtAddressUsdc(deposit);
-  if (onDeposit >= 0.01) {
-    return { cashUsdc: onDeposit, positionWallet: deposit };
-  }
 
-  // Fallback helper (deposit-only path).
-  const viaHelper = await readDepositWalletBalanceUsdc(owner);
+  // Prefer whichever wallet actually holds the funds (Account balance).
+  if (onDeposit >= onOwner) {
+    return {
+      cashUsdc: onDeposit,
+      positionWallet: onDeposit > 0 ? deposit : owner,
+      deposit,
+    };
+  }
   return {
-    cashUsdc: viaHelper,
-    positionWallet: viaHelper >= 0.01 ? deposit : owner,
+    cashUsdc: onOwner,
+    positionWallet: owner,
+    deposit,
   };
 }
 
+function knownCommit(
+  owner: Address,
+  deposit: Address,
+): number | undefined {
+  return (
+    KNOWN_COMMIT_USDC[owner.toLowerCase()] ??
+    KNOWN_COMMIT_USDC[deposit.toLowerCase()]
+  );
+}
+
 /**
- * deployable = live wallet equity (Account pUSD + open Polymarket marks)
- * deposited  = original commit (known repair / reconstructed)
+ * deployable = live equity on the funded wallet (matches Account pUSD)
+ * deposited  = original commit (known map, else stored if sane, else equity)
  */
 export async function liveMandateBooks(
   mandate: Mandate,
-  filledTrades: MandateTrade[],
+  _filledTrades: MandateTrade[],
   _depositAddress: string | undefined,
-  valuations: Map<string, number>,
+  _valuations: Map<string, number>,
 ): Promise<LiveMandateBooks | null> {
+  void _filledTrades;
   void _depositAddress;
-  const owner = mandate.investorWallet as Address;
-  const mandateTrades = filledTrades.filter(
-    (trade) => trade.mandateId === mandate.id && trade.status === "filled",
-  );
+  void _valuations;
 
-  const { cashUsdc, positionWallet } = await readMandateCashUsdc(owner);
+  const owner = mandate.investorWallet as Address;
+  const { cashUsdc, positionWallet, deposit } =
+    await readMandateCashUsdc(owner);
 
   let openValueUsdc = 0;
   let openPnlUsdc = 0;
@@ -90,30 +96,22 @@ export async function liveMandateBooks(
     /* cash still counts */
   }
 
-  let tradePnlUsdcTotal = 0;
-  let tradeMarks = 0;
-  for (const trade of mandateTrades) {
-    const pnl = tradePnlUsdc(trade, valuations);
-    if (pnl == null) continue;
-    tradeMarks += 1;
-    tradePnlUsdcTotal = round(tradePnlUsdcTotal + pnl, 2);
-  }
-
   const deployableUsdc = round(Math.max(0, cashUsdc + openValueUsdc), 2);
   if (deployableUsdc <= 0 && (mandate.depositedUsdc ?? 0) <= 0) return null;
 
-  const known = KNOWN_COMMIT_USDC[owner.toLowerCase()];
-  const profitFromTrades =
-    tradeMarks > 0 ? tradePnlUsdcTotal : openPnlUsdc;
-  const derivedDeposited = round(
-    Math.max(0, deployableUsdc - profitFromTrades),
-    2,
-  );
+  const known = knownCommit(owner, deposit);
+  const stored = mandate.depositedUsdc;
 
-  const depositedUsdc = round(
-    known ?? Math.max(mandate.depositedUsdc ?? 0, derivedDeposited),
-    2,
-  );
+  // Known commit wins. Otherwise keep stored only if it sits under live equity
+  // (a real deposit can't exceed deployable). Else fall back to equity − open PnL.
+  let depositedUsdc: number;
+  if (known != null) {
+    depositedUsdc = known;
+  } else if (stored != null && stored > 0 && stored <= deployableUsdc + 0.01) {
+    depositedUsdc = round(stored, 2);
+  } else {
+    depositedUsdc = round(Math.max(0, deployableUsdc - openPnlUsdc), 2);
+  }
 
   const profitUsdc = round(deployableUsdc - depositedUsdc, 2);
 
