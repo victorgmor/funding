@@ -1,6 +1,7 @@
 import { createPublicClient, fallback, formatUnits, http, type Address } from "viem";
 import { polygon } from "wagmi/chains";
 import { deriveDepositWalletAddress } from "@/lib/polymarket/positions";
+import { CONDITIONAL_TOKENS } from "@/lib/polymarket/polygon-contracts";
 import { GIFT_TOKEN_ADDRESSES, PUSD_ADDRESS } from "@/lib/polygon/usdc";
 
 const balanceAbi = [
@@ -9,6 +10,19 @@ const balanceAbi = [
     type: "function",
     stateMutability: "view",
     inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+] as const;
+
+const erc1155BalanceAbi = [
+  {
+    name: "balanceOf",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "account", type: "address" },
+      { name: "id", type: "uint256" },
+    ],
     outputs: [{ name: "", type: "uint256" }],
   },
 ] as const;
@@ -48,6 +62,21 @@ export async function readCollateralAtAddressUsdc(
     total += await tokenBalance(token, holder);
   }
   return round(Number(formatUnits(total, 6)), 2);
+}
+
+/** Outcome-token shares held by an address (CTF ERC-1155, 6 decimals). */
+export async function readConditionalShares(
+  holder: Address,
+  tokenId: string,
+): Promise<number> {
+  const wei = await publicClient.readContract({
+    address: CONDITIONAL_TOKENS,
+    abi: erc1155BalanceAbi,
+    functionName: "balanceOf",
+    args: [holder, BigInt(tokenId)],
+  });
+  // Round down so a sell never exceeds the on-chain balance.
+  return Math.floor(Number(formatUnits(wei, 6)) * 1e4) / 1e4;
 }
 
 /** pUSD balance at an address (6 decimals). */

@@ -5,6 +5,7 @@ import type { MandateTrade } from "@/lib/funds/types";
 import type { LegResult } from "@/lib/polymarket/trade";
 import { executeMandateTradeWithSession } from "@/lib/polymarket/trade";
 import { ensureDepositWalletApprovalsServer } from "@/lib/polymarket/deposit-approvals-server";
+import { readConditionalShares } from "@/lib/polymarket/deposit-balance";
 import {
   getAuthorizationContext,
   getPrivyServerClient,
@@ -40,14 +41,33 @@ export async function executeMandateTradeServer(input: {
     transport: http(rpcUrl),
   });
 
+  // Approvals verified on-chain are fine for sells — only heal what's missing.
   await ensureDepositWalletApprovalsServer(
     walletClient,
     input.depositAddress as `0x${string}`,
-    undefined,
-    { forceCtf: input.trade.orderSide === "SELL" },
   );
 
-  return executeMandateTradeWithSession(walletClient, input.trade, {
+  let trade = input.trade;
+  if (trade.orderSide === "SELL") {
+    // Recorded shares (usdc/price at buy time) can exceed the actual fill;
+    // clamp to the on-chain balance so the CLOB doesn't reject the order.
+    const held = await readConditionalShares(
+      input.depositAddress as `0x${string}`,
+      trade.tokenId,
+    );
+    if (held <= 0) {
+      throw new Error("Deposit wallet holds no shares of this outcome");
+    }
+    if (trade.shares > held) {
+      trade = {
+        ...trade,
+        shares: held,
+        usdcAmount: Math.round(held * trade.price * 100) / 100,
+      };
+    }
+  }
+
+  return executeMandateTradeWithSession(walletClient, trade, {
     depositAddress: input.depositAddress,
     signatureType: input.signatureType,
     creds: input.creds,

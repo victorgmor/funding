@@ -245,6 +245,13 @@ function formatTradeError(
     return msg;
   }
 
+  // CLOB "not enough balance / allowance" is usually a balance shortfall,
+  // not a missing approval — don't send users to re-authorize.
+  if (lower.includes("balance") && lower.includes("allowance")) {
+    const short = `${trading.depositAddress.slice(0, 6)}…${trading.depositAddress.slice(-4)}`;
+    return `Deposit wallet (${short}) doesn't hold enough shares or pUSD for this order`;
+  }
+
   if (lower.includes("allowance")) {
     const short = `${trading.depositAddress.slice(0, 6)}…${trading.depositAddress.slice(-4)}`;
     return `Deposit wallet (${short}) needs trading approval — revoke and re-authorize auto-trading`;

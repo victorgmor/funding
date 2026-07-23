@@ -5,9 +5,6 @@ export const CTF_EXCHANGE_V2 =
 export const NEG_RISK_CTF_EXCHANGE_V2 =
   "0xe2222d279d744050d28e00520010520000310F59" as const;
 
-export const NEG_RISK_ADAPTER =
-  "0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296" as const;
-
 export const CONDITIONAL_TOKENS =
   "0x4D97DCd97eC945f40cF65F87097ACe5EA0476045" as const;
 
@@ -23,9 +20,9 @@ export const CTF_REDEMPTION_OPERATORS = [
   NEG_RISK_COLLATERAL_ADAPTER,
 ] as const;
 
-// V1 exchanges are NOT allowed by the relayer ("approve spender … not in the allowed list").
+// V1 exchanges and the V1 neg-risk adapter (relayer-retired 2026-07-17) are
+// NOT allowed by the relayer ("approve spender … not in the allowed list").
 export const PUSD_COLLATERAL_SPENDERS = [
   CTF_EXCHANGE_V2,
   NEG_RISK_CTF_EXCHANGE_V2,
-  NEG_RISK_ADAPTER,
 ] as const;
