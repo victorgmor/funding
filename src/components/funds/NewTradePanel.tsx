@@ -28,7 +28,8 @@ type PlannedTrade = {
 
 type PreviewTrade = PlannedTrade & { id: string };
 
-type BookLevel = { price: string; size: string };
+type RawBookLevel = { price: string; size: string };
+type BookLevel = { price: number; size: number };
 
 const field =
   "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/60 w-full rounded border px-3 py-2 text-sm focus:border-primary/30 focus:outline-none";
@@ -44,11 +45,21 @@ function priceLabel(price: number) {
 }
 
 function notionalLabel(level: BookLevel) {
-  const notional = Number(level.price) * Number(level.size);
+  const notional = level.price * level.size;
   return `$${notional.toLocaleString("en-US", {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   })}`;
+}
+
+// Aggregate raw levels into one entry per cent price (Polymarket-style).
+function groupByPrice(levels: RawBookLevel[]): BookLevel[] {
+  const buckets = new Map<number, number>();
+  for (const level of levels) {
+    const price = roundPrice(Number(level.price));
+    buckets.set(price, (buckets.get(price) ?? 0) + Number(level.size));
+  }
+  return [...buckets.entries()].map(([price, size]) => ({ price, size }));
 }
 
 export default function NewTradePanel({ fund }: Props) {
@@ -166,19 +177,17 @@ export default function NewTradePanel({ fund }: Props) {
           `/api/polymarket/book?token_id=${encodeURIComponent(selectedTokenId!)}`,
         );
         const data = await readResponseJson<{
-          bids?: BookLevel[];
-          asks?: BookLevel[];
+          bids?: RawBookLevel[];
+          asks?: RawBookLevel[];
           error?: string;
         }>(res);
         if (cancelled) return;
         if (!res.ok) throw new Error(data.error ?? "Orderbook unavailable");
-        const nextBids = (data.bids ?? [])
-          .slice()
-          .sort((a, b) => Number(b.price) - Number(a.price))
+        const nextBids = groupByPrice(data.bids ?? [])
+          .sort((a, b) => b.price - a.price)
           .slice(0, 6);
-        const nextAsks = (data.asks ?? [])
-          .slice()
-          .sort((a, b) => Number(a.price) - Number(b.price))
+        const nextAsks = groupByPrice(data.asks ?? [])
+          .sort((a, b) => a.price - b.price)
           .slice(0, 6);
         setBids(nextBids);
         setAsks(nextAsks);
@@ -186,7 +195,7 @@ export default function NewTradePanel({ fund }: Props) {
 
         // Seed limit from best ask when empty / market just selected.
         if (!limitPrice && nextAsks[0]) {
-          setLimitPrice(roundPrice(Number(nextAsks[0].price)).toFixed(2));
+          setLimitPrice(nextAsks[0].price.toFixed(2));
         }
       } catch (e) {
         if (!cancelled) {
@@ -477,16 +486,12 @@ export default function NewTradePanel({ fund }: Props) {
                   ) : (
                     asks.map((level) => (
                       <button
-                        key={`ask-${level.price}-${level.size}`}
+                        key={`ask-${level.price}`}
                         type="button"
-                        onClick={() =>
-                          setLimitPrice(
-                            roundPrice(Number(level.price)).toFixed(2),
-                          )
-                        }
+                        onClick={() => setLimitPrice(level.price.toFixed(2))}
                         className="hover:bg-primary/5 flex w-full items-center justify-between gap-2 rounded px-1 py-0.5 text-red-500/90"
                       >
-                        <span>{priceLabel(Number(level.price))}</span>
+                        <span>{priceLabel(level.price)}</span>
                         <span className="text-primary/45">
                           {notionalLabel(level)}
                         </span>
@@ -505,16 +510,12 @@ export default function NewTradePanel({ fund }: Props) {
                   ) : (
                     bids.map((level) => (
                       <button
-                        key={`bid-${level.price}-${level.size}`}
+                        key={`bid-${level.price}`}
                         type="button"
-                        onClick={() =>
-                          setLimitPrice(
-                            roundPrice(Number(level.price)).toFixed(2),
-                          )
-                        }
+                        onClick={() => setLimitPrice(level.price.toFixed(2))}
                         className="hover:bg-primary/5 text-profit flex w-full items-center justify-between gap-2 rounded px-1 py-0.5"
                       >
-                        <span>{priceLabel(Number(level.price))}</span>
+                        <span>{priceLabel(level.price)}</span>
                         <span className="text-primary/45">
                           {notionalLabel(level)}
                         </span>
