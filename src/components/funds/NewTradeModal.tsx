@@ -45,8 +45,8 @@ function roundPrice(n: number) {
   return Math.round(n * 100) / 100;
 }
 
-function centsLabel(price: number) {
-  return `${Math.round(price * 100)}¢`;
+function priceLabel(price: number) {
+  return `$${Number(price).toFixed(1)}`;
 }
 
 export default function NewTradeModal({
@@ -540,7 +540,7 @@ export default function NewTradeModal({
                             }
                             className="flex w-full items-center justify-between gap-2 rounded px-1 py-0.5 text-red-300/90 hover:bg-white/5"
                           >
-                            <span>{centsLabel(Number(level.price))}</span>
+                            <span>{priceLabel(Number(level.price))}</span>
                             <span className="text-white/45">{level.size}</span>
                           </button>
                         ))
@@ -566,7 +566,7 @@ export default function NewTradeModal({
                             }
                             className="flex w-full items-center justify-between gap-2 rounded px-1 py-0.5 text-emerald-300/90 hover:bg-white/5"
                           >
-                            <span>{centsLabel(Number(level.price))}</span>
+                            <span>{priceLabel(Number(level.price))}</span>
                             <span className="text-white/45">{level.size}</span>
                           </button>
                         ))
@@ -660,7 +660,7 @@ export default function NewTradeModal({
                       <p className="min-w-0 flex-1 truncate text-sm text-white/80">
                         {trade.question}
                         <span className="ml-2 uppercase text-white/45">
-                          {trade.side} · {centsLabel(trade.price)} ·{" "}
+                          {trade.side} · {priceLabel(trade.price)} ·{" "}
                           {formatUsdExact(trade.totalUsdc)}
                         </span>
                       </p>
