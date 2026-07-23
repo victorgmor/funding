@@ -127,6 +127,7 @@ async function ctfApprovedForAll(
 
 async function buildMissingApprovalCalls(
   depositAddress: Address,
+  forceCtf = false,
 ): Promise<DepositWalletCall[]> {
   const calls: DepositWalletCall[] = [];
 
@@ -134,7 +135,9 @@ async function buildMissingApprovalCalls(
     if (!(await pusdAllowanceOk(depositAddress, spender))) {
       calls.push(erc20ApproveCall(PUSD_ADDRESS, spender));
     }
-    if (!(await ctfApprovedForAll(depositAddress, spender))) {
+    // Sells need ERC-1155 operator approval; force re-assert when selling so a
+    // stale isApprovedForAll read cannot skip the heal.
+    if (forceCtf || !(await ctfApprovedForAll(depositAddress, spender))) {
       calls.push(erc1155ApproveCall(spender));
     }
   }
@@ -147,8 +150,12 @@ export async function submitDepositWalletApprovals(
   depositAddress: Address,
   builderConfig: BuilderConfig,
   onStatus?: (message: string) => void,
+  options?: { forceCtf?: boolean },
 ): Promise<void> {
-  const calls = await buildMissingApprovalCalls(depositAddress);
+  const calls = await buildMissingApprovalCalls(
+    depositAddress,
+    options?.forceCtf === true,
+  );
   if (calls.length === 0) return;
 
   onStatus?.("Approving Polymarket trading contracts…");

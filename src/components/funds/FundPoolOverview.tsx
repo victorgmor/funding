@@ -20,6 +20,7 @@ import { addressDisplayFallback } from "@/lib/polymarket/profile";
 import { notifyPoolUpdated, POOL_UPDATED_EVENT } from "@/lib/funds/pool-events";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
+import { readResponseJson } from "@/lib/fetch-json";
 
 type Props = { fund: Fund };
 
@@ -214,7 +215,14 @@ function PositionsList({
           dryRun: true,
         }),
       });
-      const preview = await previewRes.json();
+      const preview = await readResponseJson<{
+        error?: string;
+        trades?: Array<{
+          tokenId: string;
+          side: string;
+          totalUsdc: number;
+        }>;
+      }>(previewRes);
       if (!previewRes.ok) throw new Error(preview.error ?? "Sell preview failed");
       const planned = preview.trades?.[0];
       if (!planned) throw new Error("Sell preview failed");
@@ -227,7 +235,10 @@ function PositionsList({
       const challengeRes = await fetch(
         `/api/auth/bundle-challenge?${challengeParams}`,
       );
-      const challenge = await challengeRes.json();
+      const challenge = await readResponseJson<{
+        error?: string;
+        message?: string;
+      }>(challengeRes);
       if (!challengeRes.ok) {
         throw new Error(challenge.error ?? "Could not start signing");
       }
@@ -251,7 +262,7 @@ function PositionsList({
           execute: true,
         }),
       });
-      const exec = await execRes.json();
+      const exec = await readResponseJson<{ error?: string }>(execRes);
       if (!execRes.ok) throw new Error(exec.error ?? "Sell failed");
 
       notifyPoolUpdated(fundSlug);

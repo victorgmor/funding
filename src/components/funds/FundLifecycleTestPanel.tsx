@@ -12,6 +12,7 @@ import { usePoolTotals } from "@/lib/funds/usePoolTotals";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 import { walletNavButtonClass } from "@/lib/walletNavChrome";
+import { readResponseJson } from "@/lib/fetch-json";
 
 type Props = { fund: Fund };
 
@@ -84,7 +85,10 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
         slug: fund.slug,
       });
       const challengeRes = await fetch(`/api/auth/bundle-challenge?${params}`);
-      const challengeData = await challengeRes.json();
+      const challengeData = await readResponseJson<{
+        error?: string;
+        message?: string;
+      }>(challengeRes);
       if (!challengeRes.ok) {
         throw new Error(challengeData.error ?? "Could not start signing");
       }
@@ -105,7 +109,7 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
         }),
       });
 
-      const data = await res.json();
+      const data = await readResponseJson<{ error?: string }>(res);
       if (!res.ok) throw new Error(data.error ?? "Could not update stage");
 
       window.location.reload();

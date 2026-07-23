@@ -29,6 +29,7 @@ import { useEnsurePolygon } from "@/lib/wagmi/useEnsurePolygon";
 import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { walletNavButtonClass } from "@/lib/walletNavChrome";
+import { readResponseJson } from "@/lib/fetch-json";
 
 type Props = { fund: Fund };
 
@@ -103,10 +104,16 @@ export default function MandatePanel({ fund }: Props) {
           { cache: "no-store" },
         ),
       ]);
-      const mandateData = await mandateRes.json();
-      const tradesData = await tradesRes.json();
-      if (!mandateRes.ok) throw new Error(mandateData.error ?? "Load failed");
-      setSummary(mandateData);
+      const mandateData = await readResponseJson(mandateRes);
+      const tradesData = await readResponseJson<{ trades?: MandateTrade[] }>(
+        tradesRes,
+      );
+      if (!mandateRes.ok) {
+        throw new Error(
+          (mandateData as { error?: string }).error ?? "Load failed",
+        );
+      }
+      setSummary(mandateData as MandateSummary);
       setPendingTrades(tradesRes.ok ? (tradesData.trades ?? []) : []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Load failed");
@@ -137,7 +144,9 @@ export default function MandatePanel({ fund }: Props) {
       slug: fund.slug,
     });
     const res = await fetch(`/api/auth/bundle-challenge?${params}`);
-    const data = await res.json();
+    const data = await readResponseJson<{ error?: string; message?: string }>(
+      res,
+    );
     if (!res.ok) throw new Error(data.error ?? "Could not start signing");
     return data.message as string;
   }
@@ -202,7 +211,7 @@ export default function MandatePanel({ fund }: Props) {
         }),
       });
 
-      const data = await res.json();
+      const data = await readResponseJson<{ error?: string }>(res);
       if (!res.ok) throw new Error(data.error ?? "Authorization failed");
 
       await refresh();
@@ -327,7 +336,7 @@ export default function MandatePanel({ fund }: Props) {
         }),
       });
 
-      const data = await res.json();
+      const data = await readResponseJson<{ error?: string }>(res);
       if (!res.ok) {
         throw new Error(
           data.error ?? (isWithdraw ? "Withdraw failed" : "Commit failed"),

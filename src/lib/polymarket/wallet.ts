@@ -14,7 +14,10 @@ export async function resolveTradingWallet(
   onStatus?: (message: string) => void,
 ): Promise<TradingWallet> {
   const depositAddress = await ensureDepositWallet(walletClient, onStatus);
-  await ensureDepositWalletApprovals(walletClient, depositAddress, onStatus);
+  // Re-auth / join should heal sell-side CTF approvals too.
+  await ensureDepositWalletApprovals(walletClient, depositAddress, onStatus, {
+    forceCtf: true,
+  });
 
   return {
     signatureType: SignatureTypeV2.POLY_1271,

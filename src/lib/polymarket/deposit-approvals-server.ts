@@ -8,6 +8,7 @@ export async function ensureDepositWalletApprovalsServer(
   walletClient: WalletClient,
   depositAddress: Address,
   onStatus?: (message: string) => void,
+  options?: { forceCtf?: boolean },
 ): Promise<void> {
   const builderConfig = getRelayBuilderConfig();
   if (!builderConfig) {
@@ -21,5 +22,6 @@ export async function ensureDepositWalletApprovalsServer(
     depositAddress,
     builderConfig,
     onStatus,
+    options,
   );
 }

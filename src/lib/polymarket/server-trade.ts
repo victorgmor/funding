@@ -43,6 +43,8 @@ export async function executeMandateTradeServer(input: {
   await ensureDepositWalletApprovalsServer(
     walletClient,
     input.depositAddress as `0x${string}`,
+    undefined,
+    { forceCtf: input.trade.orderSide === "SELL" },
   );
 
   return executeMandateTradeWithSession(walletClient, input.trade, {
