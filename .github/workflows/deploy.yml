@@ -81,6 +81,10 @@ jobs:
           execution-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole
           infrastructure-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecsInfrastructureRoleForExpressServices
           container-port: 8080
+          # Express defaults are 256 CPU / 512 MB — too small for Astro SSR +
+          # Dynamo during rolling deploys (ALB 504s, hung health checks).
+          cpu: "1024"
+          memory: "2048"
           # Lightweight route — homepage SSR is too heavy/slow for ALB checks.
           health-check-path: /ping
           task-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole
