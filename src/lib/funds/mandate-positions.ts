@@ -92,6 +92,42 @@ export async function addPositionFromTrade(trade: MandateTrade): Promise<Mandate
   return position;
 }
 
+/** Reduce open shares after a market sell fill. */
+export async function reducePositionFromTrade(
+  trade: MandateTrade,
+): Promise<MandatePosition | undefined> {
+  const positions = await listAllPositionsByFund(trade.fundSlug);
+  const existing = positions.find(
+    (row) =>
+      row.mandateId === trade.mandateId &&
+      row.tokenId === trade.tokenId &&
+      !row.redeemedAt,
+  );
+  if (!existing) return undefined;
+
+  const soldShares = Math.min(existing.shares, trade.shares);
+  const shares = round(Math.max(0, existing.shares - soldShares), 4);
+  const costCut = round(
+    existing.shares > 0
+      ? (existing.costUsdc * soldShares) / existing.shares
+      : 0,
+    2,
+  );
+  const next: MandatePosition = {
+    ...existing,
+    shares,
+    costUsdc: round(Math.max(0, existing.costUsdc - costCut), 2),
+    avgPrice:
+      shares > 0
+        ? round(Math.max(0, existing.costUsdc - costCut) / shares, 4)
+        : existing.avgPrice,
+    updatedAt: new Date().toISOString(),
+  };
+
+  await savePositionRecord(next);
+  return next;
+}
+
 export async function deletePositionsForMandate(
   fundSlug: string,
   mandateId: string,

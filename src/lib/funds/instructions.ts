@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import type { ManagerInstruction, MarketSide } from "@/lib/funds/types";
+import type {
+  ManagerInstruction,
+  MarketSide,
+  OrderSide,
+} from "@/lib/funds/types";
 import {
   mandateDocClient,
   mandateSk,
@@ -41,6 +45,7 @@ export async function createInstruction(input: {
   tokenId: string;
   question: string;
   side: MarketSide;
+  orderSide?: OrderSide;
   totalUsdc: number;
   price: number;
 }): Promise<ManagerInstruction> {
@@ -52,6 +57,7 @@ export async function createInstruction(input: {
     tokenId: input.tokenId,
     question: input.question,
     side: input.side,
+    orderSide: input.orderSide === "SELL" ? "SELL" : "BUY",
     totalUsdc: round(input.totalUsdc, 2),
     price: round(input.price, 4),
     shares,

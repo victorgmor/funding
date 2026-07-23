@@ -39,12 +39,16 @@ export async function recordFanoutTrades(input: {
   tokenId: string;
   question: string;
   side: MarketSide;
+  orderSide?: import("@/lib/funds/types").OrderSide;
   price: number;
   slices: FanoutSlice[];
 }): Promise<MandateTrade[]> {
+  const orderSide = input.orderSide === "SELL" ? "SELL" : "BUY";
   const now = new Date().toISOString();
   const trades: MandateTrade[] = input.slices
-    .filter((slice) => slice.usdcAmount > 0)
+    .filter((slice) =>
+      orderSide === "SELL" ? slice.shares > 0 : slice.usdcAmount > 0,
+    )
     .map((slice) => ({
       id: randomUUID(),
       mandateId: slice.mandateId,
@@ -54,6 +58,7 @@ export async function recordFanoutTrades(input: {
       tokenId: input.tokenId,
       question: input.question,
       side: input.side,
+      orderSide,
       usdcAmount: slice.usdcAmount,
       price: input.price,
       shares: slice.shares,
@@ -102,15 +107,17 @@ export async function requeueFailedTrade(
   }
 
   const { adjustMandateCash } = await import("@/lib/funds/mandates");
-  const mandate = await adjustMandateCash(
-    trade.mandateId,
-    fundSlug,
-    -trade.usdcAmount,
-  );
-  if (!mandate) {
-    throw new Error(
-      `Not enough deployable cash to retry $${trade.usdcAmount.toFixed(2)}`,
+  if (trade.orderSide !== "SELL") {
+    const mandate = await adjustMandateCash(
+      trade.mandateId,
+      fundSlug,
+      -trade.usdcAmount,
     );
+    if (!mandate) {
+      throw new Error(
+        `Not enough deployable cash to retry $${trade.usdcAmount.toFixed(2)}`,
+      );
+    }
   }
 
   const updated: MandateTrade = {

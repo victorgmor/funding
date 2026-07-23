@@ -13,6 +13,8 @@ export type MandateTradeStatus =
   | "failed"
   | "skipped";
 export type MarketSide = string;
+/** CLOB order direction — distinct from outcome label (`Yes`/`No`/`Up`/`Down`). */
+export type OrderSide = "BUY" | "SELL";
 
 /** Hydrated view of a manager; name/verified come from carriera-managers on read. */
 export type FundManager = {
@@ -88,6 +90,8 @@ export type ManagerInstruction = {
   tokenId: string;
   question: string;
   side: MarketSide;
+  /** Defaults to BUY when omitted (legacy rows). */
+  orderSide?: OrderSide;
   totalUsdc: number;
   price: number;
   shares: number;
@@ -106,6 +110,8 @@ export type MandateTrade = {
   tokenId: string;
   question: string;
   side: MarketSide;
+  /** Defaults to BUY when omitted (legacy rows). */
+  orderSide?: OrderSide;
   usdcAmount: number;
   price: number;
   shares: number;

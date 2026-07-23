@@ -1,4 +1,4 @@
-import type { FanoutSlice, Mandate } from "@/lib/funds/types";
+import type { FanoutSlice, Mandate, MandatePosition } from "@/lib/funds/types";
 
 export function activeMandates(mandates: Mandate[]): Mandate[] {
   return mandates.filter(
@@ -40,7 +40,7 @@ export function poolShare(mandate: Mandate, mandates: Mandate[]): number {
   return mandate.notionalUsdc / total;
 }
 
-/** Split a manager trade across active mandates by pool share. */
+/** Split a manager buy across active mandates by pool share. */
 export function fanoutTrade(
   totalUsdc: number,
   price: number,
@@ -88,6 +88,59 @@ export function fanoutTrade(
       usdcAmount,
       price: round(price, 4),
       shares: round(usdcAmount / price, 4),
+      poolShare: round(share, 4),
+    });
+  }
+
+  return slices;
+}
+
+/** Split a manager sell across open positions for one outcome token. */
+export function fanoutSell(
+  totalUsdc: number,
+  price: number,
+  positions: MandatePosition[],
+): FanoutSlice[] {
+  if (totalUsdc <= 0) throw new Error("Trade amount must be positive");
+  if (price <= 0) throw new Error("Price must be positive");
+
+  const open = positions.filter((pos) => !pos.redeemedAt && pos.shares > 0);
+  const totalShares = round(
+    open.reduce((sum, pos) => sum + pos.shares, 0),
+    4,
+  );
+  if (open.length === 0 || totalShares <= 0) {
+    throw new Error("No open shares to sell");
+  }
+
+  const maxUsdc = round(totalShares * price, 2);
+  if (totalUsdc > maxUsdc + 0.01) {
+    throw new Error(
+      `Pool holds ~$${maxUsdc.toFixed(2)} of this outcome — cannot sell $${totalUsdc.toFixed(2)}`,
+    );
+  }
+
+  const targetShares = round(Math.min(totalUsdc / price, totalShares), 4);
+  let allocatedShares = 0;
+  const slices: FanoutSlice[] = [];
+
+  for (let i = 0; i < open.length; i++) {
+    const pos = open[i]!;
+    const share = pos.shares / totalShares;
+    let shares =
+      i === open.length - 1
+        ? round(targetShares - allocatedShares, 4)
+        : round(targetShares * share, 4);
+    shares = Math.min(shares, pos.shares);
+    allocatedShares = round(allocatedShares + shares, 4);
+    if (shares <= 0) continue;
+
+    slices.push({
+      mandateId: pos.mandateId,
+      investorWallet: pos.investorWallet,
+      usdcAmount: round(shares * price, 2),
+      price: round(price, 4),
+      shares,
       poolShare: round(share, 4),
     });
   }

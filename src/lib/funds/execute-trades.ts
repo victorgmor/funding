@@ -1,6 +1,9 @@
 import { adjustMandateCash } from "@/lib/funds/mandates";
 import { markInstructionStatus } from "@/lib/funds/instructions";
-import { addPositionFromTrade } from "@/lib/funds/mandate-positions";
+import {
+  addPositionFromTrade,
+  reducePositionFromTrade,
+} from "@/lib/funds/mandate-positions";
 import {
   claimPendingTrade,
   completeTradeExecution,
@@ -19,6 +22,10 @@ export type ExecutionSummary = {
   withoutSession: number;
   status: "executing" | "executed" | "failed";
 };
+
+function isSell(trade: MandateTrade): boolean {
+  return trade.orderSide === "SELL";
+}
 
 /** Settle a fan-out slice and update mandate cash / position ledger. */
 export async function settleMandateTrade(
@@ -54,12 +61,19 @@ async function applyTradeSettlement(
   trade: MandateTrade,
   status: "filled" | "failed",
 ): Promise<MandateTrade> {
-  if (status === "failed") {
-    await adjustMandateCash(trade.mandateId, fundSlug, trade.usdcAmount);
-  }
-
-  if (status === "filled") {
-    await addPositionFromTrade(trade);
+  if (isSell(trade)) {
+    if (status === "filled") {
+      await reducePositionFromTrade(trade);
+      await adjustMandateCash(trade.mandateId, fundSlug, trade.usdcAmount);
+    }
+    // Sell failures reserved no cash — nothing to refund.
+  } else {
+    if (status === "failed") {
+      await adjustMandateCash(trade.mandateId, fundSlug, trade.usdcAmount);
+    }
+    if (status === "filled") {
+      await addPositionFromTrade(trade);
+    }
   }
 
   await syncInstructionStatus(fundSlug, trade.instructionId);

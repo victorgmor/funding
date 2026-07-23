@@ -111,7 +111,11 @@ function PredictionsList({
                   }`}
                 >
                   {formatUsdExact(trade.usdcAmount)}{" "}
-                  {failed ? "FAILED" : trade.side}
+                  {failed
+                    ? "FAILED"
+                    : trade.orderSide === "SELL"
+                      ? `SELL ${trade.side}`
+                      : trade.side}
                 </p>
               </div>
             </div>

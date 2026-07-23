@@ -142,6 +142,12 @@ export async function executeMandateTradeWithSession(
 
   onStatus?.("Syncing balance with Polymarket…");
   await client.updateBalanceAllowance({ asset_type: AssetType.COLLATERAL });
+  if (trade.orderSide === "SELL") {
+    await client.updateBalanceAllowance({
+      asset_type: AssetType.CONDITIONAL,
+      token_id: trade.tokenId,
+    });
+  }
 
   return executeLeg(
     client,
@@ -154,6 +160,7 @@ export async function executeMandateTradeWithSession(
       shares: trade.shares,
     },
     trading,
+    trade.orderSide === "SELL" ? Side.SELL : Side.BUY,
   );
 }
 
@@ -161,6 +168,7 @@ async function executeLeg(
   client: ClobClient,
   leg: BasketQuote["legs"][number],
   trading: TradingWallet,
+  orderSide: Side = Side.BUY,
 ): Promise<LegResult> {
   let lastError: unknown;
 
@@ -169,8 +177,10 @@ async function executeLeg(
       const resp = await client.createAndPostMarketOrder(
         {
           tokenID: leg.tokenId,
-          amount: leg.usdcAmount,
-          side: Side.BUY,
+          // BUY amount = USDC; SELL amount = shares
+          amount: orderSide === Side.SELL ? leg.shares : leg.usdcAmount,
+          side: orderSide,
+          price: leg.price,
         },
         {},
         OrderType.FOK,

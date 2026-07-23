@@ -23,24 +23,30 @@ export const prerender = false;
 
 function normalizeDrafts(body: {
   gammaMarketId?: string;
+  tokenId?: string;
   side?: string;
   totalUsdc?: number;
+  orderSide?: "BUY" | "SELL";
   trades?: TradeDraft[];
 }): TradeDraft[] {
   if (body.trades?.length) {
     return body.trades.map((trade) => ({
       gammaMarketId: trade.gammaMarketId,
+      tokenId: trade.tokenId,
       side: trade.side,
       totalUsdc: Number(trade.totalUsdc),
+      orderSide: trade.orderSide === "SELL" ? "SELL" : "BUY",
     }));
   }
 
-  if (body.gammaMarketId) {
+  if (body.gammaMarketId || body.tokenId) {
     return [
       {
         gammaMarketId: body.gammaMarketId,
+        tokenId: body.tokenId,
         side: body.side ?? "",
         totalUsdc: Number(body.totalUsdc),
+        orderSide: body.orderSide === "SELL" ? "SELL" : "BUY",
       },
     ];
   }
@@ -76,8 +82,10 @@ export const POST: APIRoute = async ({ params, request }) => {
     message?: string;
     signature?: `0x${string}`;
     gammaMarketId?: string;
+    tokenId?: string;
     side?: string;
     totalUsdc?: number;
+    orderSide?: "BUY" | "SELL";
     trades?: TradeDraft[];
     dryRun?: boolean;
     execute?: boolean;
@@ -121,7 +129,9 @@ export const POST: APIRoute = async ({ params, request }) => {
     }
 
     const mandates = await reconcileFundMandates(fund.slug);
-    const planned = await planTradeBatch(drafts, mandates);
+    const { listPositionsByFund } = await import("@/lib/funds/mandate-positions");
+    const positions = await listPositionsByFund(fund.slug);
+    const planned = await planTradeBatch(drafts, mandates, positions);
 
     if (dryRunOnly) {
       return new Response(
@@ -133,8 +143,10 @@ export const POST: APIRoute = async ({ params, request }) => {
       );
     }
 
-    const instructions = [];
-    const allTrades = [];
+    const instructions: Array<
+      Awaited<ReturnType<typeof createInstruction>> & { status: "executing" }
+    > = [];
+    const allTrades: Awaited<ReturnType<typeof recordFanoutTrades>> = [];
     const summaries: ExecutionSummary[] = [];
 
     for (const trade of planned) {
@@ -144,6 +156,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         tokenId: trade.tokenId,
         question: trade.question,
         side: trade.side,
+        orderSide: trade.orderSide,
         totalUsdc: trade.totalUsdc,
         price: trade.price,
       });
@@ -154,12 +167,16 @@ export const POST: APIRoute = async ({ params, request }) => {
         tokenId: trade.tokenId,
         question: trade.question,
         side: trade.side,
+        orderSide: trade.orderSide,
         price: trade.price,
         slices: trade.slices,
       });
 
-      for (const slice of trade.slices) {
-        await adjustMandateCash(slice.mandateId, fund.slug, -slice.usdcAmount);
+      // Buys reserve cash up front; sells credit cash on fill.
+      if (trade.orderSide !== "SELL") {
+        for (const slice of trade.slices) {
+          await adjustMandateCash(slice.mandateId, fund.slug, -slice.usdcAmount);
+        }
       }
 
       const summary = await beginInstructionExecution(fund.slug, instruction.id);
