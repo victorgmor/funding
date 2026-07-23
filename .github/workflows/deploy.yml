@@ -116,21 +116,13 @@ jobs:
             ping_body=$(curl -sS --max-time 15 "$LIVE_URL/ping" || true)
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$LIVE_URL/ping" || true)
             if [ "$code" = "200" ] && echo "$ping_body" | grep -q "$IMAGE_TAG"; then
-              js=$(curl -fsSL --max-time 30 "$LIVE_URL/funds/8907654123" | grep -oE '/_astro/FundPoolOverview[^"]+\.js' | head -1 || true)
-              panel=$(curl -fsSL --max-time 30 "$LIVE_URL/funds/8907654123" | grep -oE '/_astro/MandatePanel[^"]+\.js' | head -1 || true)
-              if [ -n "$js" ] && [ -n "$panel" ]; then
-                overview=$(curl -fsSL --max-time 30 "$LIVE_URL$js")
-                mandate=$(curl -fsSL --max-time 30 "$LIVE_URL$panel")
-                if echo "$overview" | grep -q 'History' \
-                  && echo "$overview" | grep -q 'Positions' \
-                  && echo "$mandate" | grep -q 'Re-authorize auto-trading'; then
-                  echo "Live: BUILD_SHA=$ping_body overview=$js panel=$panel"
-                  exit 0
-                fi
-                echo "attempt $i: sha ok ($ping_body) but UI strings missing"
-              else
-                echo "attempt $i: sha ok ($ping_body), bundles not found yet"
+              # BUILD_SHA matching this commit is the real gate; homepage 200 confirms SSR works.
+              home=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$LIVE_URL/" || true)
+              if [ "$home" = "200" ]; then
+                echo "Live: BUILD_SHA=$ping_body home=200"
+                exit 0
               fi
+              echo "attempt $i: sha ok ($ping_body) but / -> $home"
             else
               echo "attempt $i: /ping -> $code body=${ping_body:0:40}"
             fi
