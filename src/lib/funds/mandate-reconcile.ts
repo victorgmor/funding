@@ -11,7 +11,6 @@ import {
 } from "@/lib/funds/mandate-positions";
 import { listTradesByFund } from "@/lib/funds/mandate-trades";
 import type { Mandate, MandatePosition, MandateTrade } from "@/lib/funds/types";
-import { tradePnlUsdc } from "@/lib/funds/valuation";
 import { readInvestorCollateralUsdc } from "@/lib/polymarket/deposit-balance";
 import type { Address } from "viem";
 
@@ -142,47 +141,6 @@ export function expectedMandateCash(
  * deposited = external capital (immutable once set);
  * notional = deposited + realized; cash = notional − open cost.
  */
-export function rebuildMandateBooks(
-  mandate: Mandate,
-  openPositions: MandatePosition[],
-  filledTrades: MandateTrade[],
-  valuations: Map<string, number>,
-): Mandate {
-  const open = openPositions.filter(
-    (pos) =>
-      pos.mandateId === mandate.id && !pos.redeemedAt && pos.shares > 0,
-  );
-  const openTokens = new Set(open.map((pos) => pos.tokenId));
-  const openCost = round(
-    open.reduce((sum, pos) => sum + pos.costUsdc, 0),
-    2,
-  );
-
-  let realizedPnl = 0;
-  for (const trade of filledTrades) {
-    if (trade.mandateId !== mandate.id || trade.status !== "filled") continue;
-    if (openTokens.has(trade.tokenId)) continue;
-    const pnl = tradePnlUsdc(trade, valuations);
-    if (pnl != null) realizedPnl = round(realizedPnl + pnl, 2);
-  }
-
-  // Never rewrite deposited — commits own this field.
-  const deposited =
-    mandate.depositedUsdc ??
-    round(Math.max(0, mandate.notionalUsdc - realizedPnl), 2);
-
-  const notionalUsdc = round(Math.max(0, deposited + realizedPnl), 2);
-  const cashUsdc = round(Math.max(0, notionalUsdc - openCost), 2);
-
-  return {
-    ...mandate,
-    depositedUsdc: round(deposited, 2),
-    notionalUsdc,
-    cashUsdc,
-    updatedAt: new Date().toISOString(),
-  };
-}
-
 /** Liquid deposit wallet + open position cost for mandate backing checks. */
 export async function investorMandateBacking(
   fundSlug: string,
@@ -221,7 +179,6 @@ export async function reconcileMandateCash(
   );
 
   // Always try live books — Dynamo depositedUsdc may be corrupted.
-  // Never fall through to rebuildMandateBooks for these (it re-corrupts deposits).
   try {
     const { healMandateFromLive, liveMandateBooks } = await import(
       "@/lib/funds/live-mandate"
@@ -281,21 +238,21 @@ export async function reconcileFundMandates(fundSlug: string): Promise<Mandate[]
     allTrades,
   );
 
-  const reconciled: Mandate[] = [];
-
-  for (const mandate of mandates) {
-    const openPositions = await reconcileMandatePositions(fundSlug, mandate.id);
-    reconciled.push(
-      await reconcileMandateCash(
+  // Mandates are independent — reconcile them in parallel.
+  return Promise.all(
+    mandates.map(async (mandate) => {
+      const openPositions = await reconcileMandatePositions(
+        fundSlug,
+        mandate.id,
+      );
+      return reconcileMandateCash(
         fundSlug,
         mandate,
         openPositions,
         allTrades,
         valuations,
         depositByInvestor.get(mandate.investorWallet),
-      ),
-    );
-  }
-
-  return reconciled;
+      );
+    }),
+  );
 }

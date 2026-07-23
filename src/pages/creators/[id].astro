@@ -127,7 +127,7 @@ const metricValue =
           {
             profileWalletId ? (
               <CreatorAvatar
-                client:load
+                client:idle
                 address={profileWalletId}
                 name={name}
                 initialImage={profileImage}
@@ -156,7 +156,7 @@ const metricValue =
                 {
                   profileWalletId ? (
                     <CreatorName
-                      client:load
+                      client:idle
                       address={profileWalletId}
                       fallback={name}
                     />
@@ -171,7 +171,7 @@ const metricValue =
             <div class="mt-2 flex flex-wrap items-center gap-2">
               {
                 profileWalletId && (
-                  <CreatorWalletChip client:load address={profileWalletId} />
+                  <CreatorWalletChip client:idle address={profileWalletId} />
                 )
               }
             </div>
@@ -188,7 +188,7 @@ const metricValue =
 
         {
           profileWalletId && (
-            <CreatorLocalBio client:load address={profileWalletId} />
+            <CreatorLocalBio client:idle address={profileWalletId} />
           )
         }
 
@@ -213,7 +213,7 @@ const metricValue =
       >
         <div class="min-w-0">
           <CreatorFundList
-            client:load
+            client:idle
             funds={funds}
             initialPoolTotals={initialPoolTotals}
           />

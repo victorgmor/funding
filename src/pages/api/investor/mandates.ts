@@ -27,47 +27,54 @@ export const GET: APIRoute = async ({ url }) => {
 
   try {
     const mandates = await listMandatesForInvestor(address);
-    const entries: MandateEntry[] = [];
 
-    for (const mandate of mandates) {
-      const fund = await getFund(mandate.fundSlug);
-      if (!fund) continue;
+    // Each mandate is independent — run them in parallel instead of a
+    // sequential reconcile → trades → valuations chain per mandate.
+    const entries = (
+      await Promise.all(
+        mandates.map(async (mandate): Promise<MandateEntry | null> => {
+          const fund = await getFund(mandate.fundSlug);
+          if (!fund) return null;
 
-      let mandateProfitUsdc: number | null = null;
-      let healed = mandate;
-      try {
-        const positions = await reconcileMandatePositions(fund.slug, mandate.id);
-        const filledTrades = (await listTradesByFund(fund.slug)).filter(
-          (trade) =>
-            trade.mandateId === mandate.id && trade.status === "filled",
-        );
-        const depositByInvestor = await resolveDepositAddresses(fund.slug, [
-          address,
-        ]);
-        const valuations = await fetchTokenValuations(
-          positions,
-          depositByInvestor,
-          filledTrades,
-        );
-        const { liveMandateBooks, healMandateFromLive } = await import(
-          "@/lib/funds/live-mandate"
-        );
-        const live = await liveMandateBooks(
-          mandate,
-          filledTrades,
-          depositByInvestor.get(address.toLowerCase()),
-          valuations,
-        );
-        if (live) {
-          healed = await healMandateFromLive(mandate, live);
-          mandateProfitUsdc = live.profitUsdc;
-        }
-      } catch {
-        mandateProfitUsdc = null;
-      }
+          let mandateProfitUsdc: number | null = null;
+          let healed = mandate;
+          try {
+            const [positions, allTrades, depositByInvestor] =
+              await Promise.all([
+                reconcileMandatePositions(fund.slug, mandate.id),
+                listTradesByFund(fund.slug),
+                resolveDepositAddresses(fund.slug, [address]),
+              ]);
+            const filledTrades = allTrades.filter(
+              (trade) =>
+                trade.mandateId === mandate.id && trade.status === "filled",
+            );
+            const valuations = await fetchTokenValuations(
+              positions,
+              depositByInvestor,
+              filledTrades,
+            );
+            const { liveMandateBooks, healMandateFromLive } = await import(
+              "@/lib/funds/live-mandate"
+            );
+            const live = await liveMandateBooks(
+              mandate,
+              filledTrades,
+              depositByInvestor.get(address.toLowerCase()),
+              valuations,
+            );
+            if (live) {
+              healed = await healMandateFromLive(mandate, live);
+              mandateProfitUsdc = live.profitUsdc;
+            }
+          } catch {
+            mandateProfitUsdc = null;
+          }
 
-      entries.push({ fund, mandate: healed, mandateProfitUsdc });
-    }
+          return { fund, mandate: healed, mandateProfitUsdc };
+        }),
+      )
+    ).filter((entry): entry is MandateEntry => entry != null);
 
     return new Response(JSON.stringify({ mandates: entries }), {
       headers: { "Content-Type": "application/json" },

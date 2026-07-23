@@ -27,15 +27,17 @@ export default function InvestorTradeAutopilot() {
         if (!res.ok || cancelled) return;
 
         const data = (await res.json()) as {
+          results?: Array<{ status: string }>;
           redeems?: Array<{ status: string; fundSlug?: string }>;
         };
-        if (
+        const settled =
+          (data.results ?? []).some(
+            (run) => run.status === "filled" || run.status === "failed",
+          ) ||
           (data.redeems ?? []).some(
             (run) => run.status === "redeemed" || run.status === "failed",
-          )
-        ) {
-          notifyPoolUpdated();
-        }
+          );
+        if (settled) notifyPoolUpdated();
       } catch {
         /* retry next poll */
       } finally {

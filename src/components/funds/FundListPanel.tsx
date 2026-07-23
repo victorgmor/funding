@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import LazyProviders from "@/components/app/LazyProviders";
 import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import FundFeedCard from "@/components/funds/FundFeedCard";
-import FundTradeAutopilot from "@/components/funds/FundTradeAutopilot";
 import YourMandatesPanel from "@/components/funds/YourMandatesPanel";
 import GearIcon from "@/components/fundations/icons/GearIcon";
 import SearchIcon from "@/components/fundations/icons/SearchIcon";
@@ -12,7 +11,6 @@ import {
 } from "@/lib/funds/usePoolTotals";
 import type { Fund } from "@/lib/funds/types";
 import { localDisplayName } from "@/lib/local-profile";
-import { notifyPoolUpdated } from "@/lib/funds/pool-events";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 type Props = {
@@ -138,7 +136,7 @@ function SortIndicator({
 
 export default function FundListPanel({ funds, initialPoolTotals }: Props) {
   const { address, isConnected, restoring: walletLoading } = useWalletSession();
-  const { totals: poolTotals, refresh: refreshPoolTotals } =
+  const { totals: poolTotals } =
     usePoolTotals(initialPoolTotals);
   const [query, setQuery] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -205,16 +203,7 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
 
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,672px)_minmax(280px,1fr)]">
-      {!walletLoading && isConnected && address && (
-        <FundTradeAutopilot
-          address={address}
-          enabled
-          onTradeSettled={() => {
-            refreshPoolTotals();
-            notifyPoolUpdated();
-          }}
-        />
-      )}
+      {/* Pending-trade polling lives in the global InvestorTradeAutopilot. */}
       <div className="min-w-0">
       <div className="pb-5">
         <label className="flex items-center gap-2 pb-2">

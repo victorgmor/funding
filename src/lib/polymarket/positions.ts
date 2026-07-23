@@ -12,7 +12,6 @@ import {
   type Address,
 } from "viem";
 import { polygon } from "wagmi/chains";
-import { fetchSafeAddress } from "@/lib/polymarket/relayer";
 
 const DEPOSIT_FACTORY = "0x00000000000Fb5C9ADea0298D729A0CB3823Cc07";
 const DEPOSIT_IMPLEMENTATION = "0x58CA52ebe0DadfdF531Cde7062e76746de4Db1eB";
@@ -129,29 +128,4 @@ export async function deriveDepositWalletAddress(
   } catch {
     return uups;
   }
-}
-
-async function fetchSafeAddressForOwner(owner: Address): Promise<Address | null> {
-  return fetchSafeAddress(owner);
-}
-
-/** Wallets that may hold Polymarket positions for this EOA. */
-export async function resolvePositionWallets(
-  owner: Address,
-): Promise<Address[]> {
-  const [deposit, safe] = await Promise.all([
-    deriveDepositWalletAddress(owner),
-    fetchSafeAddressForOwner(owner),
-  ]);
-
-  const seen = new Set<string>();
-  const out: Address[] = [];
-  for (const addr of [deposit, safe, owner]) {
-    if (!addr) continue;
-    const key = addr.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(addr);
-  }
-  return out;
 }

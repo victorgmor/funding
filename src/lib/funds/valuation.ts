@@ -5,7 +5,7 @@ import {
 import { getTradingSession } from "@/lib/funds/trading-sessions";
 import { isDepositWalletDeployed } from "@/lib/polymarket/depositWallet";
 import { deriveDepositWalletAddress } from "@/lib/polymarket/positions";
-import type { Mandate, MandatePosition, MandateTrade } from "@/lib/funds/types";
+import type { MandatePosition, MandateTrade } from "@/lib/funds/types";
 import type { Address } from "viem";
 
 function round(n: number, d: number) {
@@ -115,34 +115,6 @@ export async function fetchTokenValuations(
   );
 
   return prices;
-}
-
-export function positionMarkValue(
-  position: MandatePosition,
-  valuations: Map<string, number>,
-): number {
-  const price = valuations.get(position.tokenId);
-  // Unknown mark → 0, not cost. Cost fallback hid losses on resolved markets.
-  if (price == null) return 0;
-  return round(position.shares * price, 2);
-}
-
-export function mandateMarkValue(
-  mandate: Mandate,
-  positions: MandatePosition[],
-  valuations: Map<string, number>,
-  _filledTrades: MandateTrade[] = [],
-): number {
-  void _filledTrades;
-  const openValue = positions
-    .filter(
-      (pos) =>
-        pos.mandateId === mandate.id && !pos.redeemedAt && pos.shares > 0,
-    )
-    .reduce((sum, pos) => sum + positionMarkValue(pos, valuations), 0);
-
-  // Cash already reflects buys/redeems — do not add closed-trade PnL on top.
-  return round(mandate.cashUsdc + openValue, 2);
 }
 
 /** Per-trade PnL from current/settlement price when available. */

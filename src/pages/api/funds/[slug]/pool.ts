@@ -22,7 +22,8 @@ export const GET: APIRoute = async ({ params, url }) => {
   const isOwner = isFundOwnerWallet(fund, address);
 
   try {
-    let pool = await buildVirtualPool(fund);
+    const rawPool = await buildVirtualPool(fund);
+    let pool = rawPool;
     const depositors = pool.mandates
       .filter((mandate) => mandate.status === "active" && mandate.notionalUsdc > 0)
       .map((mandate) => ({
@@ -49,8 +50,12 @@ export const GET: APIRoute = async ({ params, url }) => {
       };
     }
 
-    const performance = await computeFundPoolPerformance(fund);
-    const positions = await listPositionsByFund(fund.slug);
+    // Reuse the pool built above — computing performance from scratch would
+    // rebuild (and re-reconcile) the whole pool a second time per request.
+    const [performance, positions] = await Promise.all([
+      computeFundPoolPerformance(fund, rawPool),
+      listPositionsByFund(fund.slug),
+    ]);
     const recentTrades = await enrichTradesWithPnl(
       fund.slug,
       pool.recentTrades,

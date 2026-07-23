@@ -32,11 +32,12 @@ function round(n: number, d: number) {
 
 async function computeFundPoolPerformanceUncached(
   fund: Fund,
+  prebuiltPool?: Awaited<ReturnType<typeof buildVirtualPool>>,
 ): Promise<FundPoolPerformance | null> {
   const stage = resolveLifecycleStage(fund);
 
   // buildVirtualPool reconciles from live Polymarket books first.
-  const pool = await buildVirtualPool(fund);
+  const pool = prebuiltPool ?? (await buildVirtualPool(fund));
   const depositedUsdc = round(pool.totalDeposited, 2);
   if (depositedUsdc <= 0) return null;
 
@@ -64,9 +65,10 @@ async function computeFundPoolPerformanceUncached(
 /** Mark-to-market pool P&L — null with no commitments. */
 export async function computeFundPoolPerformance(
   fund: Fund,
+  prebuiltPool?: Awaited<ReturnType<typeof buildVirtualPool>>,
 ): Promise<FundPoolPerformance | null> {
   return perfCache.getOrSet(fund.slug, () =>
-    computeFundPoolPerformanceUncached(fund),
+    computeFundPoolPerformanceUncached(fund, prebuiltPool),
   );
 }
 

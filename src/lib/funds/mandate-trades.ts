@@ -73,27 +73,6 @@ export async function recordFanoutTrades(input: {
   return trades;
 }
 
-export async function markTradeStatus(
-  fundSlug: string,
-  tradeId: string,
-  status: MandateTrade["status"],
-  detail?: string,
-): Promise<MandateTrade | undefined> {
-  const trades = await listTradesByFund(fundSlug);
-  const trade = trades.find((row) => row.id === tradeId);
-  if (!trade) return undefined;
-
-  const updated: MandateTrade = {
-    ...trade,
-    status,
-    detail,
-    filledAt: status === "filled" ? new Date().toISOString() : trade.filledAt,
-  };
-
-  await saveTrade(updated);
-  return updated;
-}
-
 /** Re-lock cash and put a failed fan-out slice back to pending for another FOK attempt. */
 export async function requeueFailedTrade(
   fundSlug: string,

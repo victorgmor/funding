@@ -4,18 +4,6 @@ export type LifecycleStage = "deposit" | "trading" | "closed";
 
 const DAY_MS = 86_400_000;
 
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-});
-
-/** Local-TZ short date (dd.mm.yyyy). SSR falls back to the host tz (UTC by default);
- *  client islands render the visitor's timezone. */
-export function formatFundDate(iso: string): string {
-  return dateFormatter.format(new Date(iso));
-}
-
 /** True when the fund is closed or archived — no longer accepting deposits or trades. */
 export function isFundInactive(fund: Fund): boolean {
   return (

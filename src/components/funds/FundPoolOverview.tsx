@@ -562,7 +562,19 @@ export default function FundPoolOverview({ fund }: Props) {
   }, [fund.slug, address, closed, refreshKey]);
 
   if (loading) {
-    return <p className="text-primary/50 text-sm">Loading pool…</p>;
+    // Skeleton mirrors metrics row + cap bar + summary line to avoid layout shift.
+    return (
+      <div className="animate-pulse" aria-hidden>
+        <div className="space-y-2">
+          <div className="bg-primary/10 h-5 w-2/3 rounded" />
+          <div className="bg-primary/10 h-2 w-full rounded-full" />
+        </div>
+        <div className="bg-primary/10 mt-2.5 h-4 w-44 rounded" />
+        <div className="border-primary/10 mt-4 border-t pt-4">
+          <div className="bg-primary/10 h-40 w-full rounded" />
+        </div>
+      </div>
+    );
   }
 
   if (error) {

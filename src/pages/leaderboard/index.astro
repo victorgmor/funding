@@ -42,7 +42,7 @@ const topManagers = getTopCreators(funds, {
       </p>
 
       <div class="mt-8">
-        <TopManagersList client:load managers={topManagers} />
+        <TopManagersList client:idle managers={topManagers} />
       </div>
     </Wrapper>
   </section>

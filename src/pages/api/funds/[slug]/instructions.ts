@@ -26,6 +26,7 @@ function normalizeDrafts(body: {
   tokenId?: string;
   side?: string;
   totalUsdc?: number;
+  price?: number;
   orderSide?: "BUY" | "SELL";
   trades?: TradeDraft[];
 }): TradeDraft[] {
@@ -35,6 +36,10 @@ function normalizeDrafts(body: {
       tokenId: trade.tokenId,
       side: trade.side,
       totalUsdc: Number(trade.totalUsdc),
+      price:
+        trade.price != null && Number.isFinite(Number(trade.price))
+          ? Number(trade.price)
+          : undefined,
       orderSide: trade.orderSide === "SELL" ? "SELL" : "BUY",
     }));
   }
@@ -46,6 +51,10 @@ function normalizeDrafts(body: {
         tokenId: body.tokenId,
         side: body.side ?? "",
         totalUsdc: Number(body.totalUsdc),
+        price:
+          body.price != null && Number.isFinite(Number(body.price))
+            ? Number(body.price)
+            : undefined,
         orderSide: body.orderSide === "SELL" ? "SELL" : "BUY",
       },
     ];

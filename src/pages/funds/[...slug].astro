@@ -47,7 +47,7 @@ const showAvatar = isCreatorWallet(fund.manager.id);
               </div>
 
               <FundPerformanceCell
-                client:load
+                client:idle
                 fundSlug={fund.slug}
                 roi={performance?.roi ?? null}
                 since={fund.createdAt}
@@ -63,7 +63,7 @@ const showAvatar = isCreatorWallet(fund.manager.id);
                     class="inline-flex shrink-0 items-center"
                   >
                     <CreatorAvatar
-                      client:load
+                      client:idle
                       address={fund.manager.id}
                       name={fund.manager.name}
                       size="2xs"
@@ -76,7 +76,7 @@ const showAvatar = isCreatorWallet(fund.manager.id);
                 class="text-primary/70 hover:text-primary inline-flex items-center gap-1 transition-colors"
               >
                 <CreatorName
-                  client:load
+                  client:idle
                   address={fund.manager.id}
                   fallback={fund.manager.name}
                 />
@@ -105,7 +105,7 @@ const showAvatar = isCreatorWallet(fund.manager.id);
             </div>
           </div>
 
-          <FundLifecycleTestPanel client:load fund={fund} />
+          <FundLifecycleTestPanel client:visible fund={fund} />
         </div>
 
         <aside class="min-w-0">

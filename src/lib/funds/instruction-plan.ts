@@ -21,6 +21,8 @@ export type TradeDraft = {
   tokenId?: string;
   side: MarketSide;
   totalUsdc: number;
+  /** Optional limit price (0.01–0.99). Defaults to market mid when omitted. */
+  price?: number;
   orderSide?: OrderSide;
 };
 
@@ -127,7 +129,19 @@ export async function planTradeBatch(
     }
 
     const canonicalSide = outcomes[outcomeIndex(outcomes, side)]!;
-    const price = Math.min(0.99, Math.max(0.01, midPrice(gamma, canonicalSide)));
+    const override =
+      draft.price != null && Number.isFinite(Number(draft.price))
+        ? Number(draft.price)
+        : null;
+    const price = Math.min(
+      0.99,
+      Math.max(
+        0.01,
+        override != null && override >= 0.01 && override <= 0.99
+          ? override
+          : midPrice(gamma, canonicalSide),
+      ),
+    );
     const tokenId = tokenIdForSide(
       gamma.clobTokenIds,
       gamma.outcomes,

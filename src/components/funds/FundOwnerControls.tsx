@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import ConnectWallet from "@/components/app/ConnectWallet";
 import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
+import NewTradeModal from "@/components/funds/NewTradeModal";
 import { isCreatorWallet } from "@/lib/funds/creator";
 import { isFundOwner, isUserFund } from "@/lib/funds/editable";
 import type { Fund } from "@/lib/funds/types";
@@ -30,6 +31,7 @@ export function FundOwnerControlsInner({ fund }: Props) {
   const isOwner = isFundOwner(fund, walletAddress);
 
   const [managing, setManaging] = useState(false);
+  const [trading, setTrading] = useState(false);
   const [name, setName] = useState(fund.name);
   const [thesis, setThesis] = useState(fund.thesis);
   const [loaded, setLoaded] = useState(false);
@@ -240,6 +242,14 @@ export function FundOwnerControlsInner({ fund }: Props) {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
+              onClick={() => setTrading(true)}
+              disabled={busy}
+              className={`${walletNavButtonClass} !px-4 !py-1.5 text-xs uppercase`}
+            >
+              New trade
+            </button>
+            <button
+              type="button"
               onClick={() => setManaging(true)}
               disabled={busy}
               className={`${walletNavButtonClass} !px-4 !py-1.5 text-xs uppercase`}
@@ -338,6 +348,15 @@ export function FundOwnerControlsInner({ fund }: Props) {
       )}
 
       {error && <p className="text-red-400 mt-3 text-sm">{error}</p>}
+
+      {address && (
+        <NewTradeModal
+          open={trading}
+          fund={fund}
+          address={address}
+          onClose={() => setTrading(false)}
+        />
+      )}
     </div>
   );
 }
