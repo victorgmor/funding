@@ -456,9 +456,6 @@ export default function NewTradePanel({ fund }: Props) {
 
         {selected && (
           <div className="space-y-3">
-            <p className="text-primary/80 truncate text-sm">
-              {selected.question}
-            </p>
             <div className="flex flex-wrap gap-2">
               {parseOutcomes(selected.outcomes).map((outcome) => {
                 const cents = formatOutcomeCents(
