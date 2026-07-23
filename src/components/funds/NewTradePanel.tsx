@@ -115,7 +115,7 @@ export default function NewTradePanel({ fund }: Props) {
   useEffect(() => {
     if (!active) return;
     const q = query.trim();
-    if (q.length < 2) {
+    if (q.length < 2 || (selected && q === selected.question)) {
       setResults([]);
       return;
     }
@@ -143,7 +143,7 @@ export default function NewTradePanel({ fund }: Props) {
       cancelled = true;
       clearTimeout(id);
     };
-  }, [active, query]);
+  }, [active, query, selected]);
 
   useEffect(() => {
     if (!selectedTokenId) {
