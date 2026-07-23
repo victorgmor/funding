@@ -1,7 +1,6 @@
 import { defineConfig, envField } from "astro/config";
 import tailwindcss from "@tailwindcss/vite";
 import sitemap from "@astrojs/sitemap";
-import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import node from "@astrojs/node";
 
@@ -104,5 +103,5 @@ export default defineConfig({
     skipInline: false,
     drafts: true,
   },
-  integrations: [react(), sitemap(), mdx()],
+  integrations: [react(), sitemap()],
 });

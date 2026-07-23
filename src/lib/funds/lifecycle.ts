@@ -1,15 +1,6 @@
 import type { Fund } from "@/lib/funds/types";
 
 export type LifecycleStage = "deposit" | "trading" | "closed";
-export type StageState = "past" | "current" | "future";
-
-export type LifecycleStageView = {
-  id: LifecycleStage;
-  label: string;
-  state: StageState;
-  line1: string;
-  line2?: string;
-};
 
 const DAY_MS = 86_400_000;
 
@@ -41,18 +32,6 @@ export function daysUntil(iso: string, now = Date.now()): number {
 
 export function daysSince(iso: string, now = Date.now()): number {
   return Math.max(0, Math.floor((now - Date.parse(iso)) / DAY_MS));
-}
-
-export function formatDaysLeft(iso: string, now = Date.now()): string {
-  const days = daysUntil(iso, now);
-  if (days === 0) return "Ends today";
-  return `${days} ${days === 1 ? "day" : "days"} left`;
-}
-
-export function formatDaysAgo(iso: string, now = Date.now()): string {
-  const ago = daysSince(iso, now);
-  if (ago === 0) return "Today";
-  return `${ago} ${ago === 1 ? "day" : "days"} ago`;
 }
 
 export function effectiveClosedAt(fund: Fund, now = Date.now()): string | null {
@@ -101,84 +80,6 @@ export function resolveLifecycleStage(
     return "deposit";
   }
   return "trading";
-}
-
-export function buildLifecycleStages(
-  fund: Fund,
-  now = Date.now(),
-  totalNotional = 0,
-): LifecycleStageView[] {
-  const current = resolveLifecycleStage(fund, now, totalNotional);
-  const closedAt = effectiveClosedAt(fund, now);
-
-  const deposit: LifecycleStageView = {
-    id: "deposit",
-    label: "Deposit Stage",
-    state:
-      current === "deposit"
-        ? "current"
-        : current === "trading" || current === "closed"
-          ? "past"
-          : "future",
-    line1: "",
-  };
-
-  if (fund.raiseEndsAt) {
-    if (current === "deposit") {
-      deposit.line1 = formatDaysLeft(fund.raiseEndsAt, now);
-    } else if (
-      poolCapReached(fund, totalNotional) &&
-      Date.parse(fund.raiseEndsAt) > now
-    ) {
-      deposit.line1 = "Cap reached";
-    } else {
-      deposit.line1 = formatDaysAgo(fund.raiseEndsAt, now);
-    }
-  } else {
-    deposit.line1 = current === "deposit" ? "Accepting commitments" : "—";
-  }
-
-  const trading: LifecycleStageView = {
-    id: "trading",
-    label: "Trading Stage",
-    state:
-      current === "trading"
-        ? "current"
-        : current === "closed"
-          ? "past"
-          : "future",
-    line1: "",
-  };
-
-  if (fund.tradingEndsAt) {
-    if (current === "trading") {
-      trading.line1 = formatDaysLeft(fund.tradingEndsAt, now);
-    } else if (current === "closed") {
-      trading.line1 = formatDaysAgo(fund.tradingEndsAt, now);
-    } else {
-      trading.line1 = formatDaysLeft(fund.tradingEndsAt, now);
-    }
-  } else {
-    trading.line1 =
-      current === "trading" ? "Manager may open risk" : current === "closed" ? "Ended" : "—";
-  }
-
-  const closed: LifecycleStageView = {
-    id: "closed",
-    label: "Closed Stage",
-    state: current === "closed" ? "current" : "future",
-    line1: "",
-  };
-
-  if (current === "closed" && closedAt) {
-    closed.line1 = formatDaysAgo(closedAt, now);
-  } else if (fund.tradingEndsAt) {
-    closed.line1 = formatDaysLeft(fund.tradingEndsAt, now);
-  } else {
-    closed.line1 = "—";
-  }
-
-  return [deposit, trading, closed];
 }
 
 export function parseFundDateInput(value: string): string {

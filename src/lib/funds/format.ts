@@ -59,17 +59,6 @@ export function formatPublishedAgo(iso?: string): string | null {
   return formatSinceDate(iso);
 }
 
-export function formatPoolCapLabel(capUsdc?: number | null): string {
-  if (capUsdc != null && capUsdc > 0) {
-    return `${capUsdc.toLocaleString("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0,
-    })} cap`;
-  }
-  return "∞ cap";
-}
-
 export function formatCapFillLabel(
   deposited: number,
   cap: number | null | undefined,

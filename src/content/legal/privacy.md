@@ -1,80 +1,68 @@
 ---
 page: Privacy Policy
-pubDate: 2026-04-01
+pubDate: 2026-07-21
 ---
 
+This Privacy Policy explains how **PolyFund** ("we", "our") handles information when you use the PolyFund website and related interfaces (the "Service").
 
-At [Your Company Name] ("we", "our", or "us"), we respect your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, and safeguard your personal information when you use our job board website ("Website").
+By using the Service, you agree to this Policy and our [Terms of Service](/legal/terms).
 
-By accessing or using the Website, you agree to the collection and use of your personal information as described in this Privacy Policy.
+## 1. What we collect
 
-## 1. Information We Collect
+Depending on how you use the Service, we may process:
 
-We may collect the following types of information when you use our Website:
+- **Wallet identifiers** — public wallet addresses you connect (for example via Privy), and related on-chain activity needed to show funds, mandates, and balances.
+- **Profile data you choose to set** — such as display name, bio, or avatar stored for the Service.
+- **Fund and trading data** — fund metadata, mandates, trade instructions, and settlement records we store to operate the product (typically in our databases).
+- **Technical data** — IP address, browser type, device info, and basic usage logs from hosting or analytics, if enabled.
+- **Local device data** — preferences or session hints stored in your browser (for example localStorage), which you can clear yourself.
 
-- **Personal Information**: This includes information you provide when creating an account, submitting a job listing, or applying for a job. It may include your name, email address, company name, job title, phone number, location, and other relevant details.
-- **Job Application Information**: When you apply for a job, we may collect the information you provide in your application, such as your resume, cover letter, and other personal details.
-- **Usage Data**: We collect information about how you interact with our Website, including the pages you visit, the links you click, and other actions you take on the Website.
-- **Cookies**: We may use cookies and similar technologies to enhance your experience on our Website. These technologies help us remember your preferences, improve site functionality, and analyze Website traffic.
+We do **not** ask for seed phrases. Never share them with PolyFund or anyone claiming to represent us.
 
-## 2. How We Use Your Information
+## 2. How we use information
 
-We use the information we collect for the following purposes:
+We use this information to:
 
-- To provide and manage the services on the Website, including posting and applying for jobs.
-- To communicate with you about job listings, applications, and account updates.
-- To improve our Website and services based on your feedback and usage data.
-- To respond to your inquiries and provide customer support.
-- To comply with legal obligations and protect our rights.
+- Provide the Service (auth, fund feeds, deposits, trading fan-out, settlement displays).
+- Secure the Service and prevent abuse.
+- Improve reliability and user experience.
+- Comply with law when required.
 
-## 3. Sharing Your Information
+## 3. Sharing
 
-We do not share, sell, or rent your personal information to third parties, except in the following cases:
+We do not sell your personal information. We may share data with:
 
-- **With your consent**: We may share your information if you explicitly consent to it.
-- **Service Providers**: We may share information with third-party service providers who help us operate the Website, such as hosting providers, analytics services, or email providers. These third parties are obligated to keep your information secure and use it only for the purposes we specify.
-- **Legal Compliance**: We may disclose your information to comply with legal requirements, such as a court order, or to protect our rights or the rights of others.
+- **Infrastructure providers** (hosting, databases, CDNs) that process data on our behalf.
+- **Auth / wallet providers** (such as Privy) as needed to connect wallets.
+- **Public blockchains and Polymarket** — transactions and positions you authorize are public or governed by those platforms.
+- **Authorities** when required by law or to protect rights and safety.
 
-## 4. Data Retention
+## 4. Retention
 
-We retain your personal information for as long as necessary to provide you with the services on the Website, to comply with legal obligations, and to resolve disputes. If you delete your account or stop using our Website, we may retain some information for a limited period to meet our legal obligations or enforce our agreements.
+We keep operational records (funds, mandates, trades) as needed to run the Service and meet legal obligations. You may request deletion of profile fields we control; on-chain data cannot be erased by us.
 
-## 5. Your Rights
+## 5. Your choices
 
-Depending on your jurisdiction, you may have the right to:
-
-- Access, correct, or delete your personal information.
-- Object to or restrict the processing of your personal information.
-- Withdraw your consent to our use of your personal information (if applicable).
-
-To exercise any of these rights, please contact us using the information provided below.
+- Disconnect your wallet and clear site data in your browser.
+- Update or clear profile fields where the product allows.
+- Contact us (see below) to ask about access or deletion of personal data we hold off-chain, subject to legal limits.
 
 ## 6. Security
 
-We take reasonable measures to protect your personal information from unauthorized access, disclosure, or alteration. However, no method of transmission over the Internet or electronic storage is 100% secure, and we cannot guarantee the security of your data.
+We use reasonable technical and organizational measures. No method of transmission or storage is perfectly secure. You remain responsible for securing your devices and wallets.
 
-## 7. Children's Privacy
+## 7. Children
 
-Our Website is not intended for children under the age of 13. We do not knowingly collect personal information from children. If we become aware that a child has provided us with personal information, we will take steps to delete that information.
+The Service is not directed to children under 18 (or the age of majority where you live). Do not use it if you are under that age.
 
-## 8. International Data Transfers
+## 8. International processing
 
-If you are located outside of [Your Country], please be aware that your personal information may be transferred to and stored on servers located in [Your Country] or other countries with different data protection laws. By using our Website, you consent to such transfers.
+The Service may be hosted or processed in countries other than where you live. By using it, you understand that your information may be transferred accordingly.
 
-## 9. Changes to This Privacy Policy
+## 9. Changes
 
-We may update this Privacy Policy from time to time. Any changes will be posted on this page with the updated date. Your continued use of the Website after any changes constitutes your acceptance of the updated Privacy Policy.
+We may update this Policy by posting a new version here with a revised date. Continued use means you accept the updates.
 
-## 10. Contact Us
+## 10. Contact
 
-If you have any questions or concerns about this Privacy Policy or our practices regarding your personal information, please contact us at:
-
-**TechWorks Solutions**  
-Email: [support@example.com](mailto:support@example.com)  
-Phone: +1 (123) 456-7890  
-Address: 123 Ingithubtion Avenue, Suite 456, San Francisco, CA 94105, USA
-
-
-Thank you for using our Job Board!
-
----
+Privacy questions: use the Community link in the site navigation (Telegram) or the channels listed in the docs.

@@ -4,12 +4,6 @@ import {
   type Address,
 } from "viem";
 
-export type UsdcTransferTransaction = {
-  to: string;
-  data: string;
-  value: string;
-};
-
 export const USDC_ADDRESS =
   "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174" as const;
 
@@ -40,17 +34,6 @@ const transferAbi = [
   },
 ] as const;
 
-export function createUsdcTransferTransaction(
-  to: Address,
-  amountUsdc: number,
-): UsdcTransferTransaction {
-  return {
-    to: USDC_ADDRESS,
-    data: encodeUsdcTransferData(to, amountUsdc),
-    value: "0",
-  };
-}
-
 export function encodeErc20TransferData(
   token: Address,
   to: Address,
@@ -61,11 +44,4 @@ export function encodeErc20TransferData(
     functionName: "transfer",
     args: [to, parseUnits(amountUsdc.toFixed(6), 6)],
   });
-}
-
-export function encodeUsdcTransferData(
-  to: Address,
-  amountUsdc: number,
-): `0x${string}` {
-  return encodeErc20TransferData(USDC_ADDRESS, to, amountUsdc);
 }

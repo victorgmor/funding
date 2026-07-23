@@ -52,17 +52,3 @@ export function embeddedWalletForWagmi({
 export function isEmbeddedPrivyAddress(user: User | null, address: string) {
   return !!embeddedPrivyWallet(user, address);
 }
-
-/** Embedded Privy wallet with an active session signer (delegated). */
-export function delegatedPrivyWallet(user: User | null) {
-  for (const account of user?.linkedAccounts ?? []) {
-    if (account.type !== "wallet") continue;
-    const wallet = account as WalletWithMetadata;
-    if (!wallet.delegated) continue;
-    if (wallet.walletClientType !== "privy" && wallet.walletClientType !== "privy-v2") {
-      continue;
-    }
-    return wallet;
-  }
-  return undefined;
-}

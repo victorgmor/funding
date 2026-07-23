@@ -3,8 +3,9 @@ import {
   LOCAL_PROFILE_UPDATED_EVENT,
   localDisplayName,
 } from "@/lib/local-profile";
+import { fetchClientPolymarketProfile } from "@/lib/polymarket/profile-client";
 
-/** Prefers local cache, then Dynamo manager profile, then fallback. */
+/** Prefers local cache, then Dynamo/Polymarket profile API, then fallback. */
 export function useLocalDisplayName(
   address: string | undefined,
   fallback = "",
@@ -24,17 +25,9 @@ export function useLocalDisplayName(
 
     let cancelled = false;
     void (async () => {
-      try {
-        const res = await fetch(
-          `/api/polymarket/profile?address=${encodeURIComponent(address)}`,
-        );
-        const data = (await res.json()) as { name?: string | null };
-        if (cancelled || !res.ok) return;
-        const next = localDisplayName(address) || data.name?.trim() || fallback;
-        setName(next);
-      } catch {
-        // keep local / fallback
-      }
+      const data = await fetchClientPolymarketProfile(address);
+      if (cancelled || !data) return;
+      setName(localDisplayName(address) || data.name?.trim() || fallback);
     })();
 
     window.addEventListener(LOCAL_PROFILE_UPDATED_EVENT, refreshLocal);
