@@ -114,13 +114,12 @@ export function fanoutSell(
   }
 
   const maxUsdc = round(totalShares * price, 2);
-  if (totalUsdc > maxUsdc + 0.01) {
-    throw new Error(
-      `Pool holds ~$${maxUsdc.toFixed(2)} of this outcome — cannot sell $${totalUsdc.toFixed(2)}`,
-    );
+  const sellUsdc = Math.min(totalUsdc, maxUsdc);
+  if (sellUsdc <= 0) {
+    throw new Error("No open shares to sell");
   }
 
-  const targetShares = round(Math.min(totalUsdc / price, totalShares), 4);
+  const targetShares = round(Math.min(sellUsdc / price, totalShares), 4);
   let allocatedShares = 0;
   const slices: FanoutSlice[] = [];
 

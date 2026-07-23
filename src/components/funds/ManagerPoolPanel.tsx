@@ -4,7 +4,7 @@ import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import { isFundOwner } from "@/lib/funds/editable";
 import { formatUsdExact } from "@/lib/funds/format";
 import { notifyPoolUpdated } from "@/lib/funds/pool-events";
-import type { Fund, FanoutSlice, MandatePosition, OrderSide, VirtualPool } from "@/lib/funds/types";
+import type { Fund, FanoutSlice, VirtualPool } from "@/lib/funds/types";
 import type { MarketSide } from "@/lib/funds/types";
 import {
   formatOutcomeCents,
@@ -26,19 +26,10 @@ type PlannedTrade = {
   tokenId: string;
   question: string;
   side: MarketSide;
-  orderSide: OrderSide;
   slices: FanoutSlice[];
 };
 
 type PreviewTrade = PlannedTrade & { id: string };
-
-type SellPositionOption = {
-  tokenId: string;
-  question: string;
-  side: MarketSide;
-  shares: number;
-  costUsdc: number;
-};
 
 export default function ManagerPoolPanel({ fund }: Props) {
   const { address, walletAddress, isConnected, loading: walletLoading } = useWalletGate();
@@ -55,63 +46,17 @@ export default function ManagerPoolPanel({ fund }: Props) {
     null,
   );
   const [amount, setAmount] = useState("20");
-  const [orderSide, setOrderSide] = useState<OrderSide>("BUY");
-  const [sellTarget, setSellTarget] = useState<SellPositionOption | null>(null);
   const [previewQueue, setPreviewQueue] = useState<PreviewTrade[]>([]);
   const [busy, setBusy] = useState(false);
   const [signing, setSigning] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   const deployable = Math.max(0, pool?.totalCash ?? 0);
-  const openPositions = useMemo((): SellPositionOption[] => {
-    const byToken = new Map<string, SellPositionOption>();
-    for (const pos of (pool?.positions ?? []) as MandatePosition[]) {
-      if (pos.redeemedAt || pos.shares <= 0) continue;
-      const existing = byToken.get(pos.tokenId);
-      if (existing) {
-        existing.shares += pos.shares;
-        existing.costUsdc += pos.costUsdc;
-      } else {
-        byToken.set(pos.tokenId, {
-          tokenId: pos.tokenId,
-          question: pos.question,
-          side: pos.side,
-          shares: pos.shares,
-          costUsdc: pos.costUsdc,
-        });
-      }
-    }
-    return [...byToken.values()].sort((a, b) => b.costUsdc - a.costUsdc);
-  }, [pool?.positions]);
-
   const queuedBuyTotal = useMemo(
-    () =>
-      previewQueue
-        .filter((trade) => trade.orderSide !== "SELL")
-        .reduce((sum, trade) => sum + trade.totalUsdc, 0),
-    [previewQueue],
-  );
-  const queuedSellTotal = useMemo(
-    () =>
-      previewQueue
-        .filter((trade) => trade.orderSide === "SELL")
-        .reduce((sum, trade) => sum + trade.totalUsdc, 0),
+    () => previewQueue.reduce((sum, trade) => sum + trade.totalUsdc, 0),
     [previewQueue],
   );
   const remainingDeployable = Math.max(0, deployable - queuedBuyTotal);
-
-  const sellMaxUsdc = useMemo(() => {
-    if (!sellTarget) return 0;
-    const queuedShares = previewQueue
-      .filter(
-        (trade) =>
-          trade.orderSide === "SELL" && trade.tokenId === sellTarget.tokenId,
-      )
-      .reduce((sum, trade) => sum + trade.slices.reduce((s, x) => s + x.shares, 0), 0);
-    const remainingShares = Math.max(0, sellTarget.shares - queuedShares);
-    // Ceiling at ~$1/share; server clamps to mid × shares.
-    return Math.round(remainingShares * 100) / 100;
-  }, [sellTarget, previewQueue]);
 
   useEffect(() => {
     if (!isOwner || !address) return;
@@ -187,9 +132,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
   }
 
   async function addToPreview() {
-    if (!address || busy) return;
-    if (orderSide === "BUY" && !selected) return;
-    if (orderSide === "SELL" && !sellTarget) return;
+    if (!address || busy || !selected) return;
 
     setBusy(true);
     setError(null);
@@ -200,26 +143,11 @@ export default function ManagerPoolPanel({ fund }: Props) {
       if (!Number.isFinite(tradeAmount) || tradeAmount < 1) {
         throw new Error("Trade amount required");
       }
-      if (orderSide === "BUY" && tradeAmount > remainingDeployable) {
+      if (tradeAmount > remainingDeployable) {
         throw new Error(
           `Only ${formatUsdExact(remainingDeployable)} left in preview budget — cannot add ${formatUsdExact(tradeAmount)}`,
         );
       }
-
-      const draft =
-        orderSide === "SELL"
-          ? {
-              tokenId: sellTarget!.tokenId,
-              side: sellTarget!.side,
-              totalUsdc: tradeAmount,
-              orderSide: "SELL" as const,
-            }
-          : {
-              gammaMarketId: selected!.gammaMarketId,
-              side: selected!.side,
-              totalUsdc: tradeAmount,
-              orderSide: "BUY" as const,
-            };
 
       const drafts = [
         ...previewQueue.map((trade) => ({
@@ -227,9 +155,14 @@ export default function ManagerPoolPanel({ fund }: Props) {
           tokenId: trade.tokenId,
           side: trade.side,
           totalUsdc: trade.totalUsdc,
-          orderSide: trade.orderSide,
+          orderSide: "BUY" as const,
         })),
-        draft,
+        {
+          gammaMarketId: selected.gammaMarketId,
+          side: selected.side,
+          totalUsdc: tradeAmount,
+          orderSide: "BUY" as const,
+        },
       ];
 
       const res = await fetch(`/api/funds/${fund.slug}/instructions`, {
@@ -251,14 +184,12 @@ export default function ManagerPoolPanel({ fund }: Props) {
       setPreviewQueue(
         planned.map((trade, index) => ({
           ...trade,
-          orderSide: trade.orderSide ?? "BUY",
           id:
             previewQueue[index]?.id ??
-            `${trade.tokenId}-${trade.orderSide}-${Date.now()}-${index}`,
+            `${trade.tokenId}-BUY-${Date.now()}-${index}`,
         })),
       );
       setSelected(null);
-      setSellTarget(null);
       setQuery("");
       setAmount("20");
     } catch (e) {
@@ -294,7 +225,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
             tokenId: trade.tokenId,
             side: trade.side,
             totalUsdc: trade.totalUsdc,
-            orderSide: trade.orderSide,
+            orderSide: "BUY" as const,
           })),
           execute: true,
         }),
@@ -324,7 +255,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
             ? `${execSummary.count ?? tradeCount} instruction(s) recorded — ${execSummary.pending} slice(s) queued. ${execSummary.withoutSession} investor(s) need to authorize auto-trading.`
             : `${execSummary.count ?? tradeCount} instruction(s) recorded — ${execSummary.pending} slice(s) queued for autopilot.`,
         );
-        // Autopilot fills async — refresh again so Predictions catch filled/failed.
+        // Autopilot fills async — refresh again so History/Positions catch filled/failed.
         window.setTimeout(() => notifyPoolUpdated(fund.slug), 4000);
       } else {
         setNotice(`${execSummary?.count ?? tradeCount} instruction(s) recorded.`);
@@ -352,7 +283,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
           tokenId: trade.tokenId,
           side: trade.side,
           totalUsdc: trade.totalUsdc,
-          orderSide: trade.orderSide,
+          orderSide: "BUY" as const,
         })),
         dryRun: true,
       }),
@@ -409,32 +340,8 @@ export default function ManagerPoolPanel({ fund }: Props) {
       ) : (
         fund.status === "trading" && (
           <div className="space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-primary text-sm font-medium">New trade</p>
-              <div className="flex gap-1">
-                {(["BUY", "SELL"] as OrderSide[]).map((side) => (
-                  <button
-                    key={side}
-                    type="button"
-                    onClick={() => {
-                      setOrderSide(side);
-                      setSelected(null);
-                      setSellTarget(null);
-                      setQuery("");
-                      setError(null);
-                    }}
-                    className={`${tradeChipClass} !px-3 !py-1.5 text-xs uppercase ${
-                      orderSide === side ? "text-white" : "text-white/45"
-                    }`}
-                  >
-                    {side}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <p className="text-primary text-sm font-medium">New trade</p>
 
-            {orderSide === "BUY" ? (
-              <>
             <input
               type="search"
               value={query}
@@ -521,75 +428,11 @@ export default function ManagerPoolPanel({ fund }: Props) {
                     {previewQueue.length > 0 && (
                       <span>
                         {" "}
-                        · {formatUsdExact(queuedBuyTotal)} buy queued ·{" "}
+                        · {formatUsdExact(queuedBuyTotal)} queued ·{" "}
                         {formatUsdExact(deployable)} total
                       </span>
                     )}
                   </p>
-                )}
-              </div>
-            )}
-              </>
-            ) : (
-              <div className="space-y-2">
-                {openPositions.length === 0 ? (
-                  <p className="text-primary/50 text-sm">
-                    No open positions to sell yet.
-                  </p>
-                ) : (
-                  <ul className="border-primary/10 max-h-48 overflow-y-auto rounded border">
-                    {openPositions.map((pos) => {
-                      const active = sellTarget?.tokenId === pos.tokenId;
-                      return (
-                        <li
-                          key={pos.tokenId}
-                          className="border-primary/10 border-b last:border-b-0"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => setSellTarget(pos)}
-                            className={`hover:bg-primary/10 w-full px-3 py-2 text-left text-sm ${
-                              active ? "bg-primary/10" : ""
-                            }`}
-                          >
-                            <span className="text-primary/80 line-clamp-2">
-                              {pos.question}
-                            </span>
-                            <span className="text-primary/50 mt-0.5 block font-mono text-xs tabular-nums">
-                              {pos.side} · {pos.shares.toFixed(2)} sh · cost{" "}
-                              {formatUsdExact(pos.costUsdc)}
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-
-                {sellTarget && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <input
-                      type="number"
-                      min={1}
-                      max={sellMaxUsdc > 0 ? sellMaxUsdc : undefined}
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      className="border-primary/10 bg-primary/5 text-primary w-24 rounded-[12px] border px-3 py-2.5 text-sm tabular-nums focus:border-primary/30 focus:outline-none"
-                      placeholder="$"
-                      aria-label="Sell size"
-                    />
-                    <button
-                      type="button"
-                      disabled={busy || signing}
-                      onClick={() => void addToPreview()}
-                      className={`${tradeChipClass} uppercase disabled:opacity-40`}
-                    >
-                      {busy ? "…" : "Add sell"}
-                    </button>
-                    <p className="text-primary/50 w-full text-xs">
-                      Market sell · up to ~{formatUsdExact(sellMaxUsdc)} at mid
-                    </p>
-                  </div>
                 )}
               </div>
             )}
@@ -599,8 +442,7 @@ export default function ManagerPoolPanel({ fund }: Props) {
                 <div className="border-primary/10 flex items-center justify-between gap-2 border-b px-3 py-2">
                   <p className="truncate text-sm uppercase text-primary/50">
                     Preview · {previewQueue.length}
-                    {queuedBuyTotal > 0 && ` · buy ${formatUsdExact(queuedBuyTotal)}`}
-                    {queuedSellTotal > 0 && ` · sell ${formatUsdExact(queuedSellTotal)}`}
+                    {queuedBuyTotal > 0 && ` · ${formatUsdExact(queuedBuyTotal)}`}
                   </p>
                   <button
                     type="button"
@@ -618,7 +460,6 @@ export default function ManagerPoolPanel({ fund }: Props) {
                       <p className="text-primary/80 min-w-0 flex-1 truncate text-sm">
                         {trade.question}
                         <span className="text-primary/50 ml-2 uppercase">
-                          {trade.orderSide === "SELL" ? "Sell" : "Buy"}{" "}
                           {trade.side} · {formatUsdExact(trade.totalUsdc)}
                         </span>
                       </p>

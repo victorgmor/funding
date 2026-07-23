@@ -1,5 +1,11 @@
-import { useEffect, useState } from "react";
-import type { Fund, Mandate, MandateTrade, VirtualPool } from "@/lib/funds/types";
+import { useEffect, useMemo, useState } from "react";
+import type {
+  Fund,
+  Mandate,
+  MandatePosition,
+  MandateTrade,
+  VirtualPool,
+} from "@/lib/funds/types";
 import type { FundPoolPerformance } from "@/lib/funds/performance";
 import type { FundSettlement } from "@/lib/funds/settlement";
 import FundPnlChart from "@/components/funds/FundPnlChart";
@@ -12,6 +18,7 @@ import { creatorPath } from "@/lib/funds/creator";
 import { isFundOwner } from "@/lib/funds/editable";
 import { addressDisplayFallback } from "@/lib/polymarket/profile";
 import { notifyPoolUpdated, POOL_UPDATED_EVENT } from "@/lib/funds/pool-events";
+import { signWalletMessage } from "@/lib/wagmi/signMessage";
 import { useWalletSession } from "@/lib/wagmi/useWalletSession";
 
 type Props = { fund: Fund };
@@ -21,7 +28,15 @@ type PoolState = VirtualPool & {
   depositors?: (Mandate & { profileId: string })[];
 };
 
-type ActivityTab = "performance" | "predictions" | "depositors";
+type ActivityTab = "performance" | "positions" | "history" | "depositors";
+
+type OpenPositionRow = {
+  tokenId: string;
+  question: string;
+  side: string;
+  shares: number;
+  costUsdc: number;
+};
 
 const sizeClass =
   "text-primary/70 shrink-0 text-right font-mono text-sm tabular-nums uppercase";
@@ -29,7 +44,30 @@ const sizeClass =
 const depositSummaryClass =
   "text-primary/70 shrink-0 text-right font-mono text-sm tabular-nums";
 
-function PredictionsList({
+function aggregateOpenPositions(
+  positions: MandatePosition[] | undefined,
+): OpenPositionRow[] {
+  const byToken = new Map<string, OpenPositionRow>();
+  for (const pos of positions ?? []) {
+    if (pos.redeemedAt || pos.shares <= 0) continue;
+    const existing = byToken.get(pos.tokenId);
+    if (existing) {
+      existing.shares += pos.shares;
+      existing.costUsdc += pos.costUsdc;
+    } else {
+      byToken.set(pos.tokenId, {
+        tokenId: pos.tokenId,
+        question: pos.question,
+        side: pos.side,
+        shares: pos.shares,
+        costUsdc: pos.costUsdc,
+      });
+    }
+  }
+  return [...byToken.values()].sort((a, b) => b.costUsdc - a.costUsdc);
+}
+
+function HistoryList({
   trades,
   fundSlug,
   managerAddress,
@@ -46,7 +84,7 @@ function PredictionsList({
   if (trades.length === 0) {
     return (
       <p className="text-primary/45 py-8 text-center text-sm">
-        No predictions yet.
+        No trade history yet.
       </p>
     );
   }
@@ -131,6 +169,140 @@ function PredictionsList({
   );
 }
 
+function PositionsList({
+  positions,
+  fundSlug,
+  canSell,
+  managerAddress,
+}: {
+  positions: OpenPositionRow[];
+  fundSlug: string;
+  canSell: boolean;
+  managerAddress?: string;
+}) {
+  const [sellingId, setSellingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  if (positions.length === 0) {
+    return (
+      <p className="text-primary/45 py-8 text-center text-sm">
+        No open positions.
+      </p>
+    );
+  }
+
+  async function sellPosition(row: OpenPositionRow) {
+    if (!canSell || !managerAddress || sellingId) return;
+    setSellingId(row.tokenId);
+    setError(null);
+    try {
+      // Ask for full position; server clamps to mid × shares.
+      const totalUsdc = Math.max(1, Math.round(row.shares * 99) / 100);
+      const draft = {
+        tokenId: row.tokenId,
+        side: row.side,
+        totalUsdc,
+        orderSide: "SELL" as const,
+      };
+
+      const previewRes = await fetch(`/api/funds/${fundSlug}/instructions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          managerAddress,
+          trades: [draft],
+          dryRun: true,
+        }),
+      });
+      const preview = await previewRes.json();
+      if (!previewRes.ok) throw new Error(preview.error ?? "Sell preview failed");
+      const planned = preview.trades?.[0];
+      if (!planned) throw new Error("Sell preview failed");
+
+      const challengeParams = new URLSearchParams({
+        address: managerAddress,
+        action: "instruct",
+        slug: fundSlug,
+      });
+      const challengeRes = await fetch(
+        `/api/auth/bundle-challenge?${challengeParams}`,
+      );
+      const challenge = await challengeRes.json();
+      if (!challengeRes.ok) {
+        throw new Error(challenge.error ?? "Could not start signing");
+      }
+      const signature = await signWalletMessage(challenge.message as string);
+
+      const execRes = await fetch(`/api/funds/${fundSlug}/instructions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          managerAddress,
+          message: challenge.message,
+          signature,
+          trades: [
+            {
+              tokenId: planned.tokenId,
+              side: planned.side,
+              totalUsdc: planned.totalUsdc,
+              orderSide: "SELL",
+            },
+          ],
+          execute: true,
+        }),
+      });
+      const exec = await execRes.json();
+      if (!execRes.ok) throw new Error(exec.error ?? "Sell failed");
+
+      notifyPoolUpdated(fundSlug);
+      window.setTimeout(() => notifyPoolUpdated(fundSlug), 4000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Sell failed");
+    } finally {
+      setSellingId(null);
+    }
+  }
+
+  return (
+    <>
+      {error && <p className="text-red-400 mb-2 text-xs">{error}</p>}
+      {positions.map((row) => (
+        <article
+          key={row.tokenId}
+          className="border-primary/10 border-b py-3.5 last:border-b-0"
+        >
+          <div className="flex items-center justify-between gap-4">
+            <p
+              className="text-primary/80 min-w-0 flex-1 truncate text-sm"
+              title={row.question}
+            >
+              {row.question}
+            </p>
+            <div className="flex shrink-0 items-center gap-2">
+              {canSell && (
+                <button
+                  type="button"
+                  disabled={sellingId === row.tokenId}
+                  onClick={() => void sellPosition(row)}
+                  className="text-primary/60 hover:text-primary text-xs font-medium uppercase tracking-wide disabled:opacity-50"
+                >
+                  {sellingId === row.tokenId ? "Selling…" : "Sell"}
+                </button>
+              )}
+              <p className={sizeClass}>
+                {formatUsdExact(row.costUsdc)} {row.side}
+              </p>
+            </div>
+          </div>
+          <p className="text-primary/45 mt-1 font-mono text-xs tabular-nums">
+            {row.shares.toFixed(2)} shares
+          </p>
+        </article>
+      ))}
+    </>
+  );
+}
+
 function DepositorsList({
   depositors,
   totalDeposited,
@@ -201,18 +373,26 @@ function FundActivityTabs({
 }) {
   const allTrades = pool.recentTrades ?? [];
   const chartTrades = allTrades.filter((trade) => trade.status === "filled");
-  const predictions = allTrades
+  const history = allTrades
     .filter((trade) => trade.status === "filled" || trade.status === "failed")
     .slice(0, 8);
   const depositors = pool.depositors ?? [];
+  const openPositions = useMemo(
+    () => aggregateOpenPositions(pool.positions),
+    [pool.positions],
+  );
   const hasChart = chartTrades.length > 0;
+  const canSell = canRetry && fund.status === "trading";
 
-  const [tab, setTab] = useState<ActivityTab>("performance");
+  const [tab, setTab] = useState<ActivityTab>(
+    openPositions.length > 0 ? "positions" : "performance",
+  );
 
   if (
-    predictions.length === 0 &&
+    history.length === 0 &&
     !hasChart &&
-    depositors.length === 0
+    depositors.length === 0 &&
+    openPositions.length === 0
   ) {
     if (closed) return null;
     return (
@@ -241,10 +421,17 @@ function FundActivityTabs({
         </button>
         <button
           type="button"
-          onClick={() => setTab("predictions")}
-          className={tabClass("predictions")}
+          onClick={() => setTab("positions")}
+          className={tabClass("positions")}
         >
-          Predictions
+          Positions
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("history")}
+          className={tabClass("history")}
+        >
+          History
         </button>
         <button
           type="button"
@@ -268,9 +455,17 @@ function FundActivityTabs({
               Not enough trade history for a performance chart yet.
             </p>
           ))}
-        {tab === "predictions" && (
-          <PredictionsList
-            trades={predictions}
+        {tab === "positions" && (
+          <PositionsList
+            positions={openPositions}
+            fundSlug={fund.slug}
+            canSell={canSell}
+            managerAddress={managerAddress}
+          />
+        )}
+        {tab === "history" && (
+          <HistoryList
+            trades={history}
             fundSlug={fund.slug}
             managerAddress={managerAddress}
             canRetry={canRetry}
