@@ -70,7 +70,9 @@ export default function YourMandatesPanel() {
   }, [address, isConnected, walletLoading]);
 
   const visibleEntries = (entries ?? []).filter(
-    ({ fund }) => !hideClosed || resolveLifecycleStage(fund) !== "closed",
+    ({ fund, mandate }) =>
+      mandate.status === "active" &&
+      (!hideClosed || resolveLifecycleStage(fund) !== "closed"),
   );
 
   return (
