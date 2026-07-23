@@ -73,6 +73,7 @@ jobs:
             PUBLIC_PRIVY_SIGNER_QUORUM_ID=${{ secrets.PUBLIC_PRIVY_SIGNER_QUORUM_ID }}
 
       - name: Deploy to ECS Express Mode
+        id: deploy
         uses: aws-actions/amazon-ecs-deploy-express-service@v1
         with:
           service-name: ${{ env.ECS_SERVICE }}
@@ -80,6 +81,8 @@ jobs:
           execution-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole
           infrastructure-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecsInfrastructureRoleForExpressServices
           container-port: 8080
+          # Default is /ping — without this route, rollouts hang and Actions "succeeds" after 15m.
+          health-check-path: /ping
           task-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole
           cluster: ${{ env.ECS_CLUSTER }}
           environment-variables: |
@@ -96,3 +99,30 @@ jobs:
               {"name": "MANAGERS_TABLE", "value": "carriera-managers"},
               {"name": "AWS_REGION", "value": "${{ env.AWS_REGION }}"}
             ]
+
+      - name: Verify health + Positions tab shipped
+        env:
+          LIVE_URL: https://ca-a2338ec1790141a0aa696b7ee81157a9.ecs.eu-west-1.on.aws
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$LIVE_URL/ping" || true)
+            if [ "$code" = "200" ]; then
+              js=$(curl -fsSL "$LIVE_URL/funds/8907654123" | grep -oE '/_astro/FundPoolOverview[^"]+\.js' | head -1 || true)
+              if [ -n "$js" ]; then
+                body=$(curl -fsSL "$LIVE_URL$js")
+                if echo "$body" | grep -q 'History' && echo "$body" | grep -q 'Positions'; then
+                  echo "Live UI has History + Positions ($js)"
+                  exit 0
+                fi
+                echo "attempt $i: ping ok but UI still old ($js)"
+              else
+                echo "attempt $i: ping ok, FundPoolOverview bundle not found yet"
+              fi
+            else
+              echo "attempt $i: /ping -> $code"
+            fi
+            sleep 20
+          done
+          echo "::error::Deployed image never became healthy with the new UI"
+          exit 1
