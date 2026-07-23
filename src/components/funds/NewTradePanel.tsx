@@ -40,7 +40,15 @@ function roundPrice(n: number) {
 }
 
 function priceLabel(price: number) {
-  return `$${Number(price).toFixed(1)}`;
+  return `$${Number(price).toFixed(2)}`;
+}
+
+function notionalLabel(level: BookLevel) {
+  const notional = Number(level.price) * Number(level.size);
+  return `$${notional.toLocaleString("en-US", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })}`;
 }
 
 export default function NewTradePanel({ fund }: Props) {
@@ -479,7 +487,9 @@ export default function NewTradePanel({ fund }: Props) {
                         className="hover:bg-primary/5 flex w-full items-center justify-between gap-2 rounded px-1 py-0.5 text-red-500/90"
                       >
                         <span>{priceLabel(Number(level.price))}</span>
-                        <span className="text-primary/45">{level.size}</span>
+                        <span className="text-primary/45">
+                          {notionalLabel(level)}
+                        </span>
                       </button>
                     ))
                   )}
@@ -505,7 +515,9 @@ export default function NewTradePanel({ fund }: Props) {
                         className="hover:bg-primary/5 text-profit flex w-full items-center justify-between gap-2 rounded px-1 py-0.5"
                       >
                         <span>{priceLabel(Number(level.price))}</span>
-                        <span className="text-primary/45">{level.size}</span>
+                        <span className="text-primary/45">
+                          {notionalLabel(level)}
+                        </span>
                       </button>
                     ))
                   )}
