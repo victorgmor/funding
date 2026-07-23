@@ -3,7 +3,7 @@ import Skeleton from "@/components/app/Skeleton";
 import { formatUsdExact } from "@/lib/funds/format";
 import { isFundOwner } from "@/lib/funds/editable";
 import { notifyPoolUpdated } from "@/lib/funds/pool-events";
-import type { FanoutSlice, Fund, MarketSide, VirtualPool } from "@/lib/funds/types";
+import type { Fund, MarketSide, VirtualPool } from "@/lib/funds/types";
 import {
   formatOutcomeCents,
   parseOutcomes,
@@ -17,18 +17,6 @@ import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 
 type Props = { fund: Fund };
 
-type PlannedTrade = {
-  gammaMarketId?: string;
-  totalUsdc: number;
-  price: number;
-  tokenId: string;
-  question: string;
-  side: MarketSide;
-  slices: FanoutSlice[];
-};
-
-type PreviewTrade = PlannedTrade & { id: string };
-
 type RawBookLevel = { price: string; size: string };
 type BookLevel = { price: number; size: number };
 
@@ -39,10 +27,6 @@ const chip =
 
 function roundPrice(n: number) {
   return Math.round(n * 100) / 100;
-}
-
-function priceLabel(price: number) {
-  return `$${Number(price).toFixed(2)}`;
 }
 
 function centsLabel(price: number) {
@@ -87,7 +71,6 @@ export default function NewTradePanel({ fund }: Props) {
   const [bids, setBids] = useState<BookLevel[]>([]);
   const [asks, setAsks] = useState<BookLevel[]>([]);
   const [bookError, setBookError] = useState<string | null>(null);
-  const [previewQueue, setPreviewQueue] = useState<PreviewTrade[]>([]);
   const [busy, setBusy] = useState(false);
   const [signing, setSigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,12 +78,7 @@ export default function NewTradePanel({ fund }: Props) {
 
   const active = isOwner && isConnected && Boolean(address);
 
-  const deployable = Math.max(0, pool?.totalCash ?? 0);
-  const queuedBuyTotal = useMemo(
-    () => previewQueue.reduce((sum, trade) => sum + trade.totalUsdc, 0),
-    [previewQueue],
-  );
-  const remainingDeployable = Math.max(0, deployable - queuedBuyTotal);
+  const remainingDeployable = Math.max(0, pool?.totalCash ?? 0);
 
   const selectedTokenId = useMemo(() => {
     if (!selected?.side) return null;
@@ -240,53 +218,7 @@ export default function NewTradePanel({ fund }: Props) {
     return data.message as string;
   }
 
-  function draftsFrom(queue: PreviewTrade[], extra?: TradeDraftInput) {
-    const drafts = queue.map((trade) => ({
-      gammaMarketId: trade.gammaMarketId,
-      tokenId: trade.tokenId,
-      side: trade.side,
-      totalUsdc: trade.totalUsdc,
-      price: trade.price,
-      orderSide: "BUY" as const,
-    }));
-    if (extra) drafts.push(extra);
-    return drafts;
-  }
-
-  type TradeDraftInput = {
-    gammaMarketId?: string;
-    tokenId?: string;
-    side: MarketSide;
-    totalUsdc: number;
-    price: number;
-    orderSide: "BUY";
-  };
-
-  async function planPreview(drafts: TradeDraftInput[], ids: string[]) {
-    const res = await fetch(`/api/funds/${fund.slug}/instructions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        managerAddress: address,
-        trades: drafts,
-        dryRun: true,
-      }),
-    });
-    const data = await readResponseJson<{
-      trades?: PlannedTrade[];
-      error?: string;
-    }>(res);
-    if (!res.ok) throw new Error(data.error ?? "Preview failed");
-    if (!data.trades?.length) throw new Error("Preview failed");
-    setPreviewQueue(
-      data.trades.map((trade, index) => ({
-        ...trade,
-        id: ids[index] ?? `${trade.tokenId}-BUY-${Date.now()}-${index}`,
-      })),
-    );
-  }
-
-  async function addToPreview() {
+  async function executeTrade() {
     if (busy || !selected) return;
     setBusy(true);
     setError(null);
@@ -302,60 +234,10 @@ export default function NewTradePanel({ fund }: Props) {
       }
       if (tradeAmount > remainingDeployable) {
         throw new Error(
-          `Only ${formatUsdExact(remainingDeployable)} left in preview budget`,
+          `Only ${formatUsdExact(remainingDeployable)} deployable`,
         );
       }
 
-      await planPreview(
-        draftsFrom(previewQueue, {
-          gammaMarketId: selected.gammaMarketId,
-          side: selected.side,
-          totalUsdc: tradeAmount,
-          price,
-          orderSide: "BUY",
-        }),
-        previewQueue.map((trade) => trade.id),
-      );
-      setSelected(null);
-      setQuery("");
-      setAmount("20");
-      setLimitPrice("");
-      setBids([]);
-      setAsks([]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Preview failed");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function removeFromPreview(id: string) {
-    const next = previewQueue.filter((trade) => trade.id !== id);
-    if (next.length === previewQueue.length) return;
-    if (next.length === 0) {
-      setPreviewQueue([]);
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    try {
-      await planPreview(
-        draftsFrom(next),
-        next.map((trade) => trade.id),
-      );
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Preview failed");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function executeAll() {
-    if (busy || previewQueue.length === 0) return;
-    setBusy(true);
-    setError(null);
-    setNotice(null);
-    try {
       const message = await requestChallenge();
       setSigning(true);
       const signature = await signWalletMessage(message).finally(() =>
@@ -369,7 +251,15 @@ export default function NewTradePanel({ fund }: Props) {
           managerAddress: address,
           message,
           signature,
-          trades: draftsFrom(previewQueue),
+          trades: [
+            {
+              gammaMarketId: selected.gammaMarketId,
+              side: selected.side,
+              totalUsdc: tradeAmount,
+              price,
+              orderSide: "BUY" as const,
+            },
+          ],
           execute: true,
         }),
       });
@@ -383,22 +273,24 @@ export default function NewTradePanel({ fund }: Props) {
       }>(res);
       if (!res.ok) throw new Error(data.error ?? "Instruction failed");
 
-      const tradeCount = previewQueue.length;
-      setPreviewQueue([]);
+      setSelected(null);
+      setQuery("");
+      setAmount("20");
+      setLimitPrice("");
+      setBids([]);
+      setAsks([]);
       notifyPoolUpdated(fund.slug);
 
       const execSummary = data.summary;
       if (execSummary?.pending) {
         setNotice(
           execSummary.withoutSession
-            ? `${execSummary.count ?? tradeCount} instruction(s) recorded — ${execSummary.pending} slice(s) queued. ${execSummary.withoutSession} investor(s) need auto-trading.`
-            : `${execSummary.count ?? tradeCount} instruction(s) recorded — ${execSummary.pending} slice(s) queued for autopilot.`,
+            ? `${execSummary.count ?? 1} instruction(s) recorded — ${execSummary.pending} slice(s) queued. ${execSummary.withoutSession} investor(s) need auto-trading.`
+            : `${execSummary.count ?? 1} instruction(s) recorded — ${execSummary.pending} slice(s) queued for autopilot.`,
         );
         window.setTimeout(() => notifyPoolUpdated(fund.slug), 4000);
       } else {
-        setNotice(
-          `${execSummary?.count ?? tradeCount} instruction(s) recorded.`,
-        );
+        setNotice(`${execSummary?.count ?? 1} instruction(s) recorded.`);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Instruction failed");
@@ -646,79 +538,17 @@ export default function NewTradePanel({ fund }: Props) {
               <button
                 type="button"
                 disabled={busy || signing}
-                onClick={() => void addToPreview()}
+                onClick={() => void executeTrade()}
                 className={`${walletNavButtonClass} !px-4 !py-2 disabled:opacity-40`}
               >
-                {busy ? "…" : "Add"}
+                {signing ? "Sign…" : busy ? "…" : "Trade"}
               </button>
             </div>
-            {deployable > 0 && (
+            {remainingDeployable > 0 && (
               <p className="text-primary/50 text-xs">
                 {formatUsdExact(remainingDeployable)} deployable
-                {previewQueue.length > 0 && (
-                  <span>
-                    {" "}
-                    · {formatUsdExact(queuedBuyTotal)} queued ·{" "}
-                    {formatUsdExact(deployable)} total
-                  </span>
-                )}
               </p>
             )}
-          </div>
-        )}
-
-        {previewQueue.length > 0 && (
-          <div className="border-primary/10 rounded border text-xs">
-            <div className="border-primary/10 flex items-center justify-between gap-2 border-b px-3 py-2">
-              <p className="text-primary/50 truncate">
-                Preview · {previewQueue.length}
-                {queuedBuyTotal > 0 && ` · ${formatUsdExact(queuedBuyTotal)}`}
-              </p>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => setPreviewQueue([])}
-                className="text-primary/50 hover:text-primary disabled:opacity-40"
-              >
-                Clear
-              </button>
-            </div>
-            {previewQueue.map((trade) => (
-              <div
-                key={trade.id}
-                className="border-primary/10 flex items-center justify-between gap-2 border-b px-3 py-2 last:border-b-0"
-              >
-                <p className="text-primary/80 min-w-0 flex-1 truncate text-sm">
-                  {trade.question}
-                  <span className="text-primary/50 ml-2">
-                    {trade.side} · {priceLabel(trade.price)} ·{" "}
-                    {formatUsdExact(trade.totalUsdc)}
-                  </span>
-                </p>
-                <button
-                  type="button"
-                  onClick={() => void removeFromPreview(trade.id)}
-                  className="text-primary/40 hover:text-primary shrink-0 p-1"
-                  aria-label="Remove trade from preview"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-            <div className="border-primary/10 border-t px-3 py-2">
-              <button
-                type="button"
-                disabled={busy || signing}
-                onClick={() => void executeAll()}
-                className={`${walletNavButtonClass} w-full !py-2 disabled:opacity-40`}
-              >
-                {signing
-                  ? "Sign…"
-                  : busy
-                    ? "…"
-                    : `Execute (${previewQueue.length})`}
-              </button>
-            </div>
           </div>
         )}
       </div>
