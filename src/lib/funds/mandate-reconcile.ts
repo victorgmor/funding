@@ -24,7 +24,27 @@ function mergeTrade(
   existing: MandatePosition | undefined,
   trade: MandateTrade,
   now: string,
-): MandatePosition {
+): MandatePosition | undefined {
+  if (trade.orderSide === "SELL") {
+    if (!existing) return undefined;
+    const soldShares = Math.min(existing.shares, trade.shares);
+    const shares = round(Math.max(0, existing.shares - soldShares), 4);
+    const costCut = round(
+      existing.shares > 0
+        ? (existing.costUsdc * soldShares) / existing.shares
+        : 0,
+      2,
+    );
+    const costUsdc = round(Math.max(0, existing.costUsdc - costCut), 2);
+    return {
+      ...existing,
+      shares,
+      costUsdc,
+      avgPrice: shares > 0 ? round(costUsdc / shares, 4) : existing.avgPrice,
+      updatedAt: now,
+    };
+  }
+
   if (!existing) {
     return {
       id: `${trade.mandateId}#${trade.tokenId}`,
@@ -65,21 +85,25 @@ export async function reconcileMandatePositions(
       .filter((pos) => pos.redeemedAt)
       .map((pos) => pos.tokenId),
   );
-  const trades = (await listTradesByFund(fundSlug)).filter(
-    (trade) =>
-      trade.mandateId === mandateId &&
-      trade.status === "filled" &&
-      !redeemedTokens.has(trade.tokenId),
-  );
+  const trades = (await listTradesByFund(fundSlug))
+    .filter(
+      (trade) =>
+        trade.mandateId === mandateId &&
+        trade.status === "filled" &&
+        !redeemedTokens.has(trade.tokenId),
+    )
+    // Replay chronologically so sells reduce the buys that precede them.
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const now = new Date().toISOString();
 
   const rebuilt = new Map<string, MandatePosition>();
   for (const trade of trades) {
     const current = rebuilt.get(trade.tokenId);
-    rebuilt.set(trade.tokenId, mergeTrade(current, trade, now));
+    const next = mergeTrade(current, trade, now);
+    if (next) rebuilt.set(trade.tokenId, next);
   }
 
-  const expected = [...rebuilt.values()];
+  const expected = [...rebuilt.values()].filter((pos) => pos.shares > 0);
   const matches =
     existing.length === expected.length &&
     existing.every((pos) => {
