@@ -45,6 +45,14 @@ function priceLabel(price: number) {
   return `$${Number(price).toFixed(2)}`;
 }
 
+function centsLabel(price: number) {
+  return `${(price * 100).toFixed(1)}¢`;
+}
+
+function sharesLabel(size: number) {
+  return size.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
 function notionalLabel(level: BookLevel) {
   const notional = level.price * level.size;
   return `$${notional.toLocaleString("en-US", {
@@ -186,10 +194,10 @@ export default function NewTradePanel({ fund }: Props) {
         if (!res.ok) throw new Error(data.error ?? "Orderbook unavailable");
         const nextBids = groupByPrice(data.bids ?? [])
           .sort((a, b) => b.price - a.price)
-          .slice(0, 6);
+          .slice(0, 8);
         const nextAsks = groupByPrice(data.asks ?? [])
           .sort((a, b) => a.price - b.price)
-          .slice(0, 6);
+          .slice(0, 8);
         setBids(nextBids);
         setAsks(nextAsks);
         setBookError(null);
@@ -487,56 +495,121 @@ export default function NewTradePanel({ fund }: Props) {
               })}
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div className="border-primary/10 rounded border p-2.5">
-                <p className="text-primary/45 mb-1.5 text-xs font-medium">
-                  Asks
-                </p>
-                <div className="space-y-0.5 font-mono text-xs tabular-nums">
-                  {asks.length === 0 ? (
-                    <p className="text-primary/35">—</p>
+            {(() => {
+              // Asks stored best-first; show worst→best (best ask at bottom).
+              const askRows = [...asks].reverse();
+              const bestAsk = asks[0];
+              const bestBid = bids[0];
+              const last = bestBid?.price ?? bestAsk?.price;
+              const spread =
+                bestAsk && bestBid
+                  ? bestAsk.price - bestBid.price
+                  : null;
+              const maxSize = Math.max(
+                1,
+                ...asks.map((l) => l.size),
+                ...bids.map((l) => l.size),
+              );
+              const depthPct = (size: number) =>
+                `${Math.min(100, (size / maxSize) * 100)}%`;
+              const row =
+                "relative grid w-full grid-cols-3 items-center gap-2 overflow-hidden px-2 py-0.5 text-left font-mono text-xs tabular-nums hover:bg-primary/5";
+              return (
+                <div className="border-primary/10 overflow-hidden rounded border">
+                  <div className="text-primary/45 grid grid-cols-3 gap-2 px-2 py-1.5 text-[10px] font-medium tracking-wide uppercase">
+                    <span>Price</span>
+                    <span className="text-right">Shares</span>
+                    <span className="text-right">Total</span>
+                  </div>
+                  {askRows.length === 0 && bids.length === 0 ? (
+                    <p className="text-primary/35 px-2 py-2 text-xs">—</p>
                   ) : (
-                    asks.map((level) => (
-                      <button
-                        key={`ask-${level.price}`}
-                        type="button"
-                        onClick={() => setLimitPrice(level.price.toFixed(2))}
-                        className="hover:bg-primary/5 flex w-full items-center justify-between gap-2 rounded px-1 py-0.5 text-red-500/90"
-                      >
-                        <span>{priceLabel(level.price)}</span>
-                        <span className="text-primary/45">
-                          {notionalLabel(level)}
+                    <>
+                      {askRows.map((level) => {
+                        const isBest = level.price === bestAsk?.price;
+                        return (
+                          <button
+                            key={`ask-${level.price}`}
+                            type="button"
+                            onClick={() =>
+                              setLimitPrice(level.price.toFixed(2))
+                            }
+                            className={row}
+                          >
+                            <span
+                              aria-hidden
+                              className="absolute inset-y-0 right-0 bg-red-500/10"
+                              style={{ width: depthPct(level.size) }}
+                            />
+                            <span className="relative flex min-w-0 items-center gap-1.5 text-red-500/90">
+                              {centsLabel(level.price)}
+                              {isBest && (
+                                <span className="border-red-500/25 bg-red-500/10 rounded border px-1 py-px text-[9px] font-sans font-medium tracking-normal text-red-500/70 normal-case">
+                                  Asks
+                                </span>
+                              )}
+                            </span>
+                            <span className="text-primary/60 relative text-right">
+                              {sharesLabel(level.size)}
+                            </span>
+                            <span className="text-primary/45 relative text-right">
+                              {notionalLabel(level)}
+                            </span>
+                          </button>
+                        );
+                      })}
+                      <div className="border-primary/10 bg-primary/5 flex items-center justify-between gap-3 border-y px-2 py-1.5 text-xs">
+                        <span className="text-primary/50">
+                          Last{" "}
+                          <span className="text-primary font-mono tabular-nums">
+                            {last != null ? centsLabel(last) : "—"}
+                          </span>
                         </span>
-                      </button>
-                    ))
+                        <span className="text-primary/50">
+                          Spread{" "}
+                          <span className="text-primary font-mono tabular-nums">
+                            {spread != null ? centsLabel(spread) : "—"}
+                          </span>
+                        </span>
+                      </div>
+                      {bids.map((level) => {
+                        const isBest = level.price === bestBid?.price;
+                        return (
+                          <button
+                            key={`bid-${level.price}`}
+                            type="button"
+                            onClick={() =>
+                              setLimitPrice(level.price.toFixed(2))
+                            }
+                            className={row}
+                          >
+                            <span
+                              aria-hidden
+                              className="absolute inset-y-0 right-0 bg-emerald-500/10"
+                              style={{ width: depthPct(level.size) }}
+                            />
+                            <span className="text-profit relative flex min-w-0 items-center gap-1.5">
+                              {centsLabel(level.price)}
+                              {isBest && (
+                                <span className="border-emerald-500/25 bg-emerald-500/10 text-profit/70 rounded border px-1 py-px text-[9px] font-sans font-medium tracking-normal normal-case">
+                                  Bids
+                                </span>
+                              )}
+                            </span>
+                            <span className="text-primary/60 relative text-right">
+                              {sharesLabel(level.size)}
+                            </span>
+                            <span className="text-primary/45 relative text-right">
+                              {notionalLabel(level)}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </>
                   )}
                 </div>
-              </div>
-              <div className="border-primary/10 rounded border p-2.5">
-                <p className="text-primary/45 mb-1.5 text-xs font-medium">
-                  Bids
-                </p>
-                <div className="space-y-0.5 font-mono text-xs tabular-nums">
-                  {bids.length === 0 ? (
-                    <p className="text-primary/35">—</p>
-                  ) : (
-                    bids.map((level) => (
-                      <button
-                        key={`bid-${level.price}`}
-                        type="button"
-                        onClick={() => setLimitPrice(level.price.toFixed(2))}
-                        className="hover:bg-primary/5 text-profit flex w-full items-center justify-between gap-2 rounded px-1 py-0.5"
-                      >
-                        <span>{priceLabel(level.price)}</span>
-                        <span className="text-primary/45">
-                          {notionalLabel(level)}
-                        </span>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
+              );
+            })()}
             {bookError && (
               <p className="text-xs text-red-500/80">{bookError}</p>
             )}
