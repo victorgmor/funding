@@ -126,7 +126,7 @@ export default function YourMandatesPanel() {
       {isConnected && address ? (
         loading || entries === null ? (
           <div className="border-primary/10 border-t">
-            <MandateAllocationChart entries={[]} />
+            <MandateAllocationChart entries={[]} loading />
           </div>
         ) : (
           <div className="border-primary/10 border-t">

@@ -13,22 +13,6 @@ type Props = {
   variant?: "nav" | "panel" | "create";
 };
 
-function restoringPlaceholder(variant: Props["variant"]) {
-  if (variant === "panel") {
-    return <WalletPanelPlaceholder label="Loading wallet…" variant="button" />;
-  }
-  return (
-    <button
-      type="button"
-      disabled
-      aria-busy="true"
-      className={walletNavButtonClass}
-    >
-      <span className="animate-pulse">Loading…</span>
-    </button>
-  );
-}
-
 function ConnectWalletInner({ variant = "panel" }: Props) {
   const { login, logout } = usePrivy();
   const { address, displayAddress, isConnected, hasSession } = useWalletGate();
@@ -49,7 +33,7 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
 
   // Saved session still reconnecting — never flash Log in.
   if (sessionHint && !isConnected) {
-    return restoringPlaceholder(variant);
+    return <WalletPanelPlaceholder label="Loading wallet…" variant="button" />;
   }
 
   if (isConnected && address) {

@@ -3,6 +3,7 @@ import { useSigners, useUser } from "@privy-io/react-auth";
 import { getWalletClient } from "@wagmi/core";
 import { polygon } from "wagmi/chains";
 import ConnectWallet from "@/components/app/ConnectWallet";
+import Skeleton from "@/components/app/Skeleton";
 import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import FundTradeAutopilot from "@/components/funds/FundTradeAutopilot";
 import { privySignerQuorumId } from "@/lib/privy/config";
@@ -397,7 +398,13 @@ export default function MandatePanel({ fund }: Props) {
           {switching ? "Switching to Polygon…" : "Connecting to Polygon…"}
         </p>
       ) : loading && !summary ? (
-        <p className="text-primary/50 text-sm">Loading…</p>
+        // Skeleton approximates value line + caption + amount input + CTA.
+        <div aria-hidden>
+          <Skeleton className="h-6 w-28 rounded" />
+          <Skeleton className="mt-2 h-3.5 w-52 rounded" />
+          <Skeleton className="mt-4 h-10 w-full rounded-full" />
+          <Skeleton className="mt-3 h-9 w-full rounded-[12px]" />
+        </div>
       ) : (
         <>
           {hasMandate && summary?.mandate && (

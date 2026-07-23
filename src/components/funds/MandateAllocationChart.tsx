@@ -10,6 +10,8 @@ type Entry = {
 
 type Props = {
   entries: Entry[];
+  /** Render the grid as a pulsing skeleton while entries load. */
+  loading?: boolean;
 };
 
 const COLS = 20;
@@ -53,7 +55,10 @@ function allocateCells(slices: Slice[], total: number): Slice[] {
   );
 }
 
-export default function MandateAllocationChart({ entries }: Props) {
+export default function MandateAllocationChart({
+  entries,
+  loading = false,
+}: Props) {
   const [hovered, setHovered] = useState<string | null>(null);
 
   const slices = useMemo(() => {
@@ -77,6 +82,23 @@ export default function MandateAllocationChart({ entries }: Props) {
   }, [entries]);
 
   const cells = useMemo(() => allocateCells(slices, CELLS), [slices]);
+
+  if (loading) {
+    // Same grid shape as the loaded chart — skeleton cells, no layout shift.
+    return (
+      <div className="border-primary/10 border-b pb-6 pt-5">
+        <div
+          className="animate-pulse grid w-full gap-1.5"
+          style={{ gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))` }}
+          aria-hidden="true"
+        >
+          {Array.from({ length: CELLS }, (_, i) => (
+            <div key={i} className="bg-primary/10 aspect-square rounded-md" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="border-primary/10 border-b pb-6 pt-5">

@@ -8,6 +8,7 @@ import type {
 } from "@/lib/funds/types";
 import type { FundPoolPerformance } from "@/lib/funds/performance";
 import type { FundSettlement } from "@/lib/funds/settlement";
+import Skeleton from "@/components/app/Skeleton";
 import FundPnlChart from "@/components/funds/FundPnlChart";
 import FundStageMetricsRow from "@/components/funds/FundStageMetricsRow";
 import PoolCapBar from "@/components/funds/PoolCapBar";
@@ -564,14 +565,14 @@ export default function FundPoolOverview({ fund }: Props) {
   if (loading) {
     // Skeleton mirrors metrics row + cap bar + summary line to avoid layout shift.
     return (
-      <div className="animate-pulse" aria-hidden>
+      <div aria-hidden>
         <div className="space-y-2">
-          <div className="bg-primary/10 h-5 w-2/3 rounded" />
-          <div className="bg-primary/10 h-2 w-full rounded-full" />
+          <Skeleton className="h-5 w-2/3 rounded" />
+          <Skeleton className="h-2 w-full rounded-full" />
         </div>
-        <div className="bg-primary/10 mt-2.5 h-4 w-44 rounded" />
+        <Skeleton className="mt-2.5 h-4 w-44 rounded" />
         <div className="border-primary/10 mt-4 border-t pt-4">
-          <div className="bg-primary/10 h-40 w-full rounded" />
+          <Skeleton className="h-40 w-full rounded" />
         </div>
       </div>
     );

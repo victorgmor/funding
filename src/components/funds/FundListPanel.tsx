@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import LazyProviders from "@/components/app/LazyProviders";
+import Skeleton from "@/components/app/Skeleton";
 import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import FundFeedCard from "@/components/funds/FundFeedCard";
 import YourMandatesPanel from "@/components/funds/YourMandatesPanel";
@@ -119,6 +120,30 @@ function useParticipatingSlugs(enabled: boolean) {
 const defaultDirection = (field: SortField): SortDirection =>
   field === "creator" ? "asc" : "desc";
 
+/** Skeleton rows shaped like FundFeedCard — title + meta, snippet, metrics + cap bar. */
+function FundFeedSkeleton() {
+  return (
+    <div aria-hidden>
+      {[0, 1, 2].map((row) => (
+        <div
+          key={row}
+          className="border-primary/10 border-b py-5 first:border-t last:border-b-0"
+        >
+          <div className="flex items-center justify-between gap-4">
+            <Skeleton className="h-6 w-2/5 rounded" />
+            <Skeleton className="h-4 w-28 rounded" />
+          </div>
+          <Skeleton className="mt-2.5 h-4 w-3/4 rounded" />
+          <div className="mt-4 space-y-2">
+            <Skeleton className="h-5 w-2/3 rounded" />
+            <Skeleton className="h-2 w-full rounded-full" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function SortIndicator({
   active,
   direction,
@@ -191,14 +216,14 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
         : "border-transparent text-primary/45 hover:text-primary/70"
     }`;
 
+  const participatingBusy =
+    onlyParticipating &&
+    (walletLoading || participatingWalletLoading || participatingLoading);
+
   const emptyMessage = onlyParticipating
-    ? walletLoading || participatingWalletLoading
-      ? "Loading wallet…"
-      : !isConnected
-        ? "Connect your wallet to filter funds you're in"
-        : participatingLoading
-          ? "Checking your portfolio…"
-          : "You're not in any funds yet"
+    ? !isConnected
+      ? "Connect your wallet to filter funds you're in"
+      : "You're not in any funds yet"
     : "No funds match your search";
 
   return (
@@ -248,9 +273,7 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
                   Only funds I&apos;m in
                 </label>
                 {onlyParticipating && walletLoading && (
-                  <span className="text-primary/50 text-xs whitespace-nowrap">
-                    Loading wallet…
-                  </span>
+                  <Skeleton className="h-3.5 w-20 shrink-0 rounded" />
                 )}
                 {onlyParticipating && !walletLoading && !isConnected && (
                   <span className="text-primary/50 text-xs whitespace-nowrap">
@@ -287,6 +310,8 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
             />
           ))}
         </div>
+      ) : participatingBusy ? (
+        <FundFeedSkeleton />
       ) : (
         <p className="text-primary/50 py-12 text-center text-sm">
           {emptyMessage}

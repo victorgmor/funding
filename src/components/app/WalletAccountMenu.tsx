@@ -296,11 +296,23 @@ export default function WalletAccountMenu({
                         className="truncate font-mono text-sm font-medium text-white"
                         title={info?.depositAddress}
                       >
-                        {info ? shortAddress(info.depositAddress) : "…"}
+                        {info ? (
+                          shortAddress(info.depositAddress)
+                        ) : (
+                          <span
+                            aria-hidden="true"
+                            className="animate-pulse inline-block h-3.5 w-28 rounded bg-white/20 align-middle"
+                          />
+                        )}
                       </p>
                       <p className="text-xs leading-4 text-white/50">
                         {loading
-                          ? "…"
+                          ? (
+                            <span
+                              aria-hidden="true"
+                              className="animate-pulse inline-block h-3 w-16 rounded bg-white/20 align-middle"
+                            />
+                          )
                           : !registered
                             ? "Setting up…"
                             : `${formatUsdExact(info?.totalCollateral ?? info?.depositCollateral ?? 0)} pUSD`}

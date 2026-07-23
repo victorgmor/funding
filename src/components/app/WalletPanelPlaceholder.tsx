@@ -1,9 +1,10 @@
+import Skeleton from "@/components/app/Skeleton";
 import { walletNavButtonClass } from "@/lib/walletNavChrome";
 
 type Props = {
   label?: string;
   className?: string;
-  /** "text" renders an inline loading label; "button" mirrors the nav wallet chip. */
+  /** "text" renders skeleton lines; "button" mirrors the nav wallet chip. */
   variant?: "text" | "button";
 };
 
@@ -21,18 +22,24 @@ export default function WalletPanelPlaceholder({
         aria-live="polite"
         className={`${walletNavButtonClass} ${className}`}
       >
-        <span className="animate-pulse">{label}</span>
+        <span className="sr-only">{label}</span>
+        <span
+          aria-hidden="true"
+          className="animate-pulse h-5 w-16 rounded bg-white/20"
+        />
       </button>
     );
   }
 
   return (
     <div
-      className={`text-primary/50 min-h-9 text-sm ${className}`}
+      className={`min-h-9 space-y-2 ${className}`}
       aria-busy="true"
       aria-live="polite"
     >
-      {label}
+      <span className="sr-only">{label}</span>
+      <Skeleton className="h-4 w-2/3 rounded" />
+      <Skeleton className="h-4 w-2/5 rounded" />
     </div>
   );
 }

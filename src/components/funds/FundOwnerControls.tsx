@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ConnectWallet from "@/components/app/ConnectWallet";
+import Skeleton from "@/components/app/Skeleton";
 import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import { isCreatorWallet } from "@/lib/funds/creator";
 import { isFundOwner, isUserFund } from "@/lib/funds/editable";
@@ -277,7 +278,17 @@ export function FundOwnerControlsInner({ fund }: Props) {
       {managing && fund.status === "trading" && (
         <div className="mt-4 space-y-4 border-t border-primary/10 pt-4">
           {!loaded ? (
-            <p className="text-primary/50 text-sm">Loading…</p>
+            // Skeleton approximates the edit form: two labelled fields.
+            <div aria-hidden className="space-y-4">
+              <div>
+                <Skeleton className="mb-2 h-4 w-20 rounded" />
+                <Skeleton className="h-9 w-full rounded" />
+              </div>
+              <div>
+                <Skeleton className="mb-2 h-4 w-14 rounded" />
+                <Skeleton className="h-9 w-full rounded" />
+              </div>
+            </div>
           ) : (
             <>
               <div>

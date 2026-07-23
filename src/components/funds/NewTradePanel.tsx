@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import Skeleton from "@/components/app/Skeleton";
 import { formatUsdExact } from "@/lib/funds/format";
 import { isFundOwner } from "@/lib/funds/editable";
 import { notifyPoolUpdated } from "@/lib/funds/pool-events";
@@ -410,7 +411,21 @@ export default function NewTradePanel({ fund }: Props) {
           placeholder="Search or paste Polymarket URL…"
           className={field}
         />
-        {searching && <p className="text-primary/50 text-xs">Searching…</p>}
+        {searching && results.length === 0 && (
+          // Skeleton mirrors the results dropdown rows.
+          <div aria-hidden className="border-primary/10 rounded border">
+            {[0, 1, 2].map((row) => (
+              <div
+                key={row}
+                className="border-primary/10 border-b px-3 py-2.5 last:border-b-0"
+              >
+                <Skeleton
+                  className={`h-4 rounded ${row === 1 ? "w-1/2" : "w-2/3"}`}
+                />
+              </div>
+            ))}
+          </div>
+        )}
         {results.length > 0 && (
           <ul className="border-primary/10 max-h-40 overflow-y-auto rounded border">
             {results.map((market) => (

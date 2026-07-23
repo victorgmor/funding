@@ -55,7 +55,11 @@ const navLinks = [
                   class={walletNavButtonClass}
                 >
                   <span data-wallet-label-anon>Log in</span>
-                  <span data-wallet-label-session>Loading…</span>
+                  <span
+                    data-wallet-label-session
+                    aria-label="Loading…"
+                    class="animate-pulse h-5 w-16 rounded bg-white/20"
+                  ></span>
                 </button>
               </div>
             ) : (
