@@ -429,17 +429,12 @@ export default function NewTradeModal({
         >
           <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/10 px-5 py-4">
             <div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-full border border-white/25 px-2.5 py-0.5 text-xs font-medium text-white/90">
-                  Trade
-                </span>
-                <h2
-                  id="new-trade-title"
-                  className="text-base font-semibold text-white"
-                >
-                  New trade
-                </h2>
-              </div>
+              <h2
+                id="new-trade-title"
+                className="text-base font-semibold text-white"
+              >
+                New trade
+              </h2>
               <p className="mt-2 text-sm text-white/50">
                 Set a limit price against the live orderbook, then fan out across
                 the pool.
