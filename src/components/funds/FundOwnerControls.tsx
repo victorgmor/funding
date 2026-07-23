@@ -244,15 +244,15 @@ export function FundOwnerControlsInner({ fund }: Props) {
               type="button"
               onClick={() => setTrading(true)}
               disabled={busy}
-              className={`${walletNavButtonClass} !px-4 !py-1.5 text-xs uppercase`}
+              className={`${walletNavButtonClass} !px-4 !py-1.5 text-xs`}
             >
-              New trade
+              New Trade
             </button>
             <button
               type="button"
               onClick={() => setManaging(true)}
               disabled={busy}
-              className={`${walletNavButtonClass} !px-4 !py-1.5 text-xs uppercase`}
+              className={`${walletNavButtonClass} !px-4 !py-1.5 text-xs`}
             >
               Manage
             </button>
@@ -260,7 +260,7 @@ export function FundOwnerControlsInner({ fund }: Props) {
               type="button"
               onClick={closeFund}
               disabled={busy || signing}
-              className="border-red-500/30 text-red-300 hover:bg-red-500/10 rounded-[12px] border px-4 py-1.5 text-xs font-medium uppercase"
+              className="border-red-500/30 text-red-300 hover:bg-red-500/10 rounded-[12px] border px-4 py-1.5 text-xs font-medium"
             >
               {signing ? "Sign…" : busy ? "Closing…" : "Close"}
             </button>
@@ -269,14 +269,14 @@ export function FundOwnerControlsInner({ fund }: Props) {
 
         {fund.status === "archived" && (
           <div className="flex flex-wrap gap-2">
-            <span className="border-primary/15 text-primary/60 rounded-full border px-3 py-1.5 text-xs font-medium uppercase">
+            <span className="border-primary/15 text-primary/60 rounded-full border px-3 py-1.5 text-xs font-medium">
               Archived
             </span>
             <button
               type="button"
               onClick={restoreFund}
               disabled={busy || signing}
-              className={`${walletNavButtonClass} !px-4 !py-1.5 text-xs uppercase disabled:opacity-50`}
+              className={`${walletNavButtonClass} !px-4 !py-1.5 text-xs disabled:opacity-50`}
             >
               {signing ? "Sign…" : busy ? "Restoring…" : "Restore"}
             </button>
