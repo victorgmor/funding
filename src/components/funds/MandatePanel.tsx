@@ -64,6 +64,7 @@ export default function MandatePanel({ fund }: Props) {
   const [loading, setLoading] = useState(false);
   const [committing, setCommitting] = useState(false);
   const [signing, setSigning] = useState(false);
+  const [reauthorizing, setReauthorizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
@@ -141,73 +142,96 @@ export default function MandatePanel({ fund }: Props) {
     return data.message as string;
   }
 
-  const ensureServerSigner = useCallback(async () => {
-    if (!address || !onPolygon || serverSignerActive) return;
+  const ensureServerSigner = useCallback(
+    async (force = false) => {
+      if (!address || !onPolygon || (serverSignerActive && !force)) return;
 
-    if (!privySignerQuorumId) {
-      throw new Error("PUBLIC_PRIVY_SIGNER_QUORUM_ID is not configured");
-    }
+      if (!privySignerQuorumId) {
+        throw new Error("PUBLIC_PRIVY_SIGNER_QUORUM_ID is not configured");
+      }
 
-    // Always attach our quorum — `delegated` only means *some* signer exists,
-    // often an old/rotated one, which is why new-fund joins kept failing with
-    // PRIVY_AUTHORIZATION_PRIVATE_KEY mismatch after a prior authorization.
-    try {
-      await addSigners({
-        address,
-        signers: [{ signerId: privySignerQuorumId, policyIds: [] }],
+      // Always attach our quorum — `delegated` only means *some* signer exists,
+      // often an old/rotated one, which is why new-fund joins kept failing with
+      // PRIVY_AUTHORIZATION_PRIVATE_KEY mismatch after a prior authorization.
+      try {
+        await addSigners({
+          address,
+          signers: [{ signerId: privySignerQuorumId, policyIds: [] }],
+        });
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        if (!/duplicate signer/i.test(message)) throw e;
+      }
+
+      const privyWalletId = privyWalletIdForAddress(user, address);
+      if (!privyWalletId) {
+        throw new Error(
+          "Privy wallet id unavailable — try logging out and back in",
+        );
+      }
+
+      const walletClient = await getWalletClient(wagmiConfig, {
+        chainId: polygon.id,
+        account: address,
       });
+      if (!walletClient) throw new Error("Wallet not ready");
+
+      const { trading, creds } = await createTradingClient(
+        walletClient,
+        setStatus,
+      );
+
+      const message = await requestChallenge("authorize");
+      setSigning(true);
+      const signature = await signWalletMessage(message).finally(() =>
+        setSigning(false),
+      );
+
+      const res = await fetch(`/api/funds/${fund.slug}/session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          address,
+          message,
+          signature,
+          depositAddress: trading.depositAddress,
+          signatureType: trading.signatureType,
+          creds,
+          privyWalletId,
+          serverSigner: true,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Authorization failed");
+
+      await refresh();
+    },
+    [
+      address,
+      onPolygon,
+      serverSignerActive,
+      user,
+      addSigners,
+      fund.slug,
+      refresh,
+    ],
+  );
+
+  async function reauthorizeAutoTrading() {
+    if (!address || !onPolygon || reauthorizing || committing) return;
+    setReauthorizing(true);
+    setError(null);
+    setStatus("Re-authorizing auto-trading…");
+    try {
+      await ensureServerSigner(true);
     } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      if (!/duplicate signer/i.test(message)) throw e;
+      setError(e instanceof Error ? e.message : "Authorization failed");
+    } finally {
+      setReauthorizing(false);
+      setStatus(null);
     }
-
-    const privyWalletId = privyWalletIdForAddress(user, address);
-    if (!privyWalletId) {
-      throw new Error("Privy wallet id unavailable — try logging out and back in");
-    }
-
-    const walletClient = await getWalletClient(wagmiConfig, {
-      chainId: polygon.id,
-      account: address,
-    });
-    if (!walletClient) throw new Error("Wallet not ready");
-
-    const { trading, creds } = await createTradingClient(walletClient, setStatus);
-
-    const message = await requestChallenge("authorize");
-    setSigning(true);
-    const signature = await signWalletMessage(message).finally(() =>
-      setSigning(false),
-    );
-
-    const res = await fetch(`/api/funds/${fund.slug}/session`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        address,
-        message,
-        signature,
-        depositAddress: trading.depositAddress,
-        signatureType: trading.signatureType,
-        creds,
-        privyWalletId,
-        serverSigner: true,
-      }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error ?? "Authorization failed");
-
-    await refresh();
-  }, [
-    address,
-    onPolygon,
-    serverSignerActive,
-    user,
-    addSigners,
-    fund.slug,
-    refresh,
-  ]);
+  }
 
   useEffect(() => {
     if (
@@ -497,7 +521,12 @@ export default function MandatePanel({ fund }: Props) {
               </p>
               <button
                 type="button"
-                disabled={committing || signing || (isWithdraw && withdrawable <= 0)}
+                disabled={
+                  committing ||
+                  signing ||
+                  reauthorizing ||
+                  (isWithdraw && withdrawable <= 0)
+                }
                 onClick={commit}
                 className={`${walletNavButtonClass} mt-3 w-full disabled:opacity-50`}
               >
@@ -517,6 +546,19 @@ export default function MandatePanel({ fund }: Props) {
                         : "Commit to fund"}
               </button>
             </div>
+          )}
+
+          {hasMandate && !closed && address && onPolygon && (
+            <button
+              type="button"
+              disabled={committing || signing || reauthorizing}
+              onClick={() => void reauthorizeAutoTrading()}
+              className="text-primary/50 hover:text-primary mt-3 text-xs disabled:opacity-50"
+            >
+              {reauthorizing
+                ? status ?? "Re-authorizing…"
+                : "Re-authorize auto-trading"}
+            </button>
           )}
 
           {closed && !hasMandate && (
