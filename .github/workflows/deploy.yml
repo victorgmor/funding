@@ -7,7 +7,7 @@ on:
 
 concurrency:
   group: deploy-production
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
@@ -81,8 +81,9 @@ jobs:
           execution-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole
           infrastructure-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecsInfrastructureRoleForExpressServices
           container-port: 8080
-          # Default is /ping — without this route, rollouts hang and Actions "succeeds" after 15m.
-          health-check-path: /ping
+          # Use `/` — Express default `/ping` was 404 on older images and flipping
+          # the ALB check to `/ping` mid-rollout drained all targets (site-wide 504).
+          health-check-path: /
           task-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole
           cluster: ${{ env.ECS_CLUSTER }}
           environment-variables: |
@@ -100,27 +101,27 @@ jobs:
               {"name": "AWS_REGION", "value": "${{ env.AWS_REGION }}"}
             ]
 
-      - name: Verify health + Positions tab shipped
+      - name: Verify home + Positions tab shipped
         env:
           LIVE_URL: https://ca-a2338ec1790141a0aa696b7ee81157a9.ecs.eu-west-1.on.aws
         run: |
           set -euo pipefail
-          for i in $(seq 1 60); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' "$LIVE_URL/ping" || true)
+          for i in $(seq 1 45); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$LIVE_URL/" || true)
             if [ "$code" = "200" ]; then
-              js=$(curl -fsSL "$LIVE_URL/funds/8907654123" | grep -oE '/_astro/FundPoolOverview[^"]+\.js' | head -1 || true)
+              js=$(curl -fsSL --max-time 30 "$LIVE_URL/funds/8907654123" | grep -oE '/_astro/FundPoolOverview[^"]+\.js' | head -1 || true)
               if [ -n "$js" ]; then
-                body=$(curl -fsSL "$LIVE_URL$js")
+                body=$(curl -fsSL --max-time 30 "$LIVE_URL$js")
                 if echo "$body" | grep -q 'History' && echo "$body" | grep -q 'Positions'; then
                   echo "Live UI has History + Positions ($js)"
                   exit 0
                 fi
-                echo "attempt $i: ping ok but UI still old ($js)"
+                echo "attempt $i: home ok but UI still old ($js)"
               else
-                echo "attempt $i: ping ok, FundPoolOverview bundle not found yet"
+                echo "attempt $i: home ok, FundPoolOverview bundle not found yet"
               fi
             else
-              echo "attempt $i: /ping -> $code"
+              echo "attempt $i: / -> $code"
             fi
             sleep 20
           done
