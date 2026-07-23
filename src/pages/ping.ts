@@ -1,10 +1,13 @@
 import type { APIRoute } from "astro";
 
-/** ECS Express ALB health check (default path). */
+/** Lightweight ALB health + deploy verify (returns BUILD_SHA when set). */
 export const GET: APIRoute = () =>
-  new Response("ok", {
+  new Response(process.env.BUILD_SHA?.trim() || "ok", {
     status: 200,
-    headers: { "content-type": "text/plain; charset=utf-8" },
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "no-store",
+    },
   });
 
 export const prerender = false;

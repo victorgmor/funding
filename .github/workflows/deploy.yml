@@ -81,13 +81,13 @@ jobs:
           execution-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole
           infrastructure-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecsInfrastructureRoleForExpressServices
           container-port: 8080
-          # Use `/` — Express default `/ping` was 404 on older images and flipping
-          # the ALB check to `/ping` mid-rollout drained all targets (site-wide 504).
-          health-check-path: /
+          # Lightweight route — homepage SSR is too heavy/slow for ALB checks.
+          health-check-path: /ping
           task-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole
           cluster: ${{ env.ECS_CLUSTER }}
           environment-variables: |
             [
+              {"name": "BUILD_SHA", "value": "${{ env.IMAGE_TAG }}"},
               {"name": "POLY_BUILDER_API_KEY", "value": "${{ secrets.POLY_BUILDER_API_KEY }}"},
               {"name": "POLY_BUILDER_API_SECRET", "value": "${{ secrets.POLY_BUILDER_API_SECRET }}"},
               {"name": "POLY_BUILDER_PASSPHRASE", "value": "${{ secrets.POLY_BUILDER_PASSPHRASE }}"},
@@ -101,29 +101,36 @@ jobs:
               {"name": "AWS_REGION", "value": "${{ env.AWS_REGION }}"}
             ]
 
-      - name: Verify home + Positions tab shipped
+      # Express action exits after 15m while rollout may still be IN_PROGRESS.
+      # Require /ping to return this IMAGE_TAG so we never green on the old fleet.
+      - name: Verify this commit is live
         env:
           LIVE_URL: https://ca-a2338ec1790141a0aa696b7ee81157a9.ecs.eu-west-1.on.aws
         run: |
           set -euo pipefail
-          for i in $(seq 1 45); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$LIVE_URL/" || true)
-            if [ "$code" = "200" ]; then
+          for i in $(seq 1 90); do
+            ping_body=$(curl -sS --max-time 15 "$LIVE_URL/ping" || true)
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$LIVE_URL/ping" || true)
+            if [ "$code" = "200" ] && echo "$ping_body" | grep -q "$IMAGE_TAG"; then
               js=$(curl -fsSL --max-time 30 "$LIVE_URL/funds/8907654123" | grep -oE '/_astro/FundPoolOverview[^"]+\.js' | head -1 || true)
-              if [ -n "$js" ]; then
-                body=$(curl -fsSL --max-time 30 "$LIVE_URL$js")
-                if echo "$body" | grep -q 'History' && echo "$body" | grep -q 'Positions'; then
-                  echo "Live UI has History + Positions ($js)"
+              panel=$(curl -fsSL --max-time 30 "$LIVE_URL/funds/8907654123" | grep -oE '/_astro/MandatePanel[^"]+\.js' | head -1 || true)
+              if [ -n "$js" ] && [ -n "$panel" ]; then
+                overview=$(curl -fsSL --max-time 30 "$LIVE_URL$js")
+                mandate=$(curl -fsSL --max-time 30 "$LIVE_URL$panel")
+                if echo "$overview" | grep -q 'History' \
+                  && echo "$overview" | grep -q 'Positions' \
+                  && echo "$mandate" | grep -q 'Re-authorize auto-trading'; then
+                  echo "Live: BUILD_SHA=$ping_body overview=$js panel=$panel"
                   exit 0
                 fi
-                echo "attempt $i: home ok but UI still old ($js)"
+                echo "attempt $i: sha ok ($ping_body) but UI strings missing"
               else
-                echo "attempt $i: home ok, FundPoolOverview bundle not found yet"
+                echo "attempt $i: sha ok ($ping_body), bundles not found yet"
               fi
             else
-              echo "attempt $i: / -> $code"
+              echo "attempt $i: /ping -> $code body=${ping_body:0:40}"
             fi
             sleep 20
           done
-          echo "::error::Deployed image never became healthy with the new UI"
+          echo "::error::Deployed image never became healthy with this commit"
           exit 1
