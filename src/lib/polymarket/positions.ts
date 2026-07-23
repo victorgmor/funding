@@ -2,6 +2,7 @@ import {
   concat,
   createPublicClient,
   encodeAbiParameters,
+  fallback,
   getCreate2Address,
   http,
   keccak256,
@@ -30,9 +31,14 @@ const ERC1967_BEACON_CONST3 =
   "0x60195155f3363d3d373d3d363d602036600436635c60da";
 const ERC1967_BEACON_PREFIX = 0x6100523d8160233d3973n;
 
+// Explicit RPCs — viem's default (polygon.drpc.org) blocks eth_call.
 const publicClient = createPublicClient({
   chain: polygon,
-  transport: http(),
+  transport: fallback([
+    http("https://polygon-bor-rpc.publicnode.com"),
+    http("https://polygon-rpc.com"),
+    http("https://1rpc.io/matic"),
+  ]),
 });
 
 function depositWalletArgs(owner: Address, factory: Address) {
