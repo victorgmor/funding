@@ -22,12 +22,12 @@ function ThesisRoi({
 
   if (size === "header") {
     return (
-      <div className="text-right">
+      <div className="flex flex-col items-end justify-center text-right leading-none">
         <p className={`font-mono text-lg font-medium tabular-nums ${color}`}>
           {formatPercent(roi)}
         </p>
         {since && (
-          <p className="text-primary/45 mt-0.5 text-xs">
+          <p className="text-primary/45 mt-1 text-xs leading-none">
             since {formatSinceDate(since)}
           </p>
         )}
@@ -36,12 +36,12 @@ function ThesisRoi({
   }
 
   return (
-    <div className="inline-flex min-w-[5rem] flex-col items-end py-1 lg:ml-auto">
+    <div className="inline-flex min-w-[5rem] flex-col items-end justify-center leading-none lg:ml-auto">
       <p className={`font-mono text-sm font-semibold tabular-nums ${color}`}>
         {formatPercent(roi)}
       </p>
       {since && (
-        <p className="text-primary/50 mt-0.5 text-sm">
+        <p className="text-primary/50 mt-1 text-sm leading-none">
           since {formatSinceDate(since)}
         </p>
       )}
@@ -67,10 +67,10 @@ function FundPerformanceHeader({
   if (roi == null && position == null) return null;
 
   return (
-    <div className="shrink-0 text-right">
+    <div className="flex shrink-0 flex-col items-end justify-center text-right">
       {roi != null && <ThesisRoi roi={roi} since={since} size="header" />}
       {position != null && (
-        <p className="text-primary/45 text-xs">
+        <p className="text-primary/45 mt-1 text-xs leading-none">
           Your mandate{" "}
           <span className="text-primary/80 font-mono font-medium tabular-nums">
             {formatUsdExact(position)}
