@@ -154,6 +154,10 @@ export function tradePnlUsdc(
   if (trade.status !== "filled") return null;
   const price = valuations.get(trade.tokenId);
   if (price == null) return null;
+  // Buy: mark value gained minus cost. Sell: proceeds minus mark value given up.
+  if (trade.orderSide === "SELL") {
+    return round(trade.usdcAmount - trade.shares * price, 2);
+  }
   return round(trade.shares * price - trade.usdcAmount, 2);
 }
 
