@@ -90,8 +90,29 @@ export function buildPnlSeries(
     }
   }
 
-  // Stop at the last fill — no hold-forward to "now" across empty time.
+  // Hold last level to now so range windows keep a full time axis.
+  // Ending on the last fill glues the step to the right edge (flat → cliff).
+  const last = points[points.length - 1]!;
+  const now = Date.now();
+  if (now - last.t > 1_000) {
+    points.push({
+      t: now,
+      pnl: cumulative,
+      iso: new Date(now).toISOString(),
+    });
+  }
+
   return points;
+}
+
+function withRangeEnd(points: PnlPoint[], now = Date.now()): PnlPoint[] {
+  if (points.length === 0) return points;
+  const last = points[points.length - 1]!;
+  if (now - last.t <= 1_000) return points;
+  return [
+    ...points,
+    { t: now, pnl: last.pnl, iso: new Date(now).toISOString() },
+  ];
 }
 
 export function filterPnlSeries(
@@ -101,17 +122,28 @@ export function filterPnlSeries(
   if (range === "All" || points.length === 0) return points;
 
   const cutoff = rangeCutoff(range);
-  const inRange = points.filter((point) => point.t >= cutoff);
-  if (inRange.length === 0) return points.slice(-2);
+  const now = Date.now();
+  const inRange = points.filter((point) => point.t >= cutoff && point.t <= now);
+  if (inRange.length === 0) {
+    const prior = [...points].reverse().find((point) => point.t <= cutoff);
+    if (!prior) return withRangeEnd(points.slice(-2), now);
+    return withRangeEnd(
+      [
+        { ...prior, t: cutoff },
+        { t: now, pnl: prior.pnl, iso: new Date(now).toISOString() },
+      ],
+      now,
+    );
+  }
 
   const first = inRange[0]!;
   if (first.t > cutoff) {
     const prior = [...points].reverse().find((point) => point.t <= cutoff);
     const start: PnlPoint = prior ?? { t: cutoff, pnl: first.pnl, iso: first.iso };
-    return [{ ...start, t: cutoff }, ...inRange];
+    return withRangeEnd([{ ...start, t: cutoff }, ...inRange], now);
   }
 
-  return inRange;
+  return withRangeEnd(inRange, now);
 }
 
 export function defaultPnlRange(points: PnlPoint[]): PnlRange {
