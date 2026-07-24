@@ -117,24 +117,21 @@ function useParticipatingSlugs(enabled: boolean) {
 const defaultDirection = (field: SortField): SortDirection =>
   field === "creator" ? "asc" : "desc";
 
-/** Skeleton rows shaped like FundFeedCard — title + meta, snippet, metrics + cap bar. */
+/** Skeleton rows shaped like compact FundFeedCard. */
 function FundFeedSkeleton() {
   return (
     <div aria-hidden>
       {[0, 1, 2].map((row) => (
         <div
           key={row}
-          className="border-primary/10 border-b py-5 first:border-t last:border-b-0"
+          className="border-primary/10 flex items-center gap-3 border-b py-2.5 first:border-t last:border-b-0 sm:gap-4"
         >
-          <div className="flex items-center justify-between gap-4">
-            <Skeleton className="h-6 w-2/5 rounded" />
-            <Skeleton className="h-4 w-28 rounded" />
-          </div>
-          <Skeleton className="mt-2.5 h-4 w-3/4 rounded" />
-          <div className="mt-4 space-y-2">
-            <Skeleton className="h-5 w-2/3 rounded" />
-            <Skeleton className="h-2 w-full rounded-full" />
-          </div>
+          <Skeleton className="h-4 w-28 rounded sm:w-36" />
+          <Skeleton className="h-3.5 w-20 rounded" />
+          <Skeleton className="h-3.5 w-16 rounded" />
+          <Skeleton className="h-3.5 w-14 rounded" />
+          <Skeleton className="h-3.5 w-10 rounded" />
+          <Skeleton className="ml-auto h-3.5 w-28 rounded" />
         </div>
       ))}
     </div>
