@@ -8,17 +8,6 @@ type Props = {
   initialPoolTotals?: Record<string, PoolTotalEntry>;
 };
 
-const HEADERS = [
-  "Fund",
-  "Stage",
-  "Deposited",
-  "Fill %",
-  "PnL",
-  "Profit share",
-  "Manager",
-  "Published",
-] as const;
-
 export default function CreatorFundList({
   funds,
   initialPoolTotals,
@@ -30,29 +19,23 @@ export default function CreatorFundList({
   }
 
   return (
-    <div className="overflow-x-auto scrollbar-hide">
-      <div className="border-primary/10 min-w-[52rem] overflow-hidden rounded border">
-        <div
-          className={`${FUND_FEED_GRID} text-primary/45 py-1.5 text-[10px] font-medium tracking-wide uppercase`}
-        >
-          {HEADERS.map((label, i) => (
-            <span
-              key={label}
-              className={i >= 2 && i <= 5 ? "text-right" : undefined}
-            >
-              {label}
-            </span>
-          ))}
-        </div>
-        {funds.map((fund) => (
-          <FundFeedCard
-            key={fund.slug}
-            fund={fund}
-            deposited={poolTotals[fund.slug]?.deposited ?? 0}
-            profitUsdc={poolTotals[fund.slug]?.profitUsdc ?? null}
-          />
-        ))}
+    <div>
+      <div
+        className={`${FUND_FEED_GRID} text-primary/45 border-primary/10 mb-1 border-b pb-2 text-sm`}
+        aria-hidden
+      >
+        <span>Latest</span>
+        <span>Managers</span>
+        <span>Pool cap</span>
       </div>
+      {funds.map((fund) => (
+        <FundFeedCard
+          key={fund.slug}
+          fund={fund}
+          deposited={poolTotals[fund.slug]?.deposited ?? 0}
+          profitUsdc={poolTotals[fund.slug]?.profitUsdc ?? null}
+        />
+      ))}
     </div>
   );
 }

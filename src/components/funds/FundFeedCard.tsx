@@ -1,5 +1,6 @@
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
 import CreatorName from "@/components/creators/CreatorName";
+import FundLifecycleTrack from "@/components/funds/FundLifecycleTrack";
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { creatorPath } from "@/lib/funds/creator";
 import {
@@ -7,10 +8,6 @@ import {
   formatPublishedAgo,
   formatUsdExact,
 } from "@/lib/funds/format";
-import {
-  resolveLifecycleStage,
-  type LifecycleStage,
-} from "@/lib/funds/lifecycle";
 import type { Fund } from "@/lib/funds/types";
 
 type Props = {
@@ -19,15 +16,9 @@ type Props = {
   profitUsdc?: number | null;
 };
 
-const STAGE_LABEL: Record<LifecycleStage, string> = {
-  deposit: "Deposit",
-  trading: "Trading",
-  closed: "Closed",
-};
-
 /** Shared with FundListPanel header / skeleton so columns line up. */
 export const FUND_FEED_GRID =
-  "grid items-center gap-x-2 px-2 [grid-template-columns:minmax(7rem,1.6fr)_minmax(4rem,0.65fr)_minmax(4.5rem,0.7fr)_minmax(3rem,0.45fr)_minmax(4.5rem,0.7fr)_minmax(3.5rem,0.5fr)_minmax(5rem,0.9fr)_minmax(3.5rem,0.55fr)]";
+  "grid items-start gap-x-4 [grid-template-columns:minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.1fr)] sm:gap-x-6";
 
 function feedSnippet(fund: Fund): string {
   const thesis = fund.thesis.trim();
@@ -51,79 +42,81 @@ export default function FundFeedCard({
     fund.capUsdc != null && fund.capUsdc > 0
       ? capProgress(deposited, fund.capUsdc)
       : null;
-  const stage = resolveLifecycleStage(fund, Date.now(), deposited);
 
   return (
-    <div className="border-primary/10 hover:bg-primary/5 border-b last:border-b-0">
-      <div className={`${FUND_FEED_GRID} py-2 text-xs`}>
-        <a href={href} className="group min-w-0 leading-tight">
-          <span className="text-primary group-hover:text-primary/85 block truncate font-medium">
+    <article className="border-primary/10 border-b last:border-b-0">
+      <div className={`${FUND_FEED_GRID} py-3 text-sm`}>
+        {/* Latest — identity + stage */}
+        <a href={href} className="group min-w-0 space-y-1 leading-tight">
+          <h2 className="text-primary group-hover:text-primary/85 truncate text-sm font-semibold tracking-tight sm:text-base">
             {fund.name}
-          </span>
-          {snippet ? (
-            <span className="text-primary/45 block truncate">{snippet}</span>
-          ) : null}
-        </a>
-
-        <a href={href} className="text-primary/70 truncate">
-          {STAGE_LABEL[stage]}
-        </a>
-
-        <a
-          href={href}
-          className="text-primary/70 text-right font-mono tabular-nums hover:text-primary"
-        >
-          {formatUsdExact(deposited)}
-        </a>
-
-        <a
-          href={href}
-          className="text-primary/60 text-right font-mono tabular-nums"
-        >
-          {fillPct != null ? `${fillPct}%` : "—"}
-        </a>
-
-        <a
-          href={href}
-          className={`text-right font-mono tabular-nums ${pnlColor}`}
-        >
-          {formatUsdExact(pnl, true)}
-        </a>
-
-        <a
-          href={href}
-          className="text-primary/60 text-right font-mono tabular-nums"
-        >
-          {profitShare}%
-        </a>
-
-        <a
-          href={creatorPath(fund.manager.id)}
-          className="flex min-w-0 items-center gap-1.5"
-        >
-          <CreatorAvatar
-            address={fund.manager.id}
-            name={fund.manager.name}
-            size="2xs"
+          </h2>
+          {snippet && (
+            <p className="text-primary/45 truncate text-xs">{snippet}</p>
+          )}
+          <FundLifecycleTrack
+            fund={fund}
+            totalNotional={deposited}
+            compact
           />
-          <span className="text-primary/70 inline-flex min-w-0 items-center gap-0.5 truncate">
-            <CreatorName
-              address={fund.manager.id}
-              fallback={fund.manager.name}
-            />
-            {fund.manager.verified && (
-              <SealCheck
-                size="xs"
-                className="!size-3 shrink-0 text-[#288cbc]"
-              />
-            )}
-          </span>
         </a>
 
-        <a href={href} className="text-primary/45 truncate tabular-nums">
-          {published ?? "—"}
+        {/* Managers */}
+        <div className="text-primary/45 flex min-w-0 items-center gap-2 text-xs sm:text-sm">
+          <a href={creatorPath(fund.manager.id)} className="shrink-0">
+            <CreatorAvatar
+              address={fund.manager.id}
+              name={fund.manager.name}
+              size="2xs"
+            />
+          </a>
+          <div className="min-w-0 leading-tight">
+            <a
+              href={creatorPath(fund.manager.id)}
+              className="text-primary/70 hover:text-primary inline-flex max-w-full items-center gap-0.5 truncate transition-colors"
+            >
+              <CreatorName
+                address={fund.manager.id}
+                fallback={fund.manager.name}
+              />
+              {fund.manager.verified && (
+                <SealCheck
+                  size="xs"
+                  className="!size-3.5 shrink-0 text-[#288cbc]"
+                />
+              )}
+            </a>
+            {published && (
+              <p className="text-primary/40 mt-0.5 truncate text-xs">
+                {published}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Pool cap — economics */}
+        <a
+          href={href}
+          className="hover:text-primary min-w-0 space-y-0.5 font-mono text-xs tabular-nums transition-colors sm:text-sm"
+        >
+          <p className="text-primary/70 truncate">
+            {formatUsdExact(deposited)}
+            {fillPct != null && (
+              <span className="text-primary/45"> · {fillPct}%</span>
+            )}
+          </p>
+          <p className="text-primary/45 truncate">
+            {fund.capUsdc != null && fund.capUsdc > 0
+              ? `Cap ${formatUsdExact(fund.capUsdc)}`
+              : "Uncapped"}
+            <span className="text-primary/35"> · </span>
+            {profitShare}%
+          </p>
+          <p className={`truncate ${pnlColor}`}>
+            {formatUsdExact(pnl, true)}
+          </p>
         </a>
       </div>
-    </div>
+    </article>
   );
 }
