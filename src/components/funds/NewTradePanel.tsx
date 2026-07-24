@@ -299,8 +299,27 @@ export default function NewTradePanel({ fund }: Props) {
     }
   }
 
+  // Asks stored best-first; show worst→best (best ask at bottom).
+  const askRows = [...asks].reverse();
+  const bestAsk = asks[0];
+  const bestBid = bids[0];
+  const last = bestBid?.price ?? bestAsk?.price;
+  const spread =
+    bestAsk && bestBid ? bestAsk.price - bestBid.price : null;
+  const maxSize = Math.max(
+    1,
+    ...asks.map((l) => l.size),
+    ...bids.map((l) => l.size),
+  );
+  const depthPct = (size: number) =>
+    `${Math.min(100, (size / maxSize) * 100)}%`;
+  const bookRow =
+    "relative grid w-full grid-cols-3 items-center gap-2 overflow-hidden px-2 py-0.5 text-left font-mono text-xs tabular-nums hover:bg-primary/5";
+  const emptyBookRow =
+    "grid grid-cols-3 gap-2 px-2 py-0.5 font-mono text-xs tabular-nums";
+
   return (
-    <div className="pb-4 pt-4">
+    <div className="pb-4">
       <div className="space-y-3">
         <p className="text-primary text-sm font-medium">New trade</p>
 
@@ -354,185 +373,203 @@ export default function NewTradePanel({ fund }: Props) {
           </ul>
         )}
 
-        {selected && (
-          <div className="space-y-3">
-            <div className="flex w-full gap-2">
-              {parseOutcomes(selected.outcomes).map((outcome) => {
-                const cents = formatOutcomeCents(
-                  selected.outcomes,
-                  selected.outcomePrices,
-                  outcome,
-                );
-                const isActive = selected.side === outcome;
-                return (
+        <div className="space-y-3">
+          <div className="flex w-full gap-2">
+            {selected
+              ? parseOutcomes(selected.outcomes).map((outcome) => {
+                  const cents = formatOutcomeCents(
+                    selected.outcomes,
+                    selected.outcomePrices,
+                    outcome,
+                  );
+                  const isActive = selected.side === outcome;
+                  return (
+                    <button
+                      key={outcome}
+                      type="button"
+                      onClick={() => {
+                        setSelected({ ...selected, side: outcome });
+                        setLimitPrice("");
+                      }}
+                      className={`${chip} ${
+                        isActive
+                          ? "!border-primary/40 !bg-primary/10 !text-primary"
+                          : "opacity-70"
+                      }`}
+                    >
+                      {outcome}
+                      {cents ? (
+                        <span className="ml-1.5 font-mono tabular-nums">
+                          {cents}
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })
+              : (["Yes", "No"] as const).map((label) => (
                   <button
-                    key={outcome}
+                    key={label}
                     type="button"
-                    onClick={() => {
-                      setSelected({ ...selected, side: outcome });
-                      setLimitPrice("");
-                    }}
-                    className={`${chip} ${
-                      isActive
-                        ? "!border-primary/40 !bg-primary/10 !text-primary"
-                        : "opacity-70"
-                    }`}
+                    disabled
+                    className={`${chip} cursor-not-allowed opacity-40`}
                   >
-                    {outcome}
-                    {cents ? (
-                      <span className="ml-1.5 font-mono tabular-nums">
-                        {cents}
-                      </span>
-                    ) : null}
+                    {label}
                   </button>
-                );
-              })}
-            </div>
+                ))}
+          </div>
 
-            {(() => {
-              // Asks stored best-first; show worst→best (best ask at bottom).
-              const askRows = [...asks].reverse();
-              const bestAsk = asks[0];
-              const bestBid = bids[0];
-              const last = bestBid?.price ?? bestAsk?.price;
-              const spread =
-                bestAsk && bestBid
-                  ? bestAsk.price - bestBid.price
-                  : null;
-              const maxSize = Math.max(
-                1,
-                ...asks.map((l) => l.size),
-                ...bids.map((l) => l.size),
-              );
-              const depthPct = (size: number) =>
-                `${Math.min(100, (size / maxSize) * 100)}%`;
-              const row =
-                "relative grid w-full grid-cols-3 items-center gap-2 overflow-hidden px-2 py-0.5 text-left font-mono text-xs tabular-nums hover:bg-primary/5";
-              return (
-                <div className="border-primary/10 overflow-hidden rounded border">
-                  <div className="text-primary/45 grid grid-cols-3 gap-2 px-2 py-1.5 text-[10px] font-medium tracking-wide uppercase">
-                    <span>Price</span>
-                    <span className="text-right">Shares</span>
-                    <span className="text-right">Total</span>
-                  </div>
-                  {askRows.length === 0 && bids.length === 0 ? (
-                    <p className="text-primary/35 px-2 py-2 text-xs">—</p>
-                  ) : (
-                    <>
-                      {askRows.map((level) => (
-                        <button
-                          key={`ask-${level.price}`}
-                          type="button"
-                          onClick={() => setLimitPrice(level.price.toFixed(2))}
-                          className={row}
-                        >
-                          <span
-                            aria-hidden
-                            className="absolute inset-y-0 right-0 bg-red-500/10"
-                            style={{ width: depthPct(level.size) }}
-                          />
-                          <span className="relative text-red-500/90">
-                            {centsLabel(level.price)}
-                          </span>
-                          <span className="text-primary/60 relative text-right">
-                            {sharesLabel(level.size)}
-                          </span>
-                          <span className="text-primary/45 relative text-right">
-                            {notionalLabel(level)}
-                          </span>
-                        </button>
-                      ))}
-                      <div className="border-primary/10 bg-primary/5 flex items-center justify-between gap-3 border-y px-2 py-1.5 text-xs">
-                        <span className="text-primary/50">
-                          Last{" "}
-                          <span className="text-primary font-mono tabular-nums">
-                            {last != null ? centsLabel(last) : "—"}
-                          </span>
-                        </span>
-                        <span className="text-primary/50">
-                          Spread{" "}
-                          <span className="text-primary font-mono tabular-nums">
-                            {spread != null ? centsLabel(spread) : "—"}
-                          </span>
-                        </span>
-                      </div>
-                      {bids.map((level) => (
-                        <button
-                          key={`bid-${level.price}`}
-                          type="button"
-                          onClick={() => setLimitPrice(level.price.toFixed(2))}
-                          className={row}
-                        >
-                          <span
-                            aria-hidden
-                            className="absolute inset-y-0 right-0 bg-emerald-500/10"
-                            style={{ width: depthPct(level.size) }}
-                          />
-                          <span className="text-profit relative">
-                            {centsLabel(level.price)}
-                          </span>
-                          <span className="text-primary/60 relative text-right">
-                            {sharesLabel(level.size)}
-                          </span>
-                          <span className="text-primary/45 relative text-right">
-                            {notionalLabel(level)}
-                          </span>
-                        </button>
-                      ))}
-                    </>
-                  )}
+          <div className="border-primary/10 overflow-hidden rounded border">
+            <div className="text-primary/45 grid grid-cols-3 gap-2 px-2 py-1.5 text-[10px] font-medium tracking-wide uppercase">
+              <span>Price</span>
+              <span className="text-right">Shares</span>
+              <span className="text-right">Total</span>
+            </div>
+            {selected && (askRows.length > 0 || bids.length > 0) ? (
+              <>
+                {askRows.map((level) => (
+                  <button
+                    key={`ask-${level.price}`}
+                    type="button"
+                    onClick={() => setLimitPrice(level.price.toFixed(2))}
+                    className={bookRow}
+                  >
+                    <span
+                      aria-hidden
+                      className="absolute inset-y-0 right-0 bg-red-500/10"
+                      style={{ width: depthPct(level.size) }}
+                    />
+                    <span className="relative text-red-500/90">
+                      {centsLabel(level.price)}
+                    </span>
+                    <span className="text-primary/60 relative text-right">
+                      {sharesLabel(level.size)}
+                    </span>
+                    <span className="text-primary/45 relative text-right">
+                      {notionalLabel(level)}
+                    </span>
+                  </button>
+                ))}
+                <div className="border-primary/10 bg-primary/5 flex items-center justify-between gap-3 border-y px-2 py-1.5 text-xs">
+                  <span className="text-primary/50">
+                    Last{" "}
+                    <span className="text-primary font-mono tabular-nums">
+                      {last != null ? centsLabel(last) : "—"}
+                    </span>
+                  </span>
+                  <span className="text-primary/50">
+                    Spread{" "}
+                    <span className="text-primary font-mono tabular-nums">
+                      {spread != null ? centsLabel(spread) : "—"}
+                    </span>
+                  </span>
                 </div>
-              );
-            })()}
-            {bookError && (
-              <p className="text-xs text-red-500/80">{bookError}</p>
-            )}
-
-            <div className="flex flex-wrap items-end gap-2">
-              <label className="min-w-[6rem] flex-1">
-                <span className="text-primary/50 mb-1 block text-xs">
-                  Amount ($)
-                </span>
-                <input
-                  type="number"
-                  min={1}
-                  max={remainingDeployable > 0 ? remainingDeployable : undefined}
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className={field}
-                />
-              </label>
-              <label className="min-w-[6rem] flex-1">
-                <span className="text-primary/50 mb-1 block text-xs">
-                  Limit price
-                </span>
-                <input
-                  type="number"
-                  min={0.01}
-                  max={0.99}
-                  step={0.01}
-                  value={limitPrice}
-                  onChange={(e) => setLimitPrice(e.target.value)}
-                  placeholder="0.00"
-                  className={field}
-                />
-              </label>
-              <button
-                type="button"
-                disabled={busy || signing}
-                onClick={() => void executeTrade()}
-                className={`${walletNavButtonClass} !px-4 !py-2 disabled:opacity-40`}
-              >
-                {signing ? "Sign…" : busy ? "…" : "Trade"}
-              </button>
-            </div>
-            {remainingDeployable > 0 && (
-              <p className="text-primary/50 text-xs">
-                {formatUsdExact(remainingDeployable)} deployable
-              </p>
+                {bids.map((level) => (
+                  <button
+                    key={`bid-${level.price}`}
+                    type="button"
+                    onClick={() => setLimitPrice(level.price.toFixed(2))}
+                    className={bookRow}
+                  >
+                    <span
+                      aria-hidden
+                      className="absolute inset-y-0 right-0 bg-emerald-500/10"
+                      style={{ width: depthPct(level.size) }}
+                    />
+                    <span className="text-profit relative">
+                      {centsLabel(level.price)}
+                    </span>
+                    <span className="text-primary/60 relative text-right">
+                      {sharesLabel(level.size)}
+                    </span>
+                    <span className="text-primary/45 relative text-right">
+                      {notionalLabel(level)}
+                    </span>
+                  </button>
+                ))}
+              </>
+            ) : (
+              <>
+                {[0, 1, 2].map((i) => (
+                  <div key={`ask-empty-${i}`} className={emptyBookRow}>
+                    <span className="text-primary/20">—</span>
+                    <span className="text-primary/20 text-right">—</span>
+                    <span className="text-primary/20 text-right">—</span>
+                  </div>
+                ))}
+                <div className="border-primary/10 bg-primary/5 flex items-center justify-between gap-3 border-y px-2 py-1.5 text-xs">
+                  <span className="text-primary/50">
+                    Last{" "}
+                    <span className="text-primary font-mono tabular-nums">
+                      —
+                    </span>
+                  </span>
+                  <span className="text-primary/50">
+                    Spread{" "}
+                    <span className="text-primary font-mono tabular-nums">
+                      —
+                    </span>
+                  </span>
+                </div>
+                {[0, 1, 2].map((i) => (
+                  <div key={`bid-empty-${i}`} className={emptyBookRow}>
+                    <span className="text-primary/20">—</span>
+                    <span className="text-primary/20 text-right">—</span>
+                    <span className="text-primary/20 text-right">—</span>
+                  </div>
+                ))}
+              </>
             )}
           </div>
-        )}
+          {bookError && (
+            <p className="text-xs text-red-500/80">{bookError}</p>
+          )}
+
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="min-w-[6rem] flex-1">
+              <span className="text-primary/50 mb-1 block text-xs">
+                Amount ($)
+              </span>
+              <input
+                type="number"
+                min={1}
+                max={remainingDeployable > 0 ? remainingDeployable : undefined}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                disabled={!selected}
+                className={`${field} disabled:opacity-40`}
+              />
+            </label>
+            <label className="min-w-[6rem] flex-1">
+              <span className="text-primary/50 mb-1 block text-xs">
+                Limit price
+              </span>
+              <input
+                type="number"
+                min={0.01}
+                max={0.99}
+                step={0.01}
+                value={limitPrice}
+                onChange={(e) => setLimitPrice(e.target.value)}
+                placeholder="0.00"
+                disabled={!selected}
+                className={`${field} disabled:opacity-40`}
+              />
+            </label>
+            <button
+              type="button"
+              disabled={!selected || busy || signing}
+              onClick={() => void executeTrade()}
+              className={`${walletNavButtonClass} !px-4 !py-2 disabled:opacity-40`}
+            >
+              {signing ? "Sign…" : busy ? "…" : "Trade"}
+            </button>
+          </div>
+          {selected && remainingDeployable > 0 && (
+            <p className="text-primary/50 text-xs">
+              {formatUsdExact(remainingDeployable)} deployable
+            </p>
+          )}
+        </div>
       </div>
 
       {notice && <p className="text-profit mt-3 text-sm">{notice}</p>}
