@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import LazyProviders from "@/components/app/LazyProviders";
 import Skeleton from "@/components/app/Skeleton";
-import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
 import FundFeedCard from "@/components/funds/FundFeedCard";
-import YourMandatesPanel from "@/components/funds/YourMandatesPanel";
 import GearIcon from "@/components/fundations/icons/GearIcon";
 import SearchIcon from "@/components/fundations/icons/SearchIcon";
 import {
@@ -160,7 +157,7 @@ function SortIndicator({
 }
 
 export default function FundListPanel({ funds, initialPoolTotals }: Props) {
-  const { address, isConnected, restoring: walletLoading } = useWalletSession();
+  const { isConnected, restoring: walletLoading } = useWalletSession();
   const { totals: poolTotals } =
     usePoolTotals(initialPoolTotals);
   const [query, setQuery] = useState("");
@@ -227,9 +224,8 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
     : "No funds match your search";
 
   return (
-    <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,672px)_minmax(280px,1fr)]">
+    <div className="min-w-0">
       {/* Pending-trade polling lives in the global InvestorTradeAutopilot. */}
-      <div className="min-w-0">
       <div className="pb-5">
         <label className="flex items-center gap-2 pb-2">
           <SearchIcon className="text-primary/35 size-4 shrink-0" />
@@ -341,28 +337,6 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
           </button>
         </div>
       )}
-      </div>
-
-      <aside className="min-w-0">
-        <LazyProviders
-          when="session"
-          fallback={
-            <>
-              <div data-wallet-restoring>
-                <WalletPanelPlaceholder label="Loading portfolio…" />
-              </div>
-              <p
-                data-wallet-connect-cta
-                className="text-primary/40 text-sm"
-              >
-                Log in to see your portfolio
-              </p>
-            </>
-          }
-        >
-          <YourMandatesPanel />
-        </LazyProviders>
-      </aside>
     </div>
   );
 }
