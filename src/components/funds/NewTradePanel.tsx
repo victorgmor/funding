@@ -320,9 +320,12 @@ export default function NewTradePanel({ fund }: Props) {
 
   return (
     <div className="pb-4">
-      <div className="space-y-3">
-        <p className="text-primary text-sm font-medium">New trade</p>
-
+      <div>
+        <span className="border-primary text-primary inline-block border-b-2 pb-2 text-sm font-medium">
+          New trade
+        </span>
+      </div>
+      <div className="border-primary/10 space-y-3 border-t pt-3">
         <input
           type="search"
           value={query}
