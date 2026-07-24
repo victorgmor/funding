@@ -142,6 +142,11 @@ export const GET: APIRoute = async ({ params, url }) => {
       }
     }
 
+    const { filterTradablePositions } = await import(
+      "@/lib/funds/mandate-positions"
+    );
+    const openPositions = await filterTradablePositions(positions);
+
     return new Response(
       JSON.stringify({
         fundSlug: fund.slug,
@@ -156,7 +161,7 @@ export const GET: APIRoute = async ({ params, url }) => {
         capRemaining: poolCapRemaining(fund, pool.totalDeposited),
         raiseOpen: poolRaiseOpen(fund, pool.totalDeposited),
         depositBalanceUsdc,
-        positions,
+        positions: openPositions,
         session: session ?? null,
         serverSigningEnabled: serverSigningEnabled(),
         mandateSettlement: mandateSettlement ?? null,

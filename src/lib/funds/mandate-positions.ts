@@ -17,6 +17,33 @@ export async function listPositionsByFund(
   return positions.filter((row) => !row.redeemedAt);
 }
 
+/**
+ * Open Positions UI / sellable rows — drop redeemed, zero-size, and
+ * markets Gamma/CLOB marks resolved or closed (even if redeem lagged).
+ */
+export async function filterTradablePositions(
+  positions: MandatePosition[],
+): Promise<MandatePosition[]> {
+  const open = positions.filter((row) => !row.redeemedAt && row.shares > 0);
+  if (open.length === 0) return [];
+
+  const tokenIds = [...new Set(open.map((pos) => pos.tokenId))];
+  const { warmGammaMarketsByTokenIds, fetchMarketByTokenId, isMarketInactive } =
+    await import("@/lib/polymarket/gamma");
+  await warmGammaMarketsByTokenIds(tokenIds);
+
+  const inactive = new Set<string>();
+  await Promise.all(
+    tokenIds.map(async (tokenId) => {
+      const market = await fetchMarketByTokenId(tokenId);
+      // ponytail: keep row if gamma blips null — don't wipe open books on API fail
+      if (market && isMarketInactive(market)) inactive.add(tokenId);
+    }),
+  );
+
+  return open.filter((pos) => !inactive.has(pos.tokenId));
+}
+
 export async function listAllPositionsByFund(
   fundSlug: string,
 ): Promise<MandatePosition[]> {

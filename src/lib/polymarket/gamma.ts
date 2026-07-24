@@ -286,9 +286,19 @@ export type ResolvedMarketMeta = {
   conditionId: `0x${string}`;
   negRisk: boolean;
   resolved: boolean;
+  /** Gamma/CLOB closed — no longer tradable even if oracle still settling. */
+  closed?: boolean;
   /** $/share payout when resolved (0 or 1 for binary markets). */
   settlementPrice?: number;
 };
+
+/** Not sellable as an open position — resolved or market closed. */
+export function isMarketInactive(meta: {
+  resolved?: boolean;
+  closed?: boolean;
+}): boolean {
+  return Boolean(meta.resolved || meta.closed);
+}
 
 export function isMarketResolved(market: GammaMarketRow): boolean {
   try {
@@ -352,6 +362,7 @@ function metaFromGammaRow(
     conditionId: conditionId as `0x${string}`,
     negRisk: market.negRisk === true,
     resolved,
+    closed: market.closed === true || resolved,
     settlementPrice: resolved
       ? settlementPriceForToken(market, tokenId)
       : undefined,
@@ -487,6 +498,7 @@ function metaFromClobMarket(
     conditionId,
     negRisk: market.neg_risk === true,
     resolved,
+    closed: market.closed === true || resolved,
     settlementPrice: resolved ? settlementPrice : undefined,
   };
 }
@@ -518,6 +530,7 @@ export async function fetchMarketByTokenId(
           conditionId,
           negRisk: dataPos.negativeRisk === true,
           resolved: true,
+          closed: true,
           settlementPrice: Math.max(0, Math.min(1, dataPos.curPrice)),
         };
       }

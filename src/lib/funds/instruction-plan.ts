@@ -97,6 +97,14 @@ export async function planTradeBatch(
       );
       if (open.length === 0) throw new Error("No open shares to sell");
 
+      const { fetchMarketByTokenId, isMarketInactive } = await import(
+        "@/lib/polymarket/gamma"
+      );
+      const market = await fetchMarketByTokenId(tokenId);
+      if (market && isMarketInactive(market)) {
+        throw new Error("Market is resolved — redeem instead of selling");
+      }
+
       const mark = await fetchMarkPriceByTokenId(tokenId, {
         question: open[0]?.question,
         side: open[0]?.side,

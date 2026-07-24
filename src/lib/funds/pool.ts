@@ -1,7 +1,10 @@
 import { depositPhaseActive } from "@/lib/funds/lifecycle";
 import { listInstructionsByFund } from "@/lib/funds/instructions";
 import { reconcileFundMandates } from "@/lib/funds/mandate-reconcile";
-import { listPositionsByFund } from "@/lib/funds/mandate-positions";
+import {
+  filterTradablePositions,
+  listPositionsByFund,
+} from "@/lib/funds/mandate-positions";
 import { listTradesByFund } from "@/lib/funds/mandate-trades";
 import {
   totalPoolCash,
@@ -12,11 +15,13 @@ import type { Fund, Mandate, VirtualPool } from "@/lib/funds/types";
 
 export async function buildVirtualPool(fund: Fund): Promise<VirtualPool> {
   const mandates = await reconcileFundMandates(fund.slug);
-  const [instructions, trades, positions] = await Promise.all([
+  const [instructions, trades, rawPositions] = await Promise.all([
     listInstructionsByFund(fund.slug),
     listTradesByFund(fund.slug),
     listPositionsByFund(fund.slug),
   ]);
+  // Positions tab only — History uses recentTrades; ledger keeps raw until redeem.
+  const positions = await filterTradablePositions(rawPositions);
 
   return {
     fundSlug: fund.slug,
