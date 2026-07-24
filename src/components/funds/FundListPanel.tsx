@@ -28,7 +28,6 @@ const COLUMNS: {
   align?: "right";
 }[] = [
   { key: "fund", label: "Fund" },
-  { key: "stage", label: "Stage" },
   { key: "manager", label: "Manager", sortField: "creator" },
   { key: "deposited", label: "Deposited", align: "right" },
   { key: "committed", label: "Committed %", sortField: "cap", align: "right" },
@@ -140,7 +139,6 @@ function FundFeedSkeleton() {
             <Skeleton className="h-3.5 w-28 rounded" />
             <Skeleton className="h-3 w-36 rounded" />
           </div>
-          <Skeleton className="h-3 w-16 rounded" />
           <div className="flex items-center gap-1.5">
             <Skeleton className="size-4 shrink-0 rounded-full" />
             <Skeleton className="h-3 w-16 rounded" />

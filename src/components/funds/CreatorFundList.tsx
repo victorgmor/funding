@@ -10,7 +10,6 @@ type Props = {
 
 const HEADERS = [
   "Fund",
-  "Stage",
   "Manager",
   "Deposited",
   "Committed %",

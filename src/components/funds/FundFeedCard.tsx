@@ -1,6 +1,5 @@
 import CreatorAvatar from "@/components/creators/CreatorAvatar";
 import CreatorName from "@/components/creators/CreatorName";
-import FundLifecycleTrack from "@/components/funds/FundLifecycleTrack";
 import FundPerformanceCell from "@/components/funds/FundPerformanceCell";
 import SealCheck from "@/components/fundations/icons/SealCheck";
 import { creatorPath } from "@/lib/funds/creator";
@@ -19,7 +18,7 @@ type Props = {
 
 /** Shared with FundListPanel header / skeleton so columns line up. */
 export const FUND_FEED_GRID =
-  "grid items-center gap-x-3 [grid-template-columns:minmax(8rem,1.5fr)_minmax(5.5rem,0.85fr)_minmax(5.5rem,0.9fr)_minmax(4.5rem,0.7fr)_minmax(5rem,0.85fr)_minmax(4rem,0.65fr)_minmax(3.5rem,0.5fr)_minmax(4.5rem,0.7fr)_minmax(3.5rem,0.55fr)]";
+  "grid items-center gap-x-3 [grid-template-columns:minmax(8rem,1.5fr)_minmax(5.5rem,0.9fr)_minmax(4.5rem,0.7fr)_minmax(5rem,0.85fr)_minmax(4rem,0.65fr)_minmax(3.5rem,0.5fr)_minmax(4.5rem,0.7fr)_minmax(3.5rem,0.55fr)]";
 
 function feedSnippet(fund: Fund): string {
   const thesis = fund.thesis.trim();
@@ -80,14 +79,6 @@ export default function FundFeedCard({
               {snippet}
             </p>
           )}
-        </a>
-
-        <a href={href} className="min-w-0">
-          <FundLifecycleTrack
-            fund={fund}
-            totalNotional={deposited}
-            compact
-          />
         </a>
 
         <div className="text-primary/45 flex min-w-0 items-center gap-1.5 text-base">
