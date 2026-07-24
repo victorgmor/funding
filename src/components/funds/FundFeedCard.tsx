@@ -18,7 +18,7 @@ type Props = {
 
 /** Shared with FundListPanel header / skeleton so columns line up. */
 export const FUND_FEED_GRID =
-  "grid items-center gap-x-3 [grid-template-columns:minmax(8rem,1.5fr)_minmax(5.5rem,0.9fr)_minmax(4.5rem,0.7fr)_minmax(5rem,0.85fr)_minmax(4rem,0.65fr)_minmax(3.5rem,0.5fr)_minmax(4.5rem,0.7fr)_minmax(3.5rem,0.55fr)]";
+  "grid items-center gap-x-3 [grid-template-columns:minmax(8rem,1.5fr)_minmax(5.5rem,0.9fr)_minmax(8rem,1.3fr)_minmax(3.5rem,0.5fr)_minmax(4.5rem,0.7fr)_minmax(3.5rem,0.55fr)]";
 
 function feedSnippet(fund: Fund): string {
   const thesis = fund.thesis.trim();
@@ -26,29 +26,41 @@ function feedSnippet(fund: Fund): string {
   return fund.description.trim();
 }
 
-function CommitProgress({ pct }: { pct: number | null }) {
-  if (pct == null) {
-    return <span className="text-primary/30 text-right text-base">—</span>;
+function PoolCell({
+  deposited,
+  cap,
+}: {
+  deposited: number;
+  cap: number | null | undefined;
+}) {
+  if (cap == null || cap <= 0) {
+    return (
+      <span className="text-primary/80 text-right font-mono text-base tabular-nums">
+        {formatUsdExact(deposited)}
+      </span>
+    );
   }
+
+  const pct = capProgress(deposited, cap);
 
   return (
     <div className="min-w-0 space-y-1">
-      <p className="text-primary/80 text-right font-mono text-base tabular-nums">
-        {pct}%
-      </p>
       <div
         className="bg-primary/10 h-1 w-full overflow-hidden rounded-full"
         role="progressbar"
         aria-valuenow={pct}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label={`${pct}% committed`}
+        aria-label={`${formatUsdExact(deposited)} of ${formatUsdExact(cap)}, ${pct}% committed`}
       >
         <div
           className="bg-accent h-full rounded-full transition-[width]"
           style={{ width: `${pct}%` }}
         />
       </div>
+      <p className="text-primary/80 text-right font-mono text-base tabular-nums">
+        {formatUsdExact(deposited)} / {formatUsdExact(cap)} · {pct}%
+      </p>
     </div>
   );
 }
@@ -62,10 +74,6 @@ export default function FundFeedCard({
   const published = formatPublishedAgo(fund.createdAt);
   const profitShare = fund.managerProfitSharePct ?? 0;
   const href = `/funds/${fund.slug}`;
-  const fillPct =
-    fund.capUsdc != null && fund.capUsdc > 0
-      ? capProgress(deposited, fund.capUsdc)
-      : null;
 
   return (
     <article className="border-primary/10 hover:bg-primary/[0.03] border-b last:border-b-0">
@@ -106,24 +114,8 @@ export default function FundFeedCard({
           </a>
         </div>
 
-        <a
-          href={href}
-          className="text-primary/80 text-right font-mono text-base tabular-nums"
-        >
-          {formatUsdExact(deposited)}
-        </a>
-
         <a href={href} className="min-w-0">
-          <CommitProgress pct={fillPct} />
-        </a>
-
-        <a
-          href={href}
-          className="text-primary/70 text-right font-mono text-base tabular-nums"
-        >
-          {fund.capUsdc != null && fund.capUsdc > 0
-            ? formatUsdExact(fund.capUsdc)
-            : "—"}
+          <PoolCell deposited={deposited} cap={fund.capUsdc} />
         </a>
 
         <a

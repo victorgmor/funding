@@ -11,9 +11,7 @@ type Props = {
 const HEADERS = [
   "Fund",
   "Manager",
-  "Deposited",
-  "Committed %",
-  "Cap",
+  "Pool",
   "Profit share",
   "PnL",
   "Published",
@@ -31,7 +29,7 @@ export default function CreatorFundList({
 
   return (
     <div className="overflow-x-auto scrollbar-hide">
-      <div className="min-w-[56rem]">
+      <div className="min-w-[44rem]">
         <div
           className={`${FUND_FEED_GRID} text-primary/45 border-primary/10 mb-1 border-b pb-2 text-base font-medium tracking-wide uppercase`}
           aria-hidden
@@ -40,9 +38,7 @@ export default function CreatorFundList({
             <span
               key={label}
               className={
-                ["Deposited", "Committed %", "Cap", "Profit share", "PnL"].includes(
-                  label,
-                )
+                ["Pool", "Profit share", "PnL"].includes(label)
                   ? "text-right"
                   : undefined
               }

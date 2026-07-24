@@ -29,9 +29,7 @@ const COLUMNS: {
 }[] = [
   { key: "fund", label: "Fund" },
   { key: "manager", label: "Manager", sortField: "creator" },
-  { key: "deposited", label: "Deposited", align: "right" },
-  { key: "committed", label: "Committed %", sortField: "cap", align: "right" },
-  { key: "cap", label: "Cap", align: "right" },
+  { key: "pool", label: "Pool", sortField: "cap", align: "right" },
   { key: "share", label: "Profit share", align: "right" },
   { key: "pnl", label: "PnL", align: "right" },
   { key: "published", label: "Published", sortField: "published" },
@@ -143,12 +141,10 @@ function FundFeedSkeleton() {
             <Skeleton className="size-4 shrink-0 rounded-full" />
             <Skeleton className="h-3 w-16 rounded" />
           </div>
-          <Skeleton className="ml-auto h-3 w-12 rounded" />
           <div className="space-y-1">
-            <Skeleton className="ml-auto h-3 w-8 rounded" />
             <Skeleton className="h-1 w-full rounded-full" />
+            <Skeleton className="ml-auto h-3 w-28 rounded" />
           </div>
-          <Skeleton className="ml-auto h-3 w-12 rounded" />
           <Skeleton className="ml-auto h-3 w-8 rounded" />
           <Skeleton className="ml-auto h-3 w-12 rounded" />
           <Skeleton className="h-3 w-10 rounded" />
@@ -291,7 +287,7 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
       </div>
 
       <div className="overflow-x-auto scrollbar-hide">
-        <div className="min-w-[56rem]">
+        <div className="min-w-[44rem]">
           <div
             className={`${FUND_FEED_GRID} text-primary/45 border-primary/10 border-b pb-2 text-base font-medium tracking-wide uppercase`}
             role="row"
