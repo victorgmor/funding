@@ -36,12 +36,12 @@ const breadcrumbs = [
                     {index < breadcrumbs.length - 1 ? (
                       <a
                         href={item.href}
-                        class="hover:text-primary font-mono text-base font-medium uppercase"
+                        class="hover:text-primary font-mono text-base font-medium"
                       >
                         {item.label}
                       </a>
                     ) : (
-                      <span class="text-primary font-mono text-base font-medium uppercase">
+                      <span class="text-primary font-mono text-base font-medium">
                         {item.label}
                       </span>
                     )}
@@ -59,7 +59,7 @@ const breadcrumbs = [
         <Text
           class="span"
           variant="textXS"
-          class="text-primary/60 mt-12 flex items-center gap-2 font-medium uppercase"
+          class="text-primary/60 mt-12 flex items-center gap-2 font-medium"
         >
           <time
             datetime={new Date(frontmatter.pubDate).toLocaleDateString(

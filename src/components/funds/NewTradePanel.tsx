@@ -422,7 +422,7 @@ export default function NewTradePanel({ fund }: Props) {
           </div>
 
           <div className="border-primary/10 overflow-hidden rounded border">
-            <div className="text-primary/45 grid grid-cols-3 gap-2 px-2 py-1.5 text-base font-medium tracking-wide uppercase">
+            <div className="text-primary/45 grid grid-cols-3 gap-2 px-2 py-1.5 text-base font-medium tracking-wide">
               <span>Price</span>
               <span className="text-right">Shares</span>
               <span className="text-right">Total</span>

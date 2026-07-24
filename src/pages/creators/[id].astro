@@ -112,7 +112,7 @@ const polymarketUrl = profileWalletId
   : null;
 
 const metricLabel =
-  "text-primary/45 text-base font-medium tracking-wide uppercase";
+  "text-primary/45 text-base font-medium tracking-wide";
 const metricValue =
   "text-primary mt-2 font-mono text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl";
 ---
@@ -221,15 +221,15 @@ const metricValue =
 
         <aside class="border-primary/10 bg-primary/5 grid h-full min-w-0 grid-cols-2 grid-rows-2 overflow-hidden rounded-lg border">
           <div class="border-primary/10 flex min-w-0 flex-col justify-center border-r border-b p-5 sm:p-6">
-            <p class={metricLabel}>Total deposits</p>
+            <p class={metricLabel}>Total Deposits</p>
             <p class={metricValue}>{formatUsd(totalDepositedUsdc)}</p>
           </div>
           <div class="border-primary/10 flex min-w-0 flex-col justify-center border-b p-5 sm:p-6">
-            <p class={metricLabel}>Total returned</p>
+            <p class={metricLabel}>Total Returned</p>
             <p class={metricValue}>{formatUsd(totalReturnedUsdc)}</p>
           </div>
           <div class="border-primary/10 flex min-w-0 flex-col justify-center border-r p-5 sm:p-6">
-            <p class={metricLabel}>Overall performance</p>
+            <p class={metricLabel}>Overall Performance</p>
             <p class="mt-2 font-mono text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">
               {
                 overallRoi == null ? (
@@ -245,7 +245,7 @@ const metricValue =
             </p>
           </div>
           <div class="flex min-w-0 flex-col justify-center p-5 sm:p-6">
-            <p class={metricLabel}>Fees earned</p>
+            <p class={metricLabel}>Fees Earned</p>
             <p class={metricValue}>{formatUsd(totalFeesUsdc)}</p>
           </div>
         </aside>

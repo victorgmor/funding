@@ -30,7 +30,7 @@ const COLUMNS: {
   { key: "fund", label: "Fund" },
   { key: "manager", label: "Manager", sortField: "creator" },
   { key: "pool", label: "Pool", sortField: "cap", align: "right" },
-  { key: "share", label: "Profit share", align: "right" },
+  { key: "share", label: "Profit Share", align: "right" },
   { key: "pnl", label: "PnL", align: "right" },
   { key: "published", label: "Published", sortField: "published" },
 ];
@@ -289,7 +289,7 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
       <div className="overflow-x-auto scrollbar-hide">
         <div className="min-w-[44rem]">
           <div
-            className={`${FUND_FEED_GRID} text-primary/45 border-primary/10 border-b pb-2 text-base font-medium tracking-wide uppercase`}
+            className={`${FUND_FEED_GRID} text-primary/45 border-primary/10 border-b pb-2 text-base font-medium tracking-wide`}
             role="row"
           >
             {COLUMNS.map(({ key, label, sortField: field, align }) =>

@@ -586,8 +586,8 @@ export default function FundPoolOverview({ fund }: Props) {
     <div>
       {closed && settlement && (
         <div className="border-primary/10 mb-4 border-b pb-4">
-          <p className="text-primary/45 text-base uppercase tracking-wide">
-            Close settlement
+          <p className="text-primary/45 text-base tracking-wide">
+            Close Settlement
           </p>
           <p className="text-primary/45 mt-1.5 font-mono text-base tabular-nums">
             <span className="text-primary/70 font-medium">

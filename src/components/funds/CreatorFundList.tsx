@@ -12,7 +12,7 @@ const HEADERS = [
   "Fund",
   "Manager",
   "Pool",
-  "Profit share",
+  "Profit Share",
   "PnL",
   "Published",
 ] as const;
@@ -31,14 +31,14 @@ export default function CreatorFundList({
     <div className="overflow-x-auto scrollbar-hide">
       <div className="min-w-[44rem]">
         <div
-          className={`${FUND_FEED_GRID} text-primary/45 border-primary/10 mb-1 border-b pb-2 text-base font-medium tracking-wide uppercase`}
+          className={`${FUND_FEED_GRID} text-primary/45 border-primary/10 mb-1 border-b pb-2 text-base font-medium tracking-wide`}
           aria-hidden
         >
           {HEADERS.map((label) => (
             <span
               key={label}
               className={
-                ["Pool", "Profit share", "PnL"].includes(label)
+                ["Pool", "Profit Share", "PnL"].includes(label)
                   ? "text-right"
                   : undefined
               }

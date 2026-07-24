@@ -46,8 +46,8 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
   if (loading) {
     return (
       <div className="border-primary/10 bg-primary/5 mt-3 rounded-lg border border-dashed px-4 py-3">
-        <p className="text-primary/50 text-base font-medium uppercase">
-          Test lifecycle
+        <p className="text-primary/50 text-base font-medium">
+          Test Lifecycle
         </p>
         <div data-wallet-restoring>
           <WalletPanelPlaceholder className="mt-2" label="Loading wallet…" />
@@ -59,8 +59,8 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
   if (!isConnected || !address) {
     return (
       <div className="border-primary/10 bg-primary/5 mt-3 rounded-lg border border-dashed px-4 py-3">
-        <p className="text-primary/50 text-base font-medium uppercase">
-          Test lifecycle
+        <p className="text-primary/50 text-base font-medium">
+          Test Lifecycle
         </p>
         <div className="mt-2" data-wallet-connect-cta>
           <p className="text-primary/60 mb-2 text-base">
@@ -121,8 +121,8 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
 
   return (
     <div className="border-primary/10 bg-primary/5 mt-3 rounded-lg border border-dashed px-4 py-3">
-      <p className="text-primary/50 text-base font-medium uppercase">
-        Test lifecycle
+      <p className="text-primary/50 text-base font-medium">
+        Test Lifecycle
       </p>
       <>
           {currentStage === "deposit" && (

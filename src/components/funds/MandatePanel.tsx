@@ -51,7 +51,7 @@ type MandateSummary = {
 };
 
 const headerClass =
-  "text-primary/50 text-base font-medium leading-none tracking-wide uppercase";
+  "text-primary/50 text-base font-medium leading-none tracking-wide";
 
 export default function MandatePanel({ fund }: Props) {
   const { user } = useUser();
@@ -444,10 +444,10 @@ export default function MandatePanel({ fund }: Props) {
                       className={
                         mode === "add"
                           ? headerClass + " text-primary"
-                          : "text-primary/40 text-base font-medium uppercase tracking-wide"
+                          : "text-primary/40 text-base font-medium tracking-wide"
                       }
                     >
-                      Add capital
+                      Add Capital
                     </button>
                     <button
                       type="button"
@@ -460,7 +460,7 @@ export default function MandatePanel({ fund }: Props) {
                       className={
                         mode === "withdraw"
                           ? headerClass + " text-primary"
-                          : "text-primary/40 text-base font-medium uppercase tracking-wide"
+                          : "text-primary/40 text-base font-medium tracking-wide"
                       }
                     >
                       Withdraw
@@ -468,7 +468,7 @@ export default function MandatePanel({ fund }: Props) {
                   </div>
                 ) : (
                   <label className={headerClass} htmlFor="mandate-amount">
-                    {hasMandate ? "Add capital" : "Commit"}
+                    {hasMandate ? "Add Capital" : "Commit"}
                   </label>
                 )}
                 {isWithdraw ? (
@@ -583,7 +583,7 @@ export default function MandatePanel({ fund }: Props) {
 
           {closed && summary?.mandateSettlement && (
             <div className="border-primary/10 mt-4 border-t pt-4 text-base">
-              <p className="text-primary/45 uppercase tracking-wide">Your close settlement</p>
+              <p className="text-primary/45 tracking-wide">Your Close Settlement</p>
               <p className="text-primary mt-2 font-mono tabular-nums">
                 Final value {formatUsdExact(summary.mandateSettlement.finalValueUsdc)}
               </p>
@@ -606,7 +606,7 @@ export default function MandatePanel({ fund }: Props) {
 
           {(summary?.positions?.length ?? 0) > 0 && (
             <div className="border-primary/10 mt-4 border-t pt-4">
-              <p className="text-primary/45 text-base uppercase tracking-wide">
+              <p className="text-primary/45 text-base tracking-wide">
                 Positions
               </p>
               <ul className="mt-2">
@@ -634,8 +634,8 @@ export default function MandatePanel({ fund }: Props) {
 
           {pendingTrades.length > 0 && (
             <div className="border-primary/10 mt-4 border-t pt-4">
-              <p className="text-primary/45 text-base uppercase tracking-wide">
-                Pending fan-out ({pendingTrades.length})
+              <p className="text-primary/45 text-base tracking-wide">
+                Pending Fan-Out ({pendingTrades.length})
               </p>
               <ul className="mt-2">
                 {pendingTrades.map((trade, index) => (
