@@ -319,8 +319,8 @@ export default function NewTradePanel({ fund }: Props) {
     "grid grid-cols-3 gap-2 px-2 py-0.5 font-mono text-xs tabular-nums";
 
   return (
-    <div className="pb-4">
-      <div>
+    <div>
+      <div className="pb-5">
         <span className="border-primary text-primary inline-block border-b-2 pb-2 text-sm font-medium">
           New trade
         </span>
