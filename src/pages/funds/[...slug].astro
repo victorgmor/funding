@@ -4,16 +4,11 @@ export const prerender = false;
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import BackLink from "@/components/fundations/elements/BackLink.astro";
 import Wrapper from "@/components/fundations/containers/Wrapper.astro";
-import CreatorAvatar from "@/components/creators/CreatorAvatar";
-import CreatorName from "@/components/creators/CreatorName";
+import FundDetailHeader from "@/components/funds/FundDetailHeader";
 import FundLifecycleTestPanel from "@/components/funds/FundLifecycleTestPanel";
 import FundPoolOverview from "@/components/funds/FundPoolOverview";
-import FundPerformanceCell from "@/components/funds/FundPerformanceCell";
 import FundSidebar from "@/components/funds/FundSidebar";
-import SealCheck from "@/components/fundations/icons/SealCheck.astro";
 import { getFund } from "@/lib/funds/store";
-import { creatorPath, isCreatorWallet } from "@/lib/funds/creator";
-import { formatPublishedAgo } from "@/lib/funds/format";
 import { computeFundPoolPerformance } from "@/lib/funds/performance";
 
 const slug = Astro.params.slug;
@@ -27,8 +22,6 @@ if (!fund) {
 }
 
 const performance = await computeFundPoolPerformance(fund);
-const published = formatPublishedAgo(fund.createdAt);
-const showAvatar = isCreatorWallet(fund.manager.id);
 ---
 
 <BaseLayout>
@@ -36,81 +29,25 @@ const showAvatar = isCreatorWallet(fund.manager.id);
     <Wrapper variant="standard" class="py-24">
       <BackLink />
 
-      <div class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,672px)_minmax(280px,1fr)]">
-        <div class="min-w-0">
-          <div class="pb-4">
-            <div class="flex items-center justify-between gap-4">
-              <div class="flex min-w-0 flex-1 items-center gap-2.5">
-                <h1 class="text-primary truncate text-lg font-semibold leading-none tracking-tight sm:text-xl">
-                  {fund.name}
-                </h1>
-              </div>
+      <div class="mt-8">
+        <FundDetailHeader
+          client:load
+          fund={fund}
+          initialPerformance={performance}
+        />
 
-              <FundPerformanceCell
-                client:idle
-                fundSlug={fund.slug}
-                roi={performance?.roi ?? null}
-                since={fund.createdAt}
-                variant="header"
-              />
-            </div>
-
-            <div class="text-primary/45 mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm">
-              {
-                showAvatar && (
-                  <a
-                    href={creatorPath(fund.manager.id)}
-                    class="inline-flex shrink-0 items-center"
-                  >
-                    <CreatorAvatar
-                      client:idle
-                      address={fund.manager.id}
-                      name={fund.manager.name}
-                      size="2xs"
-                    />
-                  </a>
-                )
-              }
-              <a
-                href={creatorPath(fund.manager.id)}
-                class="text-primary/70 hover:text-primary inline-flex items-center gap-1 transition-colors"
-              >
-                <CreatorName
-                  client:idle
-                  address={fund.manager.id}
-                  fallback={fund.manager.name}
-                />
-                {
-                  fund.manager.verified && (
-                    <SealCheck size="xs" class="text-[#288cbc]" />
-                  )
-                }
-              </a>
-              {
-                published && (
-                  <>
-                    <span aria-hidden>·</span>
-                    <span>{published}</span>
-                  </>
-                )
-              }
-            </div>
-
-            <p class="text-primary/60 mt-1.5 line-clamp-1 text-sm leading-snug">
-              {fund.thesis}
-            </p>
-
-            <div class="mt-3.5">
-              <FundPoolOverview client:load fund={fund} />
-            </div>
+        <div
+          class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-start"
+        >
+          <div class="min-w-0">
+            <FundPoolOverview client:load fund={fund} />
+            <FundLifecycleTestPanel client:visible fund={fund} />
           </div>
 
-          <FundLifecycleTestPanel client:visible fund={fund} />
+          <aside class="min-w-0">
+            <FundSidebar client:load fund={fund} />
+          </aside>
         </div>
-
-        <aside class="min-w-0">
-          <FundSidebar client:load fund={fund} />
-        </aside>
       </div>
     </Wrapper>
   </section>

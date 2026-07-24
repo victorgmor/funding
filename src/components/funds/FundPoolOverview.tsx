@@ -10,9 +10,6 @@ import type { FundPoolPerformance } from "@/lib/funds/performance";
 import type { FundSettlement } from "@/lib/funds/settlement";
 import Skeleton from "@/components/app/Skeleton";
 import FundPnlChart from "@/components/funds/FundPnlChart";
-import FundStageMetricsRow from "@/components/funds/FundStageMetricsRow";
-import PoolCapBar from "@/components/funds/PoolCapBar";
-import ProfitShareLabel from "@/components/funds/ProfitShareLabel";
 import CreatorName from "@/components/creators/CreatorName";
 import { formatUsdExact } from "@/lib/funds/format";
 import { creatorPath } from "@/lib/funds/creator";
@@ -513,9 +510,6 @@ export default function FundPoolOverview({ fund }: Props) {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const closed = fund.status === "closed";
-  const profitShare = fund.managerProfitSharePct ?? 0;
-  const performance = pool?.performance ?? null;
-  const pnlAmount = performance?.profitUsdc ?? null;
   const canRetry = !closed && isFundOwner(fund, address);
 
   useEffect(() => {
@@ -573,17 +567,10 @@ export default function FundPoolOverview({ fund }: Props) {
   }, [fund.slug, address, closed, refreshKey]);
 
   if (loading) {
-    // Skeleton mirrors metrics row + cap bar + summary line to avoid layout shift.
     return (
       <div aria-hidden>
-        <div className="space-y-2">
-          <Skeleton className="h-5 w-2/3 rounded" />
-          <Skeleton className="h-2 w-full rounded-full" />
-        </div>
-        <Skeleton className="mt-2.5 h-4 w-44 rounded" />
-        <div className="border-primary/10 mt-4 border-t pt-4">
-          <Skeleton className="h-40 w-full rounded" />
-        </div>
+        <Skeleton className="h-8 w-64 rounded" />
+        <Skeleton className="mt-4 h-40 w-full rounded" />
       </div>
     );
   }
@@ -594,39 +581,10 @@ export default function FundPoolOverview({ fund }: Props) {
 
   if (!pool) return null;
 
-  // Deposited = external capital. Deployable = live pool mark (not deposited + chart PnL).
-  const depositedUsdc =
-    performance?.depositedUsdc ?? pool.totalDeposited ?? pool.totalNotional;
-  const deployableUsdc = Math.max(
-    0,
-    performance?.aumUsdc ?? pool.totalNotional ?? depositedUsdc,
-  );
-
   return (
     <div>
-      <div className="space-y-2">
-        <FundStageMetricsRow
-          fund={fund}
-          profitUsdc={pnlAmount}
-          totalNotional={depositedUsdc}
-        />
-        <PoolCapBar
-          deposited={depositedUsdc}
-          capUsdc={fund.capUsdc}
-          trailing={<ProfitShareLabel pct={profitShare} />}
-        />
-      </div>
-
-      <p className="text-primary/45 mt-2.5 font-mono text-xs tabular-nums">
-        <span className="text-primary/70 font-medium">
-          {formatUsdExact(deployableUsdc)}
-        </span>{" "}
-        deployable · {pool.mandateCount}{" "}
-        {pool.mandateCount === 1 ? "investor" : "investors"}
-      </p>
-
       {closed && settlement && (
-        <div className="border-primary/10 mt-4 border-t pt-4">
+        <div className="border-primary/10 mb-4 border-b pb-4">
           <p className="text-primary/45 text-xs uppercase tracking-wide">
             Close settlement
           </p>
