@@ -117,44 +117,32 @@ function useParticipatingSlugs(enabled: boolean) {
 const defaultDirection = (field: SortField): SortDirection =>
   field === "creator" ? "asc" : "desc";
 
-const FEED_HEADERS = [
-  "Fund",
-  "Stage",
-  "Deposited",
-  "PnL",
-  "Share",
-  "Manager",
-] as const;
-
-function FundFeedHeader() {
-  return (
-    <div
-      className={`${FUND_FEED_GRID} text-primary/45 border-primary/10 border-b py-1.5 text-[10px] font-medium tracking-wide uppercase`}
-      aria-hidden
-    >
-      {FEED_HEADERS.map((label) => (
-        <span key={label}>{label}</span>
-      ))}
-    </div>
-  );
-}
-
 /** Skeleton rows shaped like compact FundFeedCard. */
 function FundFeedSkeleton() {
   return (
     <div aria-hidden>
-      <FundFeedHeader />
       {[0, 1, 2].map((row) => (
         <div
           key={row}
-          className={`${FUND_FEED_GRID} border-primary/10 border-b py-2.5 last:border-b-0`}
+          className={`${FUND_FEED_GRID} border-primary/10 border-b py-3 last:border-b-0`}
         >
-          <Skeleton className="h-4 w-28 rounded sm:w-36" />
-          <Skeleton className="h-3.5 w-20 rounded" />
-          <Skeleton className="h-3.5 w-16 rounded" />
-          <Skeleton className="h-3.5 w-14 rounded" />
-          <Skeleton className="h-3.5 w-10 rounded" />
-          <Skeleton className="h-3.5 w-28 rounded" />
+          <div className="space-y-1.5">
+            <Skeleton className="h-4 w-28 rounded sm:w-36" />
+            <Skeleton className="h-3 w-40 rounded" />
+            <Skeleton className="h-3 w-24 rounded" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="size-5 shrink-0 rounded-full" />
+            <div className="space-y-1">
+              <Skeleton className="h-3.5 w-20 rounded" />
+              <Skeleton className="h-3 w-14 rounded" />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Skeleton className="h-3.5 w-24 rounded" />
+            <Skeleton className="h-3 w-28 rounded" />
+            <Skeleton className="h-3 w-16 rounded" />
+          </div>
         </div>
       ))}
     </div>
@@ -226,8 +214,8 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
     currentPage * PAGE_SIZE,
   );
 
-  const sortTabClass = (field: SortField) =>
-    `border-b-2 pb-2 text-sm transition-colors ${
+  const sortHeaderClass = (field: SortField) =>
+    `justify-self-start border-b-2 pb-2 text-left text-sm transition-colors ${
       sortField === field
         ? "border-primary text-primary font-medium"
         : "border-transparent text-primary/45 hover:text-primary/70"
@@ -259,87 +247,87 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
             autoComplete="off"
           />
         </label>
-
-        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
-          {SORT_OPTIONS.map(({ field, label }) => (
-            <button
-              key={field}
-              type="button"
-              onClick={() => toggleSort(field)}
-              className={sortTabClass(field)}
-            >
-              {label}
-              <SortIndicator
-                active={sortField === field}
-                direction={sortDirection}
-              />
-            </button>
-          ))}
-
-          <div className="ml-auto flex items-center gap-2 pb-2">
-            {settingsOpen && (
-              <div className="flex items-center gap-3">
-                <label className="text-primary flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap">
-                  <input
-                    type="checkbox"
-                    checked={onlyParticipating}
-                    onChange={(e) => setOnlyParticipating(e.target.checked)}
-                    className="border-primary/20 text-accent ring-0 size-3.5 shrink-0 rounded"
-                  />
-                  Only funds I&apos;m in
-                </label>
-                {onlyParticipating && walletLoading && (
-                  <Skeleton className="h-3.5 w-20 shrink-0 rounded" />
-                )}
-                {onlyParticipating && !walletLoading && !isConnected && (
-                  <span className="text-primary/50 text-xs whitespace-nowrap">
-                    Connect wallet
-                  </span>
-                )}
-              </div>
-            )}
-            <button
-              type="button"
-              onClick={() => setSettingsOpen((open) => !open)}
-              aria-label="Feed settings"
-              aria-expanded={settingsOpen}
-              className={`transition-colors ${
-                settingsOpen
-                  ? "text-primary"
-                  : "text-primary/45 hover:text-primary/70"
-              }`}
-            >
-              <GearIcon className="size-4" />
-            </button>
-          </div>
-        </div>
       </div>
 
-      {visible.length > 0 ? (
-        <div className="overflow-x-auto scrollbar-hide">
-          <div className="min-w-[40rem]">
-            <FundFeedHeader />
-            {pagedFunds.map((fund) => (
+      <div className="overflow-x-auto scrollbar-hide">
+        <div className="min-w-[36rem]">
+          <div className="mb-1 flex items-end gap-3">
+            <div
+              className={`${FUND_FEED_GRID} min-w-0 flex-1`}
+              role="columnheader"
+            >
+              {SORT_OPTIONS.map(({ field, label }) => (
+                <button
+                  key={field}
+                  type="button"
+                  onClick={() => toggleSort(field)}
+                  className={sortHeaderClass(field)}
+                >
+                  {label}
+                  <SortIndicator
+                    active={sortField === field}
+                    direction={sortDirection}
+                  />
+                </button>
+              ))}
+            </div>
+
+            <div className="mb-px flex shrink-0 items-center gap-2 pb-2">
+              {settingsOpen && (
+                <div className="flex items-center gap-3">
+                  <label className="text-primary flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={onlyParticipating}
+                      onChange={(e) => setOnlyParticipating(e.target.checked)}
+                      className="border-primary/20 text-accent ring-0 size-3.5 shrink-0 rounded"
+                    />
+                    Only funds I&apos;m in
+                  </label>
+                  {onlyParticipating && walletLoading && (
+                    <Skeleton className="h-3.5 w-20 shrink-0 rounded" />
+                  )}
+                  {onlyParticipating && !walletLoading && !isConnected && (
+                    <span className="text-primary/50 text-xs whitespace-nowrap">
+                      Connect wallet
+                    </span>
+                  )}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setSettingsOpen((open) => !open)}
+                aria-label="Feed settings"
+                aria-expanded={settingsOpen}
+                className={`transition-colors ${
+                  settingsOpen
+                    ? "text-primary"
+                    : "text-primary/45 hover:text-primary/70"
+                }`}
+              >
+                <GearIcon className="size-4" />
+              </button>
+            </div>
+          </div>
+
+          {visible.length > 0 ? (
+            pagedFunds.map((fund) => (
               <FundFeedCard
                 key={fund.slug}
                 fund={fund}
                 deposited={poolTotals[fund.slug]?.deposited ?? 0}
                 profitUsdc={poolTotals[fund.slug]?.profitUsdc ?? null}
               />
-            ))}
-          </div>
-        </div>
-      ) : participatingBusy ? (
-        <div className="overflow-x-auto scrollbar-hide">
-          <div className="min-w-[40rem]">
+            ))
+          ) : participatingBusy ? (
             <FundFeedSkeleton />
-          </div>
+          ) : (
+            <p className="text-primary/50 py-12 text-center text-sm">
+              {emptyMessage}
+            </p>
+          )}
         </div>
-      ) : (
-        <p className="text-primary/50 py-12 text-center text-sm">
-          {emptyMessage}
-        </p>
-      )}
+      </div>
 
       {visible.length > PAGE_SIZE && (
         <div className="border-primary/10 flex items-center justify-center gap-4 border-t py-6">

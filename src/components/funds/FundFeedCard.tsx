@@ -18,18 +18,12 @@ type Props = {
 
 /** Shared with FundListPanel header / skeleton so columns line up. */
 export const FUND_FEED_GRID =
-  "grid items-center gap-x-3 [grid-template-columns:minmax(0,1.5fr)_8.5rem_7rem_5rem_3rem_minmax(7.5rem,1fr)] sm:gap-x-4";
+  "grid items-start gap-x-4 [grid-template-columns:minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.1fr)] sm:gap-x-6";
 
 function feedSnippet(fund: Fund): string {
   const thesis = fund.thesis.trim();
   if (thesis) return thesis;
   return fund.description.trim();
-}
-
-function depositLabel(deposited: number, capUsdc?: number | null): string {
-  const amount = formatUsdExact(deposited);
-  if (capUsdc == null || capUsdc <= 0) return amount;
-  return `${amount} · ${capProgress(deposited, capUsdc)}%`;
 }
 
 export default function FundFeedCard({
@@ -44,20 +38,22 @@ export default function FundFeedCard({
   const pnlColor =
     pnl === 0 ? "text-primary/45" : pnl > 0 ? "text-profit" : "text-red-500";
   const href = `/funds/${fund.slug}`;
+  const fillPct =
+    fund.capUsdc != null && fund.capUsdc > 0
+      ? capProgress(deposited, fund.capUsdc)
+      : null;
 
   return (
     <article className="border-primary/10 border-b last:border-b-0">
-      <div className={`${FUND_FEED_GRID} py-2.5 text-sm`}>
-        <a href={href} className="group min-w-0 leading-tight">
+      <div className={`${FUND_FEED_GRID} py-3 text-sm`}>
+        {/* Latest — identity + stage */}
+        <a href={href} className="group min-w-0 space-y-1 leading-tight">
           <h2 className="text-primary group-hover:text-primary/85 truncate text-sm font-semibold tracking-tight sm:text-base">
             {fund.name}
           </h2>
           {snippet && (
-            <p className="text-primary/45 mt-0.5 truncate text-xs">{snippet}</p>
+            <p className="text-primary/45 truncate text-xs">{snippet}</p>
           )}
-        </a>
-
-        <a href={href} className="min-w-0">
           <FundLifecycleTrack
             fund={fund}
             totalNotional={deposited}
@@ -65,28 +61,8 @@ export default function FundFeedCard({
           />
         </a>
 
-        <a
-          href={href}
-          className="text-primary/70 hover:text-primary truncate font-mono text-xs tabular-nums transition-colors sm:text-sm"
-        >
-          {depositLabel(deposited, fund.capUsdc)}
-        </a>
-
-        <a
-          href={href}
-          className={`truncate font-mono text-xs tabular-nums sm:text-sm ${pnlColor}`}
-        >
-          {formatUsdExact(pnl, true)}
-        </a>
-
-        <a
-          href={href}
-          className="text-primary/55 hover:text-primary/70 font-mono text-xs tabular-nums transition-colors sm:text-sm"
-        >
-          {profitShare}%
-        </a>
-
-        <div className="text-primary/45 flex min-w-0 items-center gap-1.5 text-xs sm:text-sm">
+        {/* Managers */}
+        <div className="text-primary/45 flex min-w-0 items-center gap-2 text-xs sm:text-sm">
           <a href={creatorPath(fund.manager.id)} className="shrink-0">
             <CreatorAvatar
               address={fund.manager.id}
@@ -94,25 +70,52 @@ export default function FundFeedCard({
               size="2xs"
             />
           </a>
-          <a
-            href={creatorPath(fund.manager.id)}
-            className="text-primary/70 hover:text-primary inline-flex min-w-0 items-center gap-0.5 truncate transition-colors"
-          >
-            <CreatorName
-              address={fund.manager.id}
-              fallback={fund.manager.name}
-            />
-            {fund.manager.verified && (
-              <SealCheck size="xs" className="!size-3.5 shrink-0 text-[#288cbc]" />
+          <div className="min-w-0 leading-tight">
+            <a
+              href={creatorPath(fund.manager.id)}
+              className="text-primary/70 hover:text-primary inline-flex max-w-full items-center gap-0.5 truncate transition-colors"
+            >
+              <CreatorName
+                address={fund.manager.id}
+                fallback={fund.manager.name}
+              />
+              {fund.manager.verified && (
+                <SealCheck
+                  size="xs"
+                  className="!size-3.5 shrink-0 text-[#288cbc]"
+                />
+              )}
+            </a>
+            {published && (
+              <p className="text-primary/40 mt-0.5 truncate text-xs">
+                {published}
+              </p>
             )}
-          </a>
-          {published && (
-            <>
-              <span aria-hidden>·</span>
-              <span className="shrink-0 whitespace-nowrap">{published}</span>
-            </>
-          )}
+          </div>
         </div>
+
+        {/* Pool cap — economics */}
+        <a
+          href={href}
+          className="hover:text-primary min-w-0 space-y-0.5 font-mono text-xs tabular-nums transition-colors sm:text-sm"
+        >
+          <p className="text-primary/70 truncate">
+            {formatUsdExact(deposited)}
+            {fillPct != null && (
+              <span className="text-primary/45"> · {fillPct}%</span>
+            )}
+          </p>
+          <p className="text-primary/45 truncate">
+            {fund.capUsdc != null && fund.capUsdc > 0
+              ? `Cap ${formatUsdExact(fund.capUsdc)}`
+              : "Uncapped"}
+            <span className="text-primary/35"> · </span>
+            {profitShare}%
+          </p>
+          <p className={`truncate ${pnlColor}`}>
+            {formatUsdExact(pnl, true)}
+          </p>
+        </a>
       </div>
     </article>
   );
