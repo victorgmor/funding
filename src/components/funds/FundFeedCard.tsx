@@ -16,6 +16,10 @@ type Props = {
   profitUsdc?: number | null;
 };
 
+/** Shared with FundListPanel header / skeleton so columns line up. */
+export const FUND_FEED_GRID =
+  "grid items-center gap-x-3 [grid-template-columns:minmax(0,1.5fr)_8.5rem_7rem_5rem_3rem_minmax(7.5rem,1fr)] sm:gap-x-4";
+
 function feedSnippet(fund: Fund): string {
   const thesis = fund.thesis.trim();
   if (thesis) return thesis;
@@ -42,20 +46,18 @@ export default function FundFeedCard({
   const href = `/funds/${fund.slug}`;
 
   return (
-    <article className="border-primary/10 border-b first:border-t last:border-b-0">
-      <div className="flex items-center gap-3 overflow-x-auto py-2.5 text-sm scrollbar-hide sm:gap-4">
-        <a href={href} className="group flex min-w-0 shrink items-center gap-2">
-          <h2 className="text-primary group-hover:text-primary/85 max-w-[10rem] truncate text-sm font-semibold tracking-tight sm:max-w-[14rem] sm:text-base">
+    <article className="border-primary/10 border-b last:border-b-0">
+      <div className={`${FUND_FEED_GRID} py-2.5 text-sm`}>
+        <a href={href} className="group min-w-0 leading-tight">
+          <h2 className="text-primary group-hover:text-primary/85 truncate text-sm font-semibold tracking-tight sm:text-base">
             {fund.name}
           </h2>
           {snippet && (
-            <span className="text-primary/45 hidden max-w-[12rem] truncate text-xs lg:inline">
-              {snippet}
-            </span>
+            <p className="text-primary/45 mt-0.5 truncate text-xs">{snippet}</p>
           )}
         </a>
 
-        <a href={href} className="shrink-0">
+        <a href={href} className="min-w-0">
           <FundLifecycleTrack
             fund={fund}
             totalNotional={deposited}
@@ -65,26 +67,26 @@ export default function FundFeedCard({
 
         <a
           href={href}
-          className="text-primary/70 hover:text-primary shrink-0 font-mono text-xs tabular-nums transition-colors sm:text-sm"
+          className="text-primary/70 hover:text-primary truncate font-mono text-xs tabular-nums transition-colors sm:text-sm"
         >
           {depositLabel(deposited, fund.capUsdc)}
         </a>
 
         <a
           href={href}
-          className={`shrink-0 font-mono text-xs tabular-nums sm:text-sm ${pnlColor}`}
+          className={`truncate font-mono text-xs tabular-nums sm:text-sm ${pnlColor}`}
         >
           {formatUsdExact(pnl, true)}
         </a>
 
         <a
           href={href}
-          className="text-primary/55 hover:text-primary/70 shrink-0 font-mono text-xs tabular-nums transition-colors sm:text-sm"
+          className="text-primary/55 hover:text-primary/70 font-mono text-xs tabular-nums transition-colors sm:text-sm"
         >
           {profitShare}%
         </a>
 
-        <div className="text-primary/45 ml-auto flex min-w-0 shrink-0 items-center gap-1.5 text-xs sm:text-sm">
+        <div className="text-primary/45 flex min-w-0 items-center gap-1.5 text-xs sm:text-sm">
           <a href={creatorPath(fund.manager.id)} className="shrink-0">
             <CreatorAvatar
               address={fund.manager.id}

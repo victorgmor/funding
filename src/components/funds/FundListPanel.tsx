@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Skeleton from "@/components/app/Skeleton";
-import FundFeedCard from "@/components/funds/FundFeedCard";
+import FundFeedCard, { FUND_FEED_GRID } from "@/components/funds/FundFeedCard";
 import GearIcon from "@/components/fundations/icons/GearIcon";
 import SearchIcon from "@/components/fundations/icons/SearchIcon";
 import {
@@ -117,21 +117,44 @@ function useParticipatingSlugs(enabled: boolean) {
 const defaultDirection = (field: SortField): SortDirection =>
   field === "creator" ? "asc" : "desc";
 
+const FEED_HEADERS = [
+  "Fund",
+  "Stage",
+  "Deposited",
+  "PnL",
+  "Share",
+  "Manager",
+] as const;
+
+function FundFeedHeader() {
+  return (
+    <div
+      className={`${FUND_FEED_GRID} text-primary/45 border-primary/10 border-b py-1.5 text-[10px] font-medium tracking-wide uppercase`}
+      aria-hidden
+    >
+      {FEED_HEADERS.map((label) => (
+        <span key={label}>{label}</span>
+      ))}
+    </div>
+  );
+}
+
 /** Skeleton rows shaped like compact FundFeedCard. */
 function FundFeedSkeleton() {
   return (
     <div aria-hidden>
+      <FundFeedHeader />
       {[0, 1, 2].map((row) => (
         <div
           key={row}
-          className="border-primary/10 flex items-center gap-3 border-b py-2.5 first:border-t last:border-b-0 sm:gap-4"
+          className={`${FUND_FEED_GRID} border-primary/10 border-b py-2.5 last:border-b-0`}
         >
           <Skeleton className="h-4 w-28 rounded sm:w-36" />
           <Skeleton className="h-3.5 w-20 rounded" />
           <Skeleton className="h-3.5 w-16 rounded" />
           <Skeleton className="h-3.5 w-14 rounded" />
           <Skeleton className="h-3.5 w-10 rounded" />
-          <Skeleton className="ml-auto h-3.5 w-28 rounded" />
+          <Skeleton className="h-3.5 w-28 rounded" />
         </div>
       ))}
     </div>
@@ -293,18 +316,25 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
       </div>
 
       {visible.length > 0 ? (
-        <div>
-          {pagedFunds.map((fund) => (
-            <FundFeedCard
-              key={fund.slug}
-              fund={fund}
-              deposited={poolTotals[fund.slug]?.deposited ?? 0}
-              profitUsdc={poolTotals[fund.slug]?.profitUsdc ?? null}
-            />
-          ))}
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="min-w-[40rem]">
+            <FundFeedHeader />
+            {pagedFunds.map((fund) => (
+              <FundFeedCard
+                key={fund.slug}
+                fund={fund}
+                deposited={poolTotals[fund.slug]?.deposited ?? 0}
+                profitUsdc={poolTotals[fund.slug]?.profitUsdc ?? null}
+              />
+            ))}
+          </div>
         </div>
       ) : participatingBusy ? (
-        <FundFeedSkeleton />
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="min-w-[40rem]">
+            <FundFeedSkeleton />
+          </div>
+        </div>
       ) : (
         <p className="text-primary/50 py-12 text-center text-sm">
           {emptyMessage}
