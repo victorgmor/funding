@@ -29,12 +29,12 @@ function feedSnippet(fund: Fund): string {
 
 function CommitProgress({ pct }: { pct: number | null }) {
   if (pct == null) {
-    return <span className="text-primary/30 text-right text-xs">—</span>;
+    return <span className="text-primary/30 text-right text-base">—</span>;
   }
 
   return (
     <div className="min-w-0 space-y-1">
-      <p className="text-primary/80 text-right font-mono text-xs tabular-nums">
+      <p className="text-primary/80 text-right font-mono text-base tabular-nums">
         {pct}%
       </p>
       <div
@@ -70,13 +70,13 @@ export default function FundFeedCard({
 
   return (
     <article className="border-primary/10 hover:bg-primary/[0.03] border-b last:border-b-0">
-      <div className={`${FUND_FEED_GRID} py-2 text-sm`}>
+      <div className={`${FUND_FEED_GRID} py-2 text-base`}>
         <a href={href} className="group min-w-0 space-y-0.5 leading-tight">
-          <h2 className="text-primary group-hover:text-primary/85 truncate text-sm font-semibold tracking-tight">
+          <h2 className="text-primary group-hover:text-primary/85 truncate text-base font-semibold tracking-tight">
             {fund.name}
           </h2>
           {snippet && (
-            <p className="text-primary/35 max-w-[28ch] truncate text-[11px]">
+            <p className="text-primary/35 max-w-[28ch] truncate text-base">
               {snippet}
             </p>
           )}
@@ -90,7 +90,7 @@ export default function FundFeedCard({
           />
         </a>
 
-        <div className="text-primary/45 flex min-w-0 items-center gap-1.5 text-xs">
+        <div className="text-primary/45 flex min-w-0 items-center gap-1.5 text-base">
           <a href={creatorPath(fund.manager.id)} className="shrink-0">
             <CreatorAvatar
               address={fund.manager.id}
@@ -117,7 +117,7 @@ export default function FundFeedCard({
 
         <a
           href={href}
-          className="text-primary/80 text-right font-mono text-xs tabular-nums"
+          className="text-primary/80 text-right font-mono text-base tabular-nums"
         >
           {formatUsdExact(deposited)}
         </a>
@@ -128,7 +128,7 @@ export default function FundFeedCard({
 
         <a
           href={href}
-          className="text-primary/70 text-right font-mono text-xs tabular-nums"
+          className="text-primary/70 text-right font-mono text-base tabular-nums"
         >
           {fund.capUsdc != null && fund.capUsdc > 0
             ? formatUsdExact(fund.capUsdc)
@@ -137,7 +137,7 @@ export default function FundFeedCard({
 
         <a
           href={href}
-          className="text-primary/60 text-right font-mono text-xs tabular-nums"
+          className="text-primary/60 text-right font-mono text-base tabular-nums"
         >
           {profitShare}%
         </a>
@@ -149,7 +149,7 @@ export default function FundFeedCard({
 
         <a
           href={href}
-          className="text-primary/45 truncate text-xs tabular-nums"
+          className="text-primary/45 truncate text-base tabular-nums"
         >
           {published ?? "—"}
         </a>

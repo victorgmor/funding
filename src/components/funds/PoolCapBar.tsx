@@ -56,9 +56,9 @@ export default function PoolCapBar({
             />
           </div>
         )}
-        <p className="text-primary text-sm font-medium">
+        <p className="text-primary text-base font-medium">
           <span className="font-mono tabular-nums">{formatUsdExact(deposited)}</span>
-          <span className="text-primary/45 ml-1.5 text-xs font-normal">
+          <span className="text-primary/45 ml-1.5 text-base font-normal">
             {formatCapFillLabel(deposited, capped ? capUsdc : null)}
           </span>
         </p>
@@ -67,7 +67,7 @@ export default function PoolCapBar({
   }
 
   const statsLine = (
-    <p className="min-w-0 text-sm font-mono tabular-nums">
+    <p className="min-w-0 text-base font-mono tabular-nums">
       <span className="text-primary/80 font-medium">
         {formatUsdExact(deposited)}
       </span>

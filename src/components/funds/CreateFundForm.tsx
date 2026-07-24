@@ -96,12 +96,12 @@ function CreateFundFormInner() {
   }
 
   const inputClass =
-    "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/60 w-full rounded border px-3 py-2 text-sm focus:border-primary/30 focus:outline-none";
+    "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/60 w-full rounded border px-3 py-2 text-base focus:border-primary/30 focus:outline-none";
 
   return (
     <form className="mt-10 space-y-6" onSubmit={(e) => e.preventDefault()}>
       <div>
-        <p className="text-primary mb-2 text-sm">Creator</p>
+        <p className="text-primary mb-2 text-base">Creator</p>
         {loading ? (
           <WalletPanelPlaceholder label="Loading…" variant="button" />
         ) : (
@@ -110,7 +110,7 @@ function CreateFundFormInner() {
       </div>
 
       <div>
-        <label className="text-primary mb-1 block text-sm" htmlFor="name">
+        <label className="text-primary mb-1 block text-base" htmlFor="name">
           Fund name
         </label>
         <input
@@ -124,7 +124,7 @@ function CreateFundFormInner() {
       </div>
 
       <div>
-        <label className="text-primary mb-1 block text-sm" htmlFor="thesis">
+        <label className="text-primary mb-1 block text-base" htmlFor="thesis">
           Thesis
         </label>
         <textarea
@@ -139,7 +139,7 @@ function CreateFundFormInner() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="text-primary mb-1 block text-sm" htmlFor="raise-ends">
+          <label className="text-primary mb-1 block text-base" htmlFor="raise-ends">
             Deposit stage ends
           </label>
           <input
@@ -150,13 +150,13 @@ function CreateFundFormInner() {
             className={inputClass}
             required
           />
-          <p className="text-primary/50 mt-2 text-xs">
+          <p className="text-primary/50 mt-2 text-base">
             Last day investors can commit capital.
           </p>
         </div>
         <div>
           <label
-            className="text-primary mb-1 block text-sm"
+            className="text-primary mb-1 block text-base"
             htmlFor="trading-ends"
           >
             Trading stage ends
@@ -170,7 +170,7 @@ function CreateFundFormInner() {
             className={inputClass}
             required
           />
-          <p className="text-primary/50 mt-2 text-xs">
+          <p className="text-primary/50 mt-2 text-base">
             Last day the manager may open new risk.
           </p>
         </div>
@@ -178,7 +178,7 @@ function CreateFundFormInner() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="min-w-0">
-          <label className="text-primary mb-1 block text-sm" htmlFor="profit-share">
+          <label className="text-primary mb-1 block text-base" htmlFor="profit-share">
             Manager profit share
           </label>
           <div className={`${inputClass} flex items-center gap-2`}>
@@ -190,19 +190,19 @@ function CreateFundFormInner() {
               step={0.5}
               value={profitSharePct}
               onChange={(e) => setProfitSharePct(e.target.value)}
-              className="text-primary min-w-0 flex-1 border-0 bg-transparent p-0 text-sm focus:outline-none"
+              className="text-primary min-w-0 flex-1 border-0 bg-transparent p-0 text-base focus:outline-none"
               required
             />
-            <span className="text-primary/50 shrink-0 text-sm">%</span>
+            <span className="text-primary/50 shrink-0 text-base">%</span>
           </div>
-          <p className="text-primary/50 mt-2 text-xs">
+          <p className="text-primary/50 mt-2 text-base">
             Your cut of each investor&apos;s profit when the fund closes
             profitably. Max 50%.
           </p>
         </div>
 
         <div className="min-w-0">
-          <label className="text-primary mb-1 block text-sm" htmlFor="cap-usdc">
+          <label className="text-primary mb-1 block text-base" htmlFor="cap-usdc">
             Pool cap
           </label>
           <input
@@ -217,7 +217,7 @@ function CreateFundFormInner() {
             className={inputClass}
             required
           />
-          <p className="text-primary/50 mt-2 text-xs">
+          <p className="text-primary/50 mt-2 text-base">
             Required. Max ${MAX_POOL_CAP_USDC.toLocaleString("en-US")}. Investors
             commit capital from their deposit wallets; manager trades fan out
             proportionally.
@@ -225,7 +225,7 @@ function CreateFundFormInner() {
         </div>
       </div>
 
-      {publishError && <p className="text-red-400 text-sm">{publishError}</p>}
+      {publishError && <p className="text-red-400 text-base">{publishError}</p>}
 
       <button
         type="button"

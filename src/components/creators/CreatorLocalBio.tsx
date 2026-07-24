@@ -42,5 +42,5 @@ export default function CreatorLocalBio({ address }: Props) {
 
   if (!bio) return null;
 
-  return <p className="text-primary/70 mt-3 text-sm leading-relaxed">{bio}</p>;
+  return <p className="text-primary/70 mt-3 text-base leading-relaxed">{bio}</p>;
 }

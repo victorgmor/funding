@@ -21,9 +21,9 @@ type RawBookLevel = { price: string; size: string };
 type BookLevel = { price: number; size: number };
 
 const field =
-  "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/60 w-full rounded border px-3 py-2 text-sm focus:border-primary/30 focus:outline-none";
+  "border-primary/10 bg-primary/5 text-primary placeholder:text-primary/60 w-full rounded border px-3 py-2 text-base focus:border-primary/30 focus:outline-none";
 const chip =
-  "border-primary/10 bg-primary/5 text-primary/70 hover:text-primary flex-1 rounded border px-3 py-2 text-xs font-medium transition-colors";
+  "border-primary/10 bg-primary/5 text-primary/70 hover:text-primary flex-1 rounded border px-3 py-2 text-base font-medium transition-colors";
 
 function roundPrice(n: number) {
   return Math.round(n * 100) / 100;
@@ -314,14 +314,14 @@ export default function NewTradePanel({ fund }: Props) {
   const depthPct = (size: number) =>
     `${Math.min(100, (size / maxSize) * 100)}%`;
   const bookRow =
-    "relative grid w-full grid-cols-3 items-center gap-2 overflow-hidden px-2 py-0.5 text-left font-mono text-xs tabular-nums hover:bg-primary/5";
+    "relative grid w-full grid-cols-3 items-center gap-2 overflow-hidden px-2 py-0.5 text-left font-mono text-base tabular-nums hover:bg-primary/5";
   const emptyBookRow =
-    "grid grid-cols-3 gap-2 px-2 py-0.5 font-mono text-xs tabular-nums";
+    "grid grid-cols-3 gap-2 px-2 py-0.5 font-mono text-base tabular-nums";
 
   return (
     <div>
-      <div className="pb-5">
-        <span className="border-primary text-primary inline-block border-b-2 pb-2 text-sm font-medium">
+      <div className="pb-5 flex flex-wrap gap-x-5 gap-y-2">
+        <span className="border-primary text-primary inline-block border-b-2 pb-2 text-base font-medium">
           New trade
         </span>
       </div>
@@ -367,7 +367,7 @@ export default function NewTradePanel({ fund }: Props) {
                     setResults([]);
                     setQuery(market.question);
                   }}
-                  className="text-primary hover:bg-primary/10 w-full px-3 py-2 text-left text-sm"
+                  className="text-primary hover:bg-primary/10 w-full px-3 py-2 text-left text-base"
                 >
                   {market.question}
                 </button>
@@ -422,7 +422,7 @@ export default function NewTradePanel({ fund }: Props) {
           </div>
 
           <div className="border-primary/10 overflow-hidden rounded border">
-            <div className="text-primary/45 grid grid-cols-3 gap-2 px-2 py-1.5 text-[10px] font-medium tracking-wide uppercase">
+            <div className="text-primary/45 grid grid-cols-3 gap-2 px-2 py-1.5 text-base font-medium tracking-wide uppercase">
               <span>Price</span>
               <span className="text-right">Shares</span>
               <span className="text-right">Total</span>
@@ -452,7 +452,7 @@ export default function NewTradePanel({ fund }: Props) {
                     </span>
                   </button>
                 ))}
-                <div className="border-primary/10 bg-primary/5 flex items-center justify-between gap-3 border-y px-2 py-1.5 text-xs">
+                <div className="border-primary/10 bg-primary/5 flex items-center justify-between gap-3 border-y px-2 py-1.5 text-base">
                   <span className="text-primary/50">
                     Last{" "}
                     <span className="text-primary font-mono tabular-nums">
@@ -499,7 +499,7 @@ export default function NewTradePanel({ fund }: Props) {
                     <span className="text-primary/20 text-right">—</span>
                   </div>
                 ))}
-                <div className="border-primary/10 bg-primary/5 flex items-center justify-between gap-3 border-y px-2 py-1.5 text-xs">
+                <div className="border-primary/10 bg-primary/5 flex items-center justify-between gap-3 border-y px-2 py-1.5 text-base">
                   <span className="text-primary/50">
                     Last{" "}
                     <span className="text-primary font-mono tabular-nums">
@@ -524,12 +524,12 @@ export default function NewTradePanel({ fund }: Props) {
             )}
           </div>
           {bookError && (
-            <p className="text-xs text-red-500/80">{bookError}</p>
+            <p className="text-base text-red-500/80">{bookError}</p>
           )}
 
           <div className="flex flex-wrap items-end gap-2">
             <label className="min-w-[6rem] flex-1">
-              <span className="text-primary/50 mb-1 block text-xs">
+              <span className="text-primary/50 mb-1 block text-base">
                 Amount ($)
               </span>
               <input
@@ -543,7 +543,7 @@ export default function NewTradePanel({ fund }: Props) {
               />
             </label>
             <label className="min-w-[6rem] flex-1">
-              <span className="text-primary/50 mb-1 block text-xs">
+              <span className="text-primary/50 mb-1 block text-base">
                 Limit price
               </span>
               <input
@@ -568,15 +568,15 @@ export default function NewTradePanel({ fund }: Props) {
             </button>
           </div>
           {selected && remainingDeployable > 0 && (
-            <p className="text-primary/50 text-xs">
+            <p className="text-primary/50 text-base">
               {formatUsdExact(remainingDeployable)} deployable
             </p>
           )}
         </div>
       </div>
 
-      {notice && <p className="text-profit mt-3 text-sm">{notice}</p>}
-      {error && <p className="mt-3 text-sm text-red-500">{error}</p>}
+      {notice && <p className="text-profit mt-3 text-base">{notice}</p>}
+      {error && <p className="mt-3 text-base text-red-500">{error}</p>}
     </div>
   );
 }

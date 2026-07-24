@@ -11,7 +11,7 @@ export default function PnlAmount({ amount }: Props) {
         : "text-red-500";
 
   return (
-    <span className="inline-flex items-baseline gap-1 text-sm">
+    <span className="inline-flex items-baseline gap-1 text-base">
       <span className={`font-mono tabular-nums ${color}`}>
         {formatUsdExact(amount, true)}
       </span>

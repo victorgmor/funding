@@ -17,8 +17,8 @@ const BIO_MAX = 160;
 const shell =
   "w-full max-w-md overflow-hidden rounded-2xl bg-[#181709] text-white shadow-[0px_0px_40px_-8px_rgba(0,0,0,0.45)]";
 const field =
-  "w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/35 focus:border-white/40 focus:outline-none";
-const labelClass = "mb-1.5 block text-sm font-medium text-white/80";
+  "w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-base text-white placeholder:text-white/35 focus:border-white/40 focus:outline-none";
+const labelClass = "mb-1.5 block text-base font-medium text-white/80";
 
 function shortAddress(value: string) {
   return `${value.slice(0, 6)}…${value.slice(-4)}`;
@@ -162,7 +162,7 @@ export default function EditProfileModal({
           <div className="flex items-start justify-between gap-3 border-b border-white/10 px-5 py-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="rounded-full border border-white/25 px-2.5 py-0.5 text-xs font-medium text-white/90">
+                <span className="rounded-full border border-white/25 px-2.5 py-0.5 text-base font-medium text-white/90">
                   Edit
                 </span>
                 <h2
@@ -172,7 +172,7 @@ export default function EditProfileModal({
                   Your Profile
                 </h2>
               </div>
-              <p className="mt-2 text-sm text-white/50">
+              <p className="mt-2 text-base text-white/50">
                 Change your name, avatar, or keep your profile up to date.
               </p>
             </div>
@@ -188,7 +188,7 @@ export default function EditProfileModal({
 
           <div className="space-y-5 px-5 py-5">
             <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
-              <span className="text-sm text-white/55">Wallet Address:</span>
+              <span className="text-base text-white/55">Wallet Address:</span>
               <div className="flex min-w-0 items-center gap-2">
                 <CreatorAvatar
                   address={address}
@@ -198,7 +198,7 @@ export default function EditProfileModal({
                   className="ring-1 ring-white/25"
                 />
                 <span
-                  className="truncate font-mono text-sm text-white"
+                  className="truncate font-mono text-base text-white"
                   title={displayWallet}
                 >
                   {shortAddress(displayWallet)}
@@ -233,7 +233,7 @@ export default function EditProfileModal({
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
-                  className="rounded-full border border-white/25 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                  className="rounded-full border border-white/25 px-3 py-1.5 text-base font-medium text-white transition-colors hover:bg-white/10"
                 >
                   Change Avatar
                 </button>
@@ -270,7 +270,7 @@ export default function EditProfileModal({
                   rows={3}
                   className={`${field} resize-none pr-14`}
                 />
-                <span className="pointer-events-none absolute right-3 bottom-2.5 text-xs text-white/35">
+                <span className="pointer-events-none absolute right-3 bottom-2.5 text-base text-white/35">
                   {bio.length}/{BIO_MAX}
                 </span>
               </div>
@@ -288,7 +288,7 @@ export default function EditProfileModal({
             <button
               type="button"
               onClick={onClose}
-              className={`flex-1 border border-white/25 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10 ${walletNavRadius}`}
+              className={`flex-1 border border-white/25 px-3 py-2 text-base font-medium text-white transition-colors hover:bg-white/10 ${walletNavRadius}`}
             >
               Cancel
             </button>

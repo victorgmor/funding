@@ -91,18 +91,18 @@ export default function FundDetailHeader({
 
   return (
     <article className="border-primary/10 border">
-      <div className={`${FUND_FEED_GRID} gap-y-3 px-4 py-3 text-sm sm:px-5`}>
+      <div className={`${FUND_FEED_GRID} gap-y-3 px-4 py-3 text-base sm:px-5`}>
         {/* Identity + stage */}
         <div className="min-w-0 space-y-1 leading-tight">
           <h1 className="text-primary truncate text-base font-semibold tracking-tight sm:text-lg">
             {fund.name}
           </h1>
           {fund.thesis.trim() && (
-            <p className="text-primary/35 max-w-[28ch] truncate text-[11px]">
+            <p className="text-primary/35 max-w-[28ch] truncate text-base">
               {fund.thesis}
             </p>
           )}
-          <p className="text-primary/30 max-w-[18ch] truncate font-mono text-[10px] tabular-nums">
+          <p className="text-primary/30 max-w-[18ch] truncate font-mono text-base tabular-nums">
             {fund.slug}
           </p>
           <FundLifecycleTrack
@@ -113,7 +113,7 @@ export default function FundDetailHeader({
         </div>
 
         {/* Manager */}
-        <div className="text-primary/45 flex min-w-0 items-center gap-2 text-xs sm:text-sm">
+        <div className="text-primary/45 flex min-w-0 items-center gap-2 text-base sm:text-base">
           {showAvatar && (
             <a href={creatorPath(fund.manager.id)} className="shrink-0">
               <CreatorAvatar
@@ -140,7 +140,7 @@ export default function FundDetailHeader({
               )}
             </a>
             {published && (
-              <p className="text-primary/40 mt-0.5 truncate text-xs">
+              <p className="text-primary/40 mt-0.5 truncate text-base">
                 {published}
               </p>
             )}
@@ -148,7 +148,7 @@ export default function FundDetailHeader({
         </div>
 
         {/* Economics */}
-        <div className="min-w-0 space-y-0.5 text-right font-mono text-xs tabular-nums">
+        <div className="min-w-0 space-y-0.5 text-right font-mono text-base tabular-nums">
           {loading && !pool ? (
             <div className="space-y-1.5" aria-hidden>
               <Skeleton className="ml-auto h-3.5 w-24 rounded" />
@@ -187,7 +187,7 @@ export default function FundDetailHeader({
           capUsdc={fund.capUsdc}
           trailing={
             pool ? (
-              <span className="text-primary/45 font-mono text-xs tabular-nums">
+              <span className="text-primary/45 font-mono text-base tabular-nums">
                 {pool.mandateCount}{" "}
                 {pool.mandateCount === 1 ? "investor" : "investors"}
               </span>

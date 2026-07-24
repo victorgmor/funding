@@ -51,7 +51,7 @@ type MandateSummary = {
 };
 
 const headerClass =
-  "text-primary/50 text-sm font-medium leading-none tracking-wide uppercase";
+  "text-primary/50 text-base font-medium leading-none tracking-wide uppercase";
 
 export default function MandatePanel({ fund }: Props) {
   const { user } = useUser();
@@ -376,7 +376,7 @@ export default function MandatePanel({ fund }: Props) {
         />
       )}
 
-      <h2 className="text-primary text-sm font-medium">
+      <h2 className="text-primary text-base font-medium">
         {hasMandate ? "Your mandate" : "Join fund"}
       </h2>
 
@@ -387,14 +387,14 @@ export default function MandatePanel({ fund }: Props) {
             <WalletPanelPlaceholder label="Loading wallet…" />
           </div>
           <div className="space-y-3" data-wallet-connect-cta>
-            <p className="text-primary/60 text-sm">
+            <p className="text-primary/60 text-base">
               Connect to commit capital to this managed pool.
             </p>
             <ConnectWallet variant="panel" />
           </div>
         </>
       ) : !onPolygon ? (
-        <p className="text-primary/60 text-sm">
+        <p className="text-primary/60 text-base">
           {switching ? "Switching to Polygon…" : "Connecting to Polygon…"}
         </p>
       ) : loading && !summary ? (
@@ -412,7 +412,7 @@ export default function MandatePanel({ fund }: Props) {
               <p className="text-primary mt-2 font-mono text-lg font-semibold tabular-nums">
                 {formatUsdExact(mandateValue)}
               </p>
-              <p className="text-primary/45 mt-1 font-mono text-xs tabular-nums">
+              <p className="text-primary/45 mt-1 font-mono text-base tabular-nums">
                 Deposited{" "}
                 <span className="text-primary/70 font-mono tabular-nums">
                   {formatUsdExact(depositedUsdc)}
@@ -429,7 +429,7 @@ export default function MandatePanel({ fund }: Props) {
           {!closed && summary?.raiseOpen !== false && (
             <div className="mt-4">
               {serverSignerActive && summary?.serverSigningEnabled === false && (
-                <p className="text-red-400 mb-3 text-xs">
+                <p className="text-red-400 mb-3 text-base">
                   Server signing is not configured on the host — trades cannot
                   execute until PRIVY_APP_SECRET and PRIVY_AUTHORIZATION_PRIVATE_KEY
                   are set.
@@ -444,7 +444,7 @@ export default function MandatePanel({ fund }: Props) {
                       className={
                         mode === "add"
                           ? headerClass + " text-primary"
-                          : "text-primary/40 text-sm font-medium uppercase tracking-wide"
+                          : "text-primary/40 text-base font-medium uppercase tracking-wide"
                       }
                     >
                       Add capital
@@ -460,7 +460,7 @@ export default function MandatePanel({ fund }: Props) {
                       className={
                         mode === "withdraw"
                           ? headerClass + " text-primary"
-                          : "text-primary/40 text-sm font-medium uppercase tracking-wide"
+                          : "text-primary/40 text-base font-medium uppercase tracking-wide"
                       }
                     >
                       Withdraw
@@ -477,14 +477,14 @@ export default function MandatePanel({ fund }: Props) {
                     onClick={() =>
                       setAmount(String(Math.floor(withdrawable * 100) / 100))
                     }
-                    className="text-primary/50 hover:text-primary/70 text-sm tabular-nums"
+                    className="text-primary/50 hover:text-primary/70 text-base tabular-nums"
                   >
                     {formatUsdExact(withdrawable)} available
                   </button>
                 ) : (
                   depositBalance != null && (
                     <div className="flex items-center gap-2">
-                      <span className="text-primary/50 text-sm tabular-nums">
+                      <span className="text-primary/50 text-base tabular-nums">
                         {formatUsdExact(depositBalance)} deposit wallet
                       </span>
                       <button
@@ -500,7 +500,7 @@ export default function MandatePanel({ fund }: Props) {
                             String(Math.floor(Math.max(0, max) * 100) / 100),
                           );
                         }}
-                        className="text-primary/70 hover:text-primary text-xs font-medium uppercase tracking-wide disabled:opacity-40"
+                        className="text-primary/70 hover:text-primary text-base font-medium uppercase tracking-wide disabled:opacity-40"
                       >
                         Max
                       </button>
@@ -509,7 +509,7 @@ export default function MandatePanel({ fund }: Props) {
                 )}
               </div>
               <div className="border-primary/10 flex items-center gap-2 rounded-full border py-1 pl-3 pr-1">
-                <span className="text-primary/40 text-sm">$</span>
+                <span className="text-primary/40 text-base">$</span>
                 <input
                   id="mandate-amount"
                   type="number"
@@ -526,11 +526,11 @@ export default function MandatePanel({ fund }: Props) {
                   }
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="text-primary w-full border-0 bg-transparent py-1.5 text-sm font-medium tabular-nums [appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="text-primary w-full border-0 bg-transparent py-1.5 text-base font-medium tabular-nums [appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
-                <span className="text-primary/40 pr-2 text-xs">pUSD</span>
+                <span className="text-primary/40 pr-2 text-base">pUSD</span>
               </div>
-              <p className="text-primary/40 mt-2 text-xs">
+              <p className="text-primary/40 mt-2 text-base">
                 {isWithdraw
                   ? "Withdraw unused external deposits while the raise is open. Realized profits stay committed to the mandate."
                   : "Commitment is backed by pUSD in your Polymarket deposit wallet. Auto-trading is enabled when you join."}
@@ -569,7 +569,7 @@ export default function MandatePanel({ fund }: Props) {
               type="button"
               disabled={committing || signing || reauthorizing}
               onClick={() => void reauthorizeAutoTrading()}
-              className="text-primary/50 hover:text-primary mt-3 text-xs disabled:opacity-50"
+              className="text-primary/50 hover:text-primary mt-3 text-base disabled:opacity-50"
             >
               {reauthorizing
                 ? status ?? "Re-authorizing…"
@@ -578,11 +578,11 @@ export default function MandatePanel({ fund }: Props) {
           )}
 
           {closed && !hasMandate && (
-            <p className="text-primary/60 text-sm">This pool is closed.</p>
+            <p className="text-primary/60 text-base">This pool is closed.</p>
           )}
 
           {closed && summary?.mandateSettlement && (
-            <div className="border-primary/10 mt-4 border-t pt-4 text-xs">
+            <div className="border-primary/10 mt-4 border-t pt-4 text-base">
               <p className="text-primary/45 uppercase tracking-wide">Your close settlement</p>
               <p className="text-primary mt-2 font-mono tabular-nums">
                 Final value {formatUsdExact(summary.mandateSettlement.finalValueUsdc)}
@@ -606,14 +606,14 @@ export default function MandatePanel({ fund }: Props) {
 
           {(summary?.positions?.length ?? 0) > 0 && (
             <div className="border-primary/10 mt-4 border-t pt-4">
-              <p className="text-primary/45 text-xs uppercase tracking-wide">
+              <p className="text-primary/45 text-base uppercase tracking-wide">
                 Positions
               </p>
               <ul className="mt-2">
                 {summary!.positions.map((pos, index) => (
                   <li
                     key={pos.id}
-                    className={`border-primary/10 space-y-1 py-3 text-xs ${
+                    className={`border-primary/10 space-y-1 py-3 text-base ${
                       index > 0 ? "border-t" : ""
                     }`}
                   >
@@ -634,14 +634,14 @@ export default function MandatePanel({ fund }: Props) {
 
           {pendingTrades.length > 0 && (
             <div className="border-primary/10 mt-4 border-t pt-4">
-              <p className="text-primary/45 text-xs uppercase tracking-wide">
+              <p className="text-primary/45 text-base uppercase tracking-wide">
                 Pending fan-out ({pendingTrades.length})
               </p>
               <ul className="mt-2">
                 {pendingTrades.map((trade, index) => (
                   <li
                     key={trade.id}
-                    className={`border-primary/10 space-y-2 py-3 text-xs ${
+                    className={`border-primary/10 space-y-2 py-3 text-base ${
                       index > 0 ? "border-t" : ""
                     }`}
                   >
@@ -661,7 +661,7 @@ export default function MandatePanel({ fund }: Props) {
       )}
       </div>
 
-      {error && <p className="text-red-400 mt-3 text-xs">{error}</p>}
+      {error && <p className="text-red-400 mt-3 text-base">{error}</p>}
     </div>
   );
 }

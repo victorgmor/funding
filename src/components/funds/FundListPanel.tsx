@@ -257,7 +257,7 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
         <div className="flex shrink-0 items-center gap-2">
           {settingsOpen && (
             <div className="flex items-center gap-3">
-              <label className="text-primary flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap">
+              <label className="text-primary flex cursor-pointer items-center gap-2 text-base whitespace-nowrap">
                 <input
                   type="checkbox"
                   checked={onlyParticipating}
@@ -270,7 +270,7 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
                 <Skeleton className="h-3.5 w-20 shrink-0 rounded" />
               )}
               {onlyParticipating && !walletLoading && !isConnected && (
-                <span className="text-primary/50 text-xs whitespace-nowrap">
+                <span className="text-primary/50 text-base whitespace-nowrap">
                   Connect wallet
                 </span>
               )}
@@ -295,7 +295,7 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
       <div className="overflow-x-auto scrollbar-hide">
         <div className="min-w-[56rem]">
           <div
-            className={`${FUND_FEED_GRID} text-primary/45 border-primary/10 border-b pb-2 text-[10px] font-medium tracking-wide uppercase`}
+            className={`${FUND_FEED_GRID} text-primary/45 border-primary/10 border-b pb-2 text-base font-medium tracking-wide uppercase`}
             role="row"
           >
             {COLUMNS.map(({ key, label, sortField: field, align }) =>
@@ -337,7 +337,7 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
           ) : participatingBusy ? (
             <FundFeedSkeleton />
           ) : (
-            <p className="text-primary/50 py-12 text-center text-sm">
+            <p className="text-primary/50 py-12 text-center text-base">
               {emptyMessage}
             </p>
           )}
@@ -350,18 +350,18 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
             type="button"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={currentPage <= 1}
-            className="text-primary/50 hover:text-primary disabled:text-primary/25 text-sm transition-colors disabled:cursor-not-allowed"
+            className="text-primary/50 hover:text-primary disabled:text-primary/25 text-base transition-colors disabled:cursor-not-allowed"
           >
             Previous
           </button>
-          <span className="text-primary/45 text-sm tabular-nums">
+          <span className="text-primary/45 text-base tabular-nums">
             Page {currentPage} of {pageCount}
           </span>
           <button
             type="button"
             onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
             disabled={currentPage >= pageCount}
-            className="text-primary/50 hover:text-primary disabled:text-primary/25 text-sm transition-colors disabled:cursor-not-allowed"
+            className="text-primary/50 hover:text-primary disabled:text-primary/25 text-base transition-colors disabled:cursor-not-allowed"
           >
             Next
           </button>

@@ -13,7 +13,7 @@ const entries = sortDocs(await getCollection("helpcenter"));
     <Wrapper variant="standard" class="py-16 sm:py-24">
       <div class="grid grid-cols-1 gap-12 lg:grid-cols-[14rem_minmax(0,1fr)]">
         <aside class="lg:sticky lg:top-24 lg:self-start">
-          <p class="text-primary/45 text-xs font-medium uppercase tracking-wide">
+          <p class="text-primary/45 text-base font-medium uppercase tracking-wide">
             Docs
           </p>
           <nav class="mt-4 flex flex-col gap-1" aria-label="Documentation">
@@ -24,7 +24,7 @@ const entries = sortDocs(await getCollection("helpcenter"));
                   <a
                     href={`/docs/${entry.id}`}
                     class:list={[
-                      "rounded px-2 py-1.5 text-sm transition-colors",
+                      "rounded px-2 py-1.5 text-base transition-colors",
                       active
                         ? "bg-primary/10 text-primary font-medium"
                         : "text-primary/60 hover:text-primary hover:bg-primary/5",

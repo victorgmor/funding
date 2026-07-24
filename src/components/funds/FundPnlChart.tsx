@@ -267,7 +267,7 @@ export default function FundPnlChart({
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           {!embedded && (
-            <span className="bg-[#288cbc]/15 text-[#288cbc] shrink-0 rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide">
+            <span className="bg-[#288cbc]/15 text-[#288cbc] shrink-0 rounded-full px-2.5 py-1 text-base font-medium uppercase tracking-wide">
               P&L
             </span>
           )}
@@ -279,11 +279,11 @@ export default function FundPnlChart({
             >
               {formatUsdExact(displayPnl, true)}
             </p>
-            <p className="text-primary/50 text-xs">{dateLabel}</p>
+            <p className="text-primary/50 text-base">{dateLabel}</p>
           </div>
         </div>
 
-        <div className="text-primary/45 flex shrink-0 items-center gap-1 text-xs">
+        <div className="text-primary/45 flex shrink-0 items-center gap-1 text-base">
           {PNL_RANGES.map((option) => (
             <button
               key={option}

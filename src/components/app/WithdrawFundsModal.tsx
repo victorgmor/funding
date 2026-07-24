@@ -22,8 +22,8 @@ type Props = {
 const shell =
   "w-full max-w-md overflow-hidden rounded-2xl bg-[#181709] text-white shadow-[0px_0px_40px_-8px_rgba(0,0,0,0.45)]";
 const field =
-  "w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/35 focus:border-white/40 focus:outline-none";
-const labelClass = "mb-1.5 block text-sm font-medium text-white/80";
+  "w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-base text-white placeholder:text-white/35 focus:border-white/40 focus:outline-none";
+const labelClass = "mb-1.5 block text-base font-medium text-white/80";
 
 export default function WithdrawFundsModal({ open, address, onClose }: Props) {
   const [info, setInfo] = useState<PolymarketWalletInfo | null>(null);
@@ -141,7 +141,7 @@ export default function WithdrawFundsModal({ open, address, onClose }: Props) {
               >
                 Withdraw funds
               </h2>
-              <p className="mt-2 text-sm text-white/50">
+              <p className="mt-2 text-base text-white/50">
                 Send withdrawable pUSD from your deposit wallet to any Polygon
                 address. Capital locked in open fund mandates stays put.
               </p>
@@ -159,8 +159,8 @@ export default function WithdrawFundsModal({ open, address, onClose }: Props) {
 
           <div className="space-y-5 px-5 py-5">
             <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
-              <span className="text-sm text-white/55">Available</span>
-              <span className="font-mono text-sm text-white tabular-nums">
+              <span className="text-base text-white/55">Available</span>
+              <span className="font-mono text-base text-white tabular-nums">
                 {formatUsdExact(available)} pUSD
               </span>
             </div>
@@ -183,7 +183,7 @@ export default function WithdrawFundsModal({ open, address, onClose }: Props) {
 
             <div>
               <div className="mb-1.5 flex items-center justify-between gap-2">
-                <label className="text-sm font-medium text-white/80" htmlFor="withdraw-amount">
+                <label className="text-base font-medium text-white/80" htmlFor="withdraw-amount">
                   Amount
                 </label>
                 <button
@@ -192,7 +192,7 @@ export default function WithdrawFundsModal({ open, address, onClose }: Props) {
                   onClick={() =>
                     setAmount(String(Math.floor(available * 100) / 100))
                   }
-                  className="text-xs font-medium uppercase tracking-wide text-white/50 transition-colors hover:text-white disabled:opacity-40"
+                  className="text-base font-medium uppercase tracking-wide text-white/50 transition-colors hover:text-white disabled:opacity-40"
                 >
                   Max
                 </button>
@@ -210,8 +210,8 @@ export default function WithdrawFundsModal({ open, address, onClose }: Props) {
               />
             </div>
 
-            {status && <p className="text-sm text-white/50">{status}</p>}
-            {error && <p className="text-sm text-red-400">{error}</p>}
+            {status && <p className="text-base text-white/50">{status}</p>}
+            {error && <p className="text-base text-red-400">{error}</p>}
           </div>
 
           <div className="flex gap-3 border-t border-white/10 px-5 py-4">
@@ -227,7 +227,7 @@ export default function WithdrawFundsModal({ open, address, onClose }: Props) {
               type="button"
               onClick={onClose}
               disabled={busy}
-              className={`flex-1 border border-white/25 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-40 ${walletNavRadius}`}
+              className={`flex-1 border border-white/25 px-3 py-2 text-base font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-40 ${walletNavRadius}`}
             >
               Cancel
             </button>

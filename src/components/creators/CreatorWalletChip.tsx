@@ -28,11 +28,11 @@ export default function CreatorWalletChip({ address }: Props) {
     <button
       type="button"
       onClick={(event) => void onCopy(event)}
-      className="text-primary/60 hover:text-primary inline-flex items-center gap-1.5 font-mono text-sm transition-colors"
+      className="text-primary/60 hover:text-primary inline-flex items-center gap-1.5 font-mono text-base transition-colors"
       title={address}
     >
       {addressDisplayFallback(address)}
-      <span aria-hidden className="text-xs">
+      <span aria-hidden className="text-base">
         {copied ? "✓" : "⧉"}
       </span>
     </button>

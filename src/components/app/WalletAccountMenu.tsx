@@ -89,9 +89,9 @@ async function copyText(value: string) {
 const panelShellClass =
   "w-80 overflow-hidden rounded-2xl bg-[#181709] text-white shadow-[0px_0px_40px_-8px_rgba(0,0,0,0.45)]";
 const rowBtnClass =
-  "flex h-[34px] w-full items-center gap-2 px-6 text-left text-sm text-white";
+  "flex h-[34px] w-full items-center gap-2 px-6 text-left text-base text-white";
 const sectionBtnClass =
-  "w-full rounded-xl border border-white/15 px-3 py-2 text-sm text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50";
+  "w-full rounded-xl border border-white/15 px-3 py-2 text-base text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50";
 
 export default function WalletAccountMenu({
   address,
@@ -293,7 +293,7 @@ export default function WalletAccountMenu({
                   <div className="flex h-14 w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                     <div className="flex min-w-0 flex-1 flex-col gap-0">
                       <p
-                        className="truncate font-mono text-sm font-medium text-white"
+                        className="truncate font-mono text-base font-medium text-white"
                         title={info?.depositAddress}
                       >
                         {info ? (
@@ -305,7 +305,7 @@ export default function WalletAccountMenu({
                           />
                         )}
                       </p>
-                      <p className="text-xs leading-4 text-white/50">
+                      <p className="text-base leading-4 text-white/50">
                         {loading
                           ? (
                             <span
@@ -322,7 +322,7 @@ export default function WalletAccountMenu({
                       type="button"
                       onClick={(event) => void copyDepositAddress(event)}
                       disabled={!info?.depositAddress}
-                      className="flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-white/25 bg-transparent px-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-50"
+                      className="flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-white/25 bg-transparent px-2.5 text-base font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-50"
                     >
                       {copied ? (
                         <>
@@ -402,10 +402,10 @@ export default function WalletAccountMenu({
                 </button>
 
                 {status && (
-                  <p className="px-4 pb-2 text-sm text-white/50">{status}</p>
+                  <p className="px-4 pb-2 text-base text-white/50">{status}</p>
                 )}
                 {error && (
-                  <p className="px-4 pb-3 text-sm text-red-400">{error}</p>
+                  <p className="px-4 pb-3 text-base text-red-400">{error}</p>
                 )}
 
                 <div className="flex justify-center px-4 py-5 text-white/40">

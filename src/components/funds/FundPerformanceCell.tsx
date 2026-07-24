@@ -27,7 +27,7 @@ function ThesisRoi({
           {formatPercent(roi)}
         </p>
         {since && (
-          <p className="text-primary/45 mt-1 text-xs leading-none">
+          <p className="text-primary/45 mt-1 text-base leading-none">
             since {formatSinceDate(since)}
           </p>
         )}
@@ -37,11 +37,11 @@ function ThesisRoi({
 
   return (
     <div className="inline-flex min-w-[5rem] flex-col items-end justify-center leading-none lg:ml-auto">
-      <p className={`font-mono text-sm font-semibold tabular-nums ${color}`}>
+      <p className={`font-mono text-base font-semibold tabular-nums ${color}`}>
         {formatPercent(roi)}
       </p>
       {since && (
-        <p className="text-primary/50 mt-1 text-sm leading-none">
+        <p className="text-primary/50 mt-1 text-base leading-none">
           since {formatSinceDate(since)}
         </p>
       )}
@@ -70,7 +70,7 @@ function FundPerformanceHeader({
     <div className="flex shrink-0 flex-col items-end justify-center text-right">
       {roi != null && <ThesisRoi roi={roi} since={since} size="header" />}
       {position != null && (
-        <p className="text-primary/45 mt-1 text-xs leading-none">
+        <p className="text-primary/45 mt-1 text-base leading-none">
           Your mandate{" "}
           <span className="text-primary/80 font-mono font-medium tabular-nums">
             {formatUsdExact(position)}
@@ -89,7 +89,7 @@ export default function FundPerformanceCell({
 }: Props) {
   if (variant === "row") {
     if (roi == null) {
-      return <span className="text-primary/30 text-sm">—</span>;
+      return <span className="text-primary/30 text-base">—</span>;
     }
     return <ThesisRoi roi={roi} since={since} size="row" />;
   }

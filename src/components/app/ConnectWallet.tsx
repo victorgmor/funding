@@ -39,7 +39,7 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
   if (isConnected && address) {
     if (switching) {
       return (
-        <span className="text-primary/60 text-sm">Switching to Polygon…</span>
+        <span className="text-primary/60 text-base">Switching to Polygon…</span>
       );
     }
 
@@ -76,7 +76,7 @@ function ConnectWalletInner({ variant = "panel" }: Props) {
 export default function ConnectWallet(props: Props) {
   if (!privyAppId) {
     return (
-      <span className="text-primary/50 text-sm">
+      <span className="text-primary/50 text-base">
         Set PUBLIC_PRIVY_APP_ID to enable login.
       </span>
     );

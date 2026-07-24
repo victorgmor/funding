@@ -38,10 +38,10 @@ type OpenPositionRow = {
 };
 
 const sizeClass =
-  "text-primary/70 shrink-0 text-right font-mono text-sm tabular-nums uppercase";
+  "text-primary/70 shrink-0 text-right font-mono text-base tabular-nums uppercase";
 
 const depositSummaryClass =
-  "text-primary/70 shrink-0 text-right font-mono text-sm tabular-nums";
+  "text-primary/70 shrink-0 text-right font-mono text-base tabular-nums";
 
 function aggregateOpenPositions(
   positions: MandatePosition[] | undefined,
@@ -82,7 +82,7 @@ function HistoryList({
 
   if (trades.length === 0) {
     return (
-      <p className="text-primary/45 py-8 text-center text-sm">
+      <p className="text-primary/45 py-8 text-center text-base">
         No trade history yet.
       </p>
     );
@@ -111,7 +111,7 @@ function HistoryList({
   return (
     <>
       {retryError && (
-        <p className="text-red-400 mb-2 text-xs">{retryError}</p>
+        <p className="text-red-400 mb-2 text-base">{retryError}</p>
       )}
       {trades.map((trade) => {
         const failed = trade.status === "failed";
@@ -134,7 +134,7 @@ function HistoryList({
           >
             <div className="flex items-center justify-between gap-4">
               <p
-                className={`min-w-0 flex-1 truncate text-sm ${
+                className={`min-w-0 flex-1 truncate text-base ${
                   failed ? "text-red-400" : "text-primary/80"
                 }`}
                 title={trade.question}
@@ -148,7 +148,7 @@ function HistoryList({
                     type="button"
                     disabled={retryingId === trade.id}
                     onClick={() => void retryTrade(trade.id)}
-                    className="text-primary/60 hover:text-primary text-xs font-medium uppercase tracking-wide disabled:opacity-50"
+                    className="text-primary/60 hover:text-primary text-base font-medium uppercase tracking-wide disabled:opacity-50"
                   >
                     {retryingId === trade.id ? "Retrying…" : "Retry"}
                   </button>
@@ -167,7 +167,7 @@ function HistoryList({
               </div>
             </div>
             {failed && trade.detail && (
-              <p className="text-red-400/80 mt-1.5 text-xs" title={trade.detail}>
+              <p className="text-red-400/80 mt-1.5 text-base" title={trade.detail}>
                 {trade.detail}
               </p>
             )}
@@ -194,7 +194,7 @@ function PositionsList({
 
   if (positions.length === 0) {
     return (
-      <p className="text-primary/45 py-8 text-center text-sm">
+      <p className="text-primary/45 py-8 text-center text-base">
         No open positions.
       </p>
     );
@@ -284,7 +284,7 @@ function PositionsList({
 
   return (
     <>
-      {error && <p className="text-red-400 mb-2 text-xs">{error}</p>}
+      {error && <p className="text-red-400 mb-2 text-base">{error}</p>}
       {positions.map((row) => (
         <article
           key={row.tokenId}
@@ -292,7 +292,7 @@ function PositionsList({
         >
           <div className="flex items-center justify-between gap-4">
             <p
-              className="text-primary/80 min-w-0 flex-1 truncate text-sm"
+              className="text-primary/80 min-w-0 flex-1 truncate text-base"
               title={row.question}
             >
               {row.question}
@@ -303,7 +303,7 @@ function PositionsList({
                   type="button"
                   disabled={sellingId === row.tokenId}
                   onClick={() => void sellPosition(row)}
-                  className="text-primary/60 hover:text-primary text-xs font-medium uppercase tracking-wide disabled:opacity-50"
+                  className="text-primary/60 hover:text-primary text-base font-medium uppercase tracking-wide disabled:opacity-50"
                 >
                   {sellingId === row.tokenId ? "Selling…" : "Sell"}
                 </button>
@@ -313,7 +313,7 @@ function PositionsList({
               </p>
             </div>
           </div>
-          <p className="text-primary/45 mt-1 font-mono text-xs tabular-nums">
+          <p className="text-primary/45 mt-1 font-mono text-base tabular-nums">
             {row.shares.toFixed(2)} shares
           </p>
         </article>
@@ -331,7 +331,7 @@ function DepositorsList({
 }) {
   if (depositors.length === 0) {
     return (
-      <p className="text-primary/45 py-8 text-center text-sm">
+      <p className="text-primary/45 py-8 text-center text-base">
         No depositors yet.
       </p>
     );
@@ -354,7 +354,7 @@ function DepositorsList({
             <div className="flex items-center justify-between gap-4">
               <a
                 href={creatorPath(mandate.profileId)}
-                className="text-primary/80 hover:text-primary min-w-0 flex-1 truncate font-mono text-sm transition-colors"
+                className="text-primary/80 hover:text-primary min-w-0 flex-1 truncate font-mono text-base transition-colors"
               >
                 <CreatorName
                   address={mandate.profileId}
@@ -415,21 +415,21 @@ function FundActivityTabs({
   ) {
     if (closed) return null;
     return (
-      <p className="text-primary/45 mt-6 border-t border-primary/10 pt-4 text-sm">
+      <p className="text-primary/45 mt-6 border-t border-primary/10 pt-4 text-base">
         No manager trades yet. Commit capital in the sidebar to join the fund.
       </p>
     );
   }
 
   const tabClass = (value: ActivityTab) =>
-    `border-b-2 pb-2 text-sm transition-colors ${
+    `border-b-2 pb-2 text-base transition-colors ${
       tab === value
         ? "border-primary text-primary font-medium"
         : "border-transparent text-primary/45 hover:text-primary/70"
     }`;
 
   return (
-    <div className="border-primary/10 mt-6 border-t pt-4">
+    <div className="">
       <div className="flex flex-wrap gap-x-5 gap-y-2">
         <button
           type="button"
@@ -471,7 +471,7 @@ function FundActivityTabs({
               fundCreatedAt={fund.createdAt}
             />
           ) : (
-            <p className="text-primary/45 py-8 text-center text-sm">
+            <p className="text-primary/45 py-8 text-center text-base">
               Not enough trade history for a performance chart yet.
             </p>
           ))}
@@ -577,7 +577,7 @@ export default function FundPoolOverview({ fund }: Props) {
   }
 
   if (error) {
-    return <p className="text-red-400 text-sm">{error}</p>;
+    return <p className="text-red-400 text-base">{error}</p>;
   }
 
   if (!pool) return null;
@@ -586,10 +586,10 @@ export default function FundPoolOverview({ fund }: Props) {
     <div>
       {closed && settlement && (
         <div className="border-primary/10 mb-4 border-b pb-4">
-          <p className="text-primary/45 text-xs uppercase tracking-wide">
+          <p className="text-primary/45 text-base uppercase tracking-wide">
             Close settlement
           </p>
-          <p className="text-primary/45 mt-1.5 font-mono text-xs tabular-nums">
+          <p className="text-primary/45 mt-1.5 font-mono text-base tabular-nums">
             <span className="text-primary/70 font-medium">
               {formatUsdExact(settlement.totalProfitUsdc)}
             </span>{" "}

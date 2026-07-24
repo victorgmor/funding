@@ -46,7 +46,7 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
   if (loading) {
     return (
       <div className="border-primary/10 bg-primary/5 mt-3 rounded-lg border border-dashed px-4 py-3">
-        <p className="text-primary/50 text-sm font-medium uppercase">
+        <p className="text-primary/50 text-base font-medium uppercase">
           Test lifecycle
         </p>
         <div data-wallet-restoring>
@@ -59,11 +59,11 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
   if (!isConnected || !address) {
     return (
       <div className="border-primary/10 bg-primary/5 mt-3 rounded-lg border border-dashed px-4 py-3">
-        <p className="text-primary/50 text-sm font-medium uppercase">
+        <p className="text-primary/50 text-base font-medium uppercase">
           Test lifecycle
         </p>
         <div className="mt-2" data-wallet-connect-cta>
-          <p className="text-primary/60 mb-2 text-xs">
+          <p className="text-primary/60 mb-2 text-base">
             Connect your creator wallet to switch stages.
           </p>
           <ConnectWallet variant="panel" />
@@ -121,7 +121,7 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
 
   return (
     <div className="border-primary/10 bg-primary/5 mt-3 rounded-lg border border-dashed px-4 py-3">
-      <p className="text-primary/50 text-sm font-medium uppercase">
+      <p className="text-primary/50 text-base font-medium uppercase">
         Test lifecycle
       </p>
       <>
@@ -150,8 +150,8 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
                   onClick={() => setStage(stage.id)}
                   className={
                     active
-                      ? `${walletNavButtonClass} !px-3 !py-1 text-xs`
-                      : `border-primary/15 text-primary/70 hover:bg-primary/10 rounded-[12px] border px-3 py-1 text-xs font-medium disabled:opacity-40`
+                      ? `${walletNavButtonClass} !px-3 !py-1 text-base`
+                      : `border-primary/15 text-primary/70 hover:bg-primary/10 rounded-[12px] border px-3 py-1 text-base font-medium disabled:opacity-40`
                   }
                 >
                   {stage.label}
@@ -159,11 +159,11 @@ function FundLifecycleTestPanelInner({ fund }: Props) {
               );
             })}
           </div>
-          <p className="text-primary/40 mt-2 text-xs">
+          <p className="text-primary/40 mt-2 text-base">
             Adjusts dates and status for testing. Does not run close settlement.
           </p>
       </>
-      {error && <p className="text-red-400 mt-2 text-xs">{error}</p>}
+      {error && <p className="text-red-400 mt-2 text-base">{error}</p>}
     </div>
   );
 }

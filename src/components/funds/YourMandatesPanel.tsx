@@ -88,7 +88,7 @@ export default function YourMandatesPanel() {
           />
         </div>
         <div className="flex items-center justify-between lg:mt-4">
-          <span className="border-primary text-primary inline-block border-b-2 pb-2 text-sm font-medium">
+          <span className="border-primary text-primary inline-block border-b-2 pb-2 text-base font-medium">
             Your portfolio
           </span>
         </div>
@@ -113,7 +113,7 @@ export default function YourMandatesPanel() {
             className="border-primary/10 border-t pt-4"
             data-wallet-connect-cta
           >
-            <p className="text-primary/55 text-sm leading-relaxed">
+            <p className="text-primary/55 text-base leading-relaxed">
               Connect your wallet to see the funds you're in.
             </p>
             <div className="mt-4 max-w-56">

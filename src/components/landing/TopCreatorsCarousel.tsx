@@ -20,7 +20,7 @@ function CreatorItem({ creator }: { creator: TopCreator }) {
   return (
     <a
       href={creatorPath(creator.id)}
-      className="text-primary/60 hover:text-primary inline-flex shrink-0 items-center gap-2 text-sm transition-colors"
+      className="text-primary/60 hover:text-primary inline-flex shrink-0 items-center gap-2 text-base transition-colors"
     >
       <CreatorAvatar address={creator.id} name={creator.name} size="2xs" />
       <span className="text-primary inline-flex items-center gap-0.5 font-medium">
@@ -29,7 +29,7 @@ function CreatorItem({ creator }: { creator: TopCreator }) {
           <SealCheck size="sm" className="!size-3.5 text-[#288cbc] shrink-0" />
         )}
       </span>
-      <span className="text-primary/40 text-xs">
+      <span className="text-primary/40 text-base">
         {creator.fundCount} fund{creator.fundCount === 1 ? "" : "s"}
       </span>
       <PnlAmount amount={creator.totalProfitUsdc} />
@@ -44,7 +44,7 @@ export default function TopCreatorsCarousel({ creators }: Props) {
 
   return (
     <section aria-label="Creator spotlights" className="group">
-      <p className="text-primary/50 mb-3 text-sm">
+      <p className="text-primary/50 mb-3 text-base">
         <a href="/leaderboard" className="hover:text-primary transition-colors">
           Leaderboard
         </a>

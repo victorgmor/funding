@@ -16,7 +16,7 @@ const { links = [] } = Astro.props;
         <Logo />
       </a>
       <button
-        class="hover:text-primary text-primary duration-300 text-sm"
+        class="hover:text-primary text-primary duration-300 text-base"
         data-close-nav
       >
         Close
@@ -26,7 +26,7 @@ const { links = [] } = Astro.props;
       {links.map((link) => (
         <a
           href={link.href}
-          class="hover:text-primary/40 duration-300 text-primary text-sm"
+          class="hover:text-primary/40 duration-300 text-primary text-base"
           target={link.href.startsWith("http") ? "_blank" : undefined}
           rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
         >
@@ -56,7 +56,7 @@ const { links = [] } = Astro.props;
             </button>
           </div>
         ) : (
-          <span class="text-primary/60 text-xs">Login unavailable</span>
+          <span class="text-primary/60 text-base">Login unavailable</span>
         )
       }
     </div>

@@ -27,14 +27,14 @@ export default function CreatorFundList({
   const { totals: poolTotals } = usePoolTotals(initialPoolTotals);
 
   if (funds.length === 0) {
-    return <p className="text-primary/50 text-sm">No funds yet.</p>;
+    return <p className="text-primary/50 text-base">No funds yet.</p>;
   }
 
   return (
     <div className="overflow-x-auto scrollbar-hide">
       <div className="min-w-[56rem]">
         <div
-          className={`${FUND_FEED_GRID} text-primary/45 border-primary/10 mb-1 border-b pb-2 text-[10px] font-medium tracking-wide uppercase`}
+          className={`${FUND_FEED_GRID} text-primary/45 border-primary/10 mb-1 border-b pb-2 text-base font-medium tracking-wide uppercase`}
           aria-hidden
         >
           {HEADERS.map((label) => (

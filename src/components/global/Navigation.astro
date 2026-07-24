@@ -30,7 +30,7 @@ const navLinks = [
           navLinks.map((link) => (
             <a
               href={link.href}
-              class="hover:text-primary text-sm font-medium duration-300"
+              class="hover:text-primary text-base font-medium duration-300"
               target={link.href.startsWith("http") ? "_blank" : undefined}
               rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
             >
@@ -63,7 +63,7 @@ const navLinks = [
                 </button>
               </div>
             ) : (
-              <span class="text-primary/60 text-xs">
+              <span class="text-primary/60 text-base">
                 Login unavailable
               </span>
             )
@@ -71,7 +71,7 @@ const navLinks = [
         </div>
         <button
           id="navToggle"
-          class="hover:text-primary/40 duration-300 text-secondary text-sm lg:hidden"
+          class="hover:text-primary/40 duration-300 text-secondary text-base lg:hidden"
           aria-expanded="false"
           aria-controls="mobileMenu"
         >

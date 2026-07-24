@@ -15,8 +15,8 @@ type Props = {
 };
 
 const sizes = {
-  "2xs": "size-5 text-[10px]",
-  xs: "size-8 text-sm",
+  "2xs": "size-5 text-base",
+  xs: "size-8 text-base",
   sm: "size-10 text-base",
   md: "size-16 text-xl",
 } as const;
