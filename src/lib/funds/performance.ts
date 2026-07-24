@@ -1,10 +1,12 @@
 import { createTtlCache } from "@/lib/cache/ttl";
-import { resolveLifecycleStage } from "@/lib/funds/lifecycle";
+import { knownCommitUsdc } from "@/lib/funds/live-mandate";
 import { totalPoolDeposited } from "@/lib/funds/fanout";
 import { listMandatesByFund } from "@/lib/funds/mandates";
+import { listPositionsByFund } from "@/lib/funds/mandate-positions";
+import { listTradesByFund } from "@/lib/funds/mandate-trades";
 import { buildVirtualPool } from "@/lib/funds/pool";
-import { getFundSettlement } from "@/lib/funds/settlement";
-import type { Fund } from "@/lib/funds/types";
+import { enrichTradesWithPnl } from "@/lib/funds/valuation";
+import type { Fund, Mandate } from "@/lib/funds/types";
 
 export type FundPerformance = {
   roi: number;
@@ -30,33 +32,53 @@ function round(n: number, d: number) {
   return Math.round(n * f) / f;
 }
 
+/** External capital committed to this fund slug (any mandate status). */
+function poolDepositedUsdc(mandates: Mandate[]): number {
+  const fromField = round(
+    mandates.reduce((sum, m) => sum + (m.depositedUsdc ?? 0), 0),
+    2,
+  );
+  if (fromField > 0) return fromField;
+
+  const fromKnown = round(
+    mandates.reduce(
+      (sum, m) => sum + (knownCommitUsdc(m.investorWallet) ?? 0),
+      0,
+    ),
+    2,
+  );
+  if (fromKnown > 0) return fromKnown;
+
+  return 0;
+}
+
+/**
+ * Mark-to-market pool P&L for one fund slug.
+ *
+ * Boundary: profit = Σ pnl of this slug's recorded pool trades only.
+ * Never wallet-wide Polymarket equity, never other funds on the same deposit
+ * wallet, never external CLOB activity outside fund fan-out. Closed funds
+ * with no pool trades → $0 (not live wallet marks).
+ */
 async function computeFundPoolPerformanceUncached(
   fund: Fund,
   prebuiltPool?: Awaited<ReturnType<typeof buildVirtualPool>>,
 ): Promise<FundPoolPerformance | null> {
-  const stage = resolveLifecycleStage(fund);
-
-  // buildVirtualPool reconciles from live Polymarket books first.
-  const pool = prebuiltPool ?? (await buildVirtualPool(fund));
-  const depositedUsdc = round(pool.totalDeposited, 2);
+  void prebuiltPool; // pool.totalNotional may be heal-poisoned — do not use it
+  const mandates = await listMandatesByFund(fund.slug);
+  const depositedUsdc = poolDepositedUsdc(mandates);
   if (depositedUsdc <= 0) return null;
 
-  if (stage === "closed") {
-    const settlement = await getFundSettlement(fund.slug);
-    if (settlement) {
-      const aumUsdc = round(
-        settlement.mandates.reduce((sum, row) => sum + row.finalValueUsdc, 0),
-        2,
-      );
-      const profitUsdc = round(aumUsdc - depositedUsdc, 2);
-      const roi = round((profitUsdc / depositedUsdc) * 100, 2);
-      return { roi, profitUsdc, aumUsdc, depositedUsdc };
-    }
-  }
-
-  // After live heal, notional == deployable and deposited is reconstructed.
-  const aumUsdc = round(pool.totalNotional, 2);
-  const profitUsdc = round(aumUsdc - depositedUsdc, 2);
+  const [trades, positions] = await Promise.all([
+    listTradesByFund(fund.slug),
+    listPositionsByFund(fund.slug),
+  ]);
+  const enriched = await enrichTradesWithPnl(fund.slug, trades, positions);
+  const profitUsdc = round(
+    enriched.reduce((sum, trade) => sum + (trade.pnlUsdc ?? 0), 0),
+    2,
+  );
+  const aumUsdc = round(depositedUsdc + profitUsdc, 2);
   const roi = round((profitUsdc / depositedUsdc) * 100, 2);
 
   return { roi, profitUsdc, aumUsdc, depositedUsdc };

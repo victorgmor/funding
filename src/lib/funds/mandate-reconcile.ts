@@ -178,14 +178,18 @@ export async function reconcileMandateCash(
       pos.mandateId === mandate.id && !pos.redeemedAt && pos.shares > 0,
   );
 
-  // Always try live books — Dynamo depositedUsdc may be corrupted.
+  // Heal deposited/notional from this mandate's fund trades only (never wallet
+  // /value portfolio — that leaked external / other-fund PnL into the pool).
   try {
     const { healMandateFromLive, liveMandateBooks } = await import(
       "@/lib/funds/live-mandate"
     );
+    const ownTrades = filledTrades.filter(
+      (trade) => trade.mandateId === mandate.id,
+    );
     const live = await liveMandateBooks(
       mandate,
-      filledTrades,
+      ownTrades,
       depositAddress,
       valuations,
     );

@@ -1,13 +1,6 @@
 import { saveMandateRecord } from "@/lib/funds/mandates";
-import { readCollateralAtAddressUsdc } from "@/lib/polymarket/deposit-balance";
-import {
-  fetchPolymarketPositions,
-  fetchPolymarketPositionsValue,
-  positionPnlUsdc,
-} from "@/lib/polymarket/portfolio";
-import { deriveDepositWalletAddress } from "@/lib/polymarket/positions";
+import { tradePnlUsdc } from "@/lib/funds/valuation";
 import type { Mandate, MandateTrade } from "@/lib/funds/types";
-import type { Address } from "viem";
 
 export type LiveMandateBooks = {
   depositedUsdc: number;
@@ -46,113 +39,59 @@ export function knownCommitUsdc(
   return undefined;
 }
 
-async function safeCollateral(addr: Address): Promise<number> {
-  try {
-    return await readCollateralAtAddressUsdc(addr);
-  } catch {
-    return 0;
-  }
-}
-
 /**
- * deployable = live equity on the funded wallet (session depositAddress / Account pUSD)
- * deposited  = original commit (known map first)
+ * Per-mandate books for one fund slug.
  *
- * Mandate.investorWallet is often the Safe; pUSD sits on session.depositAddress.
+ * Boundary: profit/deployable come from this mandate's fund trades + stored
+ * deposit only. Never Polymarket /value or /positions for the whole wallet —
+ * those mix external CLOB activity and other funds on the same deposit address.
  */
 export async function liveMandateBooks(
   mandate: Mandate,
-  _filledTrades: MandateTrade[] = [],
+  filledTrades: MandateTrade[] = [],
   depositAddress?: string,
-  _valuations: Map<string, number> = new Map(),
+  valuations: Map<string, number> = new Map(),
 ): Promise<LiveMandateBooks | null> {
-  void _filledTrades;
-  void _valuations;
-
-  const owner = mandate.investorWallet as Address;
-  const sessionDeposit = depositAddress?.trim()
-    ? (depositAddress.trim() as Address)
-    : null;
-
-  let derived = owner;
-  try {
-    derived = await deriveDepositWalletAddress(owner);
-  } catch {
-    /* keep owner */
-  }
-
-  const known = knownCommitUsdc(owner, sessionDeposit, derived);
-
-  const candidates = [
-    ...new Set(
-      [owner, sessionDeposit, derived]
-        .filter(Boolean)
-        .map((a) => (a as string).toLowerCase()),
-    ),
-  ] as Address[];
-
-  const balances = await Promise.all(
-    candidates.map((addr) => safeCollateral(addr)),
+  const known = knownCommitUsdc(
+    mandate.investorWallet,
+    depositAddress,
   );
-  const cashUsdc = Math.max(0, ...balances);
-
-  // Prefer the wallet that actually holds cash (matches Account).
-  let positionWallet = owner;
-  let best = -1;
-  for (let i = 0; i < candidates.length; i++) {
-    if (balances[i]! >= best) {
-      best = balances[i]!;
-      positionWallet = candidates[i]!;
-    }
-  }
-
-  let openValueUsdc = 0;
-  let openPnlUsdc = 0;
-  try {
-    openValueUsdc = await fetchPolymarketPositionsValue(positionWallet);
-    for (const pos of await fetchPolymarketPositions(positionWallet)) {
-      if ((pos.size ?? 0) <= 0 && !pos.redeemable) continue;
-      openPnlUsdc = round(openPnlUsdc + positionPnlUsdc(pos), 2);
-    }
-  } catch {
-    /* cash still counts */
-  }
-
-  const liveEquity = round(Math.max(0, cashUsdc + openValueUsdc), 2);
   const stored = mandate.depositedUsdc;
+  const depositedUsdc =
+    known != null
+      ? known
+      : stored != null && stored > 0
+        ? round(stored, 2)
+        : null;
+  if (depositedUsdc == null || depositedUsdc <= 0) return null;
 
-  let depositedUsdc: number;
-  if (known != null) {
-    depositedUsdc = known;
-  } else if (
-    stored != null &&
-    stored > 0 &&
-    liveEquity > 0 &&
-    stored <= liveEquity + 0.01
-  ) {
-    depositedUsdc = round(stored, 2);
-  } else if (liveEquity > 0) {
-    depositedUsdc = round(Math.max(0, liveEquity - openPnlUsdc), 2);
-  } else if (stored != null && stored > 0) {
-    depositedUsdc = round(stored, 2);
-  } else {
-    return null;
+  const own = filledTrades.filter(
+    (trade) =>
+      trade.status === "filled" &&
+      (!trade.mandateId || trade.mandateId === mandate.id),
+  );
+
+  let profitUsdc = 0;
+  for (const trade of own) {
+    const pnl = tradePnlUsdc(trade, valuations);
+    if (pnl != null) profitUsdc = round(profitUsdc + pnl, 2);
   }
 
-  const deployableUsdc = round(Math.max(liveEquity, depositedUsdc), 2);
-  const profitUsdc = round(deployableUsdc - depositedUsdc, 2);
+  const deployableUsdc = round(Math.max(0, depositedUsdc + profitUsdc), 2);
+  // Keep ledger cash — do not replace with shared wallet collateral.
+  const cashUsdc = round(Math.max(0, mandate.cashUsdc), 2);
 
   return {
     depositedUsdc,
     deployableUsdc,
     profitUsdc,
     openCostUsdc: 0,
-    openValueUsdc,
+    openValueUsdc: round(Math.max(0, deployableUsdc - cashUsdc), 2),
     cashUsdc,
   };
 }
 
-/** Persist live deposited/cash/notional so Dynamo stops serving corrupted books. */
+/** Persist fund-scoped deposited/notional — never wallet-wide equity. */
 export async function healMandateFromLive(
   mandate: Mandate,
   live: LiveMandateBooks,
@@ -161,14 +100,14 @@ export async function healMandateFromLive(
     ...mandate,
     depositedUsdc: live.depositedUsdc,
     notionalUsdc: live.deployableUsdc,
-    cashUsdc: live.cashUsdc,
+    // Preserve ledger cash; wallet USDC is shared across funds / external use.
+    cashUsdc: mandate.cashUsdc,
     updatedAt: new Date().toISOString(),
   };
 
   if (
     next.depositedUsdc !== mandate.depositedUsdc ||
-    next.notionalUsdc !== mandate.notionalUsdc ||
-    Math.abs(next.cashUsdc - mandate.cashUsdc) >= 0.01
+    next.notionalUsdc !== mandate.notionalUsdc
   ) {
     await saveMandateRecord(next);
   }

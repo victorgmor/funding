@@ -78,67 +78,47 @@ export const GET: APIRoute = async ({ params, url }) => {
           await resolveDepositAddresses(fund.slug, [address])
         ).get(address.toLowerCase());
 
-      // Session deposit wallet equity is the Account pUSD number — prefer it.
+      // Per-fund books only — never treat deposit-wallet cash as mandate equity
+      // (wallet holds external CLOB + other funds).
       const { knownCommitUsdc, liveMandateBooks, healMandateFromLive } =
         await import("@/lib/funds/live-mandate");
       const known = knownCommitUsdc(address, depositAddress);
-      const cash = depositBalanceUsdc ?? 0;
-
-      if (known != null && cash > 0) {
-        // ponytail: direct session+known path; drop once Dynamo stays clean
-        mandateDepositedUsdc = known;
-        mandateValueUsdc = Math.max(cash, known);
-        mandateProfitUsdc = round(mandateValueUsdc - known, 2);
-        mandate.depositedUsdc = known;
-        mandate.notionalUsdc = mandateValueUsdc;
-        mandate.cashUsdc = cash;
-        booksSource = "session-known";
-        await healMandateFromLive(mandate, {
-          depositedUsdc: known,
-          deployableUsdc: mandateValueUsdc,
-          profitUsdc: mandateProfitUsdc,
-          openCostUsdc: 0,
-          openValueUsdc: 0,
-          cashUsdc: cash,
-        }).catch(() => {});
+      const filledTrades = (await listTradesByFund(fund.slug)).filter(
+        (trade) =>
+          trade.mandateId === mandate.id && trade.status === "filled",
+      );
+      const depositByInvestor = depositAddress
+        ? new Map([[address.toLowerCase(), depositAddress]])
+        : await resolveDepositAddresses(fund.slug, [address]);
+      const valuations = await fetchTokenValuations(
+        positions,
+        depositByInvestor,
+        filledTrades,
+      );
+      const live = await liveMandateBooks(
+        mandate,
+        filledTrades,
+        depositAddress,
+        valuations,
+      ).catch((error) => {
+        console.error("[mandates] liveMandateBooks failed", address, error);
+        return null;
+      });
+      if (live) {
+        mandateDepositedUsdc = live.depositedUsdc;
+        mandateProfitUsdc = live.profitUsdc;
+        mandateValueUsdc = live.deployableUsdc;
+        booksSource = "live";
+        await healMandateFromLive(mandate, live).catch(() => {});
+        mandate.depositedUsdc = live.depositedUsdc;
+        mandate.notionalUsdc = live.deployableUsdc;
       } else {
-        const filledTrades = (await listTradesByFund(fund.slug)).filter(
-          (trade) =>
-            trade.mandateId === mandate.id && trade.status === "filled",
-        );
-        const depositByInvestor = depositAddress
-          ? new Map([[address.toLowerCase(), depositAddress]])
-          : await resolveDepositAddresses(fund.slug, [address]);
-        const valuations = await fetchTokenValuations(
-          positions,
-          depositByInvestor,
-          filledTrades,
-        );
-        const live = await liveMandateBooks(
-          mandate,
-          filledTrades,
-          depositAddress,
-          valuations,
-        ).catch((error) => {
-          console.error("[mandates] liveMandateBooks failed", address, error);
-          return null;
-        });
-        if (live) {
-          mandateDepositedUsdc = live.depositedUsdc;
-          mandateProfitUsdc = live.profitUsdc;
-          mandateValueUsdc = live.deployableUsdc;
-          mandate.depositedUsdc = live.depositedUsdc;
-          mandate.cashUsdc = live.cashUsdc;
-          mandate.notionalUsdc = live.deployableUsdc;
-          booksSource = "live";
-        } else {
-          const deposited = known ?? mandate.depositedUsdc ?? mandate.notionalUsdc;
-          const equity = Math.max(cash, deposited);
-          mandateDepositedUsdc = deposited;
-          mandateValueUsdc = equity;
-          mandateProfitUsdc = round(equity - deposited, 2);
-          booksSource = known != null ? "known" : "cash-fallback";
-        }
+        const deposited =
+          known ?? mandate.depositedUsdc ?? mandate.notionalUsdc;
+        mandateDepositedUsdc = deposited;
+        mandateValueUsdc = deposited;
+        mandateProfitUsdc = 0;
+        booksSource = known != null ? "known" : "ledger-fallback";
       }
     }
 
