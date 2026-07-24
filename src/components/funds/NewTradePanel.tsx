@@ -325,7 +325,7 @@ export default function NewTradePanel({ fund }: Props) {
           New trade
         </span>
       </div>
-      <div className="border-primary/10 space-y-3 border-t pt-3">
+      <div className="space-y-3">
         <input
           type="search"
           value={query}

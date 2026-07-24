@@ -361,5 +361,5 @@ export default function FundPnlChart({
 
   if (embedded) return <div>{content}</div>;
 
-  return <div className="border-primary/10 mt-6 border-t pt-4">{content}</div>;
+  return <div className="">{content}</div>;
 }
