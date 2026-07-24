@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { isFundInactive } from "@/lib/funds/lifecycle";
 import { reconcileMandatePositions } from "@/lib/funds/mandate-reconcile";
 import { listTradesByFund } from "@/lib/funds/mandate-trades";
 import { listMandatesForInvestor } from "@/lib/funds/mandates";
@@ -33,8 +34,10 @@ export const GET: APIRoute = async ({ url }) => {
     const entries = (
       await Promise.all(
         mandates.map(async (mandate): Promise<MandateEntry | null> => {
+          // Portfolio: only active capital still in open funds.
+          if (mandate.status !== "active") return null;
           const fund = await getFund(mandate.fundSlug);
-          if (!fund) return null;
+          if (!fund || isFundInactive(fund)) return null;
 
           let mandateProfitUsdc: number | null = null;
           let healed = mandate;
@@ -71,6 +74,7 @@ export const GET: APIRoute = async ({ url }) => {
             mandateProfitUsdc = null;
           }
 
+          if (healed.status !== "active") return null;
           return { fund, mandate: healed, mandateProfitUsdc };
         }),
       )

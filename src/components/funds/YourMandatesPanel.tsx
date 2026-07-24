@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import ConnectWallet from "@/components/app/ConnectWallet";
 import WalletPanelPlaceholder from "@/components/app/WalletPanelPlaceholder";
-import GearIcon from "@/components/fundations/icons/GearIcon";
 import MandateAllocationChart from "@/components/funds/MandateAllocationChart";
-import { resolveLifecycleStage } from "@/lib/funds/lifecycle";
+import { isFundInactive } from "@/lib/funds/lifecycle";
 import type { Fund, Mandate } from "@/lib/funds/types";
 import { useWalletGate } from "@/lib/wagmi/useWalletGate";
 
@@ -17,8 +16,6 @@ export default function YourMandatesPanel() {
   const { address, isConnected, loading: walletLoading } = useWalletGate();
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [loading, setLoading] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [hideClosed, setHideClosed] = useState(false);
 
   useEffect(() => {
     if (walletLoading || !isConnected || !address) {
@@ -69,10 +66,10 @@ export default function YourMandatesPanel() {
     };
   }, [address, isConnected, walletLoading]);
 
+  // Closed/archived funds and non-active mandates are not portfolio capital.
   const visibleEntries = (entries ?? []).filter(
     ({ fund, mandate }) =>
-      mandate.status === "active" &&
-      (!hideClosed || resolveLifecycleStage(fund) !== "closed"),
+      mandate.status === "active" && !isFundInactive(fund),
   );
 
   return (
@@ -94,32 +91,6 @@ export default function YourMandatesPanel() {
           <span className="border-primary text-primary inline-block border-b-2 pb-2 text-sm font-medium">
             Your portfolio
           </span>
-          <div className="flex items-center gap-2 pb-2">
-            {settingsOpen && (
-              <label className="text-primary flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap">
-                <input
-                  type="checkbox"
-                  checked={hideClosed}
-                  onChange={(e) => setHideClosed(e.target.checked)}
-                  className="border-primary/20 text-accent ring-0 size-3.5 shrink-0 rounded"
-                />
-                Hide closed funds
-              </label>
-            )}
-            <button
-              type="button"
-              onClick={() => setSettingsOpen((open) => !open)}
-              aria-label="Portfolio settings"
-              aria-expanded={settingsOpen}
-              className={`transition-colors ${
-                settingsOpen
-                  ? "text-primary"
-                  : "text-primary/45 hover:text-primary/70"
-              }`}
-            >
-              <GearIcon className="size-4" />
-            </button>
-          </div>
         </div>
       </div>
 
