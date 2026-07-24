@@ -1,4 +1,5 @@
 import {
+  fetchMarketByTokenId,
   fetchMarkPriceByTokenId,
   warmGammaMarketsByTokenIds,
 } from "@/lib/polymarket/gamma";
@@ -11,6 +12,17 @@ import type { Address } from "viem";
 function round(n: number, d: number) {
   const f = 10 ** d;
   return Math.round(n * f) / f;
+}
+
+/** Map decisive settlement $/share → WON/LOST; null while still settling. */
+export function resolutionFromSettlement(
+  settlementPrice: number | undefined,
+  resolved: boolean,
+): "won" | "lost" | null {
+  if (!resolved || settlementPrice == null) return null;
+  if (settlementPrice >= 0.95) return "won";
+  if (settlementPrice <= 0.05) return "lost";
+  return null;
 }
 
 /** Deposit wallet per investor — session first, then on-chain derivation. */
@@ -133,6 +145,27 @@ export function tradePnlUsdc(
   return round(trade.shares * price - trade.usdcAmount, 2);
 }
 
+async function fetchTokenResolutions(
+  tokenIds: string[],
+): Promise<Map<string, "won" | "lost">> {
+  const unique = [...new Set(tokenIds)];
+  const out = new Map<string, "won" | "lost">();
+  if (unique.length === 0) return out;
+
+  await warmGammaMarketsByTokenIds(unique);
+  await Promise.all(
+    unique.map(async (tokenId) => {
+      const market = await fetchMarketByTokenId(tokenId);
+      const resolution = resolutionFromSettlement(
+        market?.settlementPrice,
+        Boolean(market?.resolved),
+      );
+      if (resolution) out.set(tokenId, resolution);
+    }),
+  );
+  return out;
+}
+
 export async function enrichTradesWithPnl(
   fundSlug: string,
   trades: MandateTrade[],
@@ -143,6 +176,7 @@ export async function enrichTradesWithPnl(
     return trades.map((trade) => ({
       ...trade,
       pnlUsdc: trade.status === "failed" ? 0 : null,
+      resolution: null,
     }));
   }
 
@@ -150,14 +184,17 @@ export async function enrichTradesWithPnl(
     ...filled.map((trade) => trade.investorWallet),
     ...positions.map((pos) => pos.investorWallet),
   ]);
-  const valuations = await fetchTokenValuations(
-    positions,
-    depositByInvestor,
-    filled,
-  );
+  const [valuations, resolutions] = await Promise.all([
+    fetchTokenValuations(positions, depositByInvestor, filled),
+    fetchTokenResolutions(filled.map((trade) => trade.tokenId)),
+  ]);
 
   return trades.map((trade) => ({
     ...trade,
     pnlUsdc: tradePnlUsdc(trade, valuations),
+    resolution:
+      trade.status === "filled"
+        ? (resolutions.get(trade.tokenId) ?? null)
+        : null,
   }));
 }

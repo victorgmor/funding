@@ -118,6 +118,17 @@ function HistoryList({
       )}
       {trades.map((trade) => {
         const failed = trade.status === "failed";
+        const won = trade.resolution === "won";
+        const lost = trade.resolution === "lost";
+        const outcomeLabel = failed
+          ? "FAILED"
+          : won
+            ? "WON"
+            : lost
+              ? "LOST"
+              : trade.orderSide === "SELL"
+                ? `SELL ${trade.side}`
+                : trade.side;
 
         return (
           <article
@@ -147,15 +158,14 @@ function HistoryList({
                 )}
                 <p
                   className={`${sizeClass} ${
-                    failed ? "text-red-400" : "text-primary/70"
+                    failed || lost
+                      ? "text-red-400"
+                      : won
+                        ? "text-emerald-400"
+                        : "text-primary/70"
                   }`}
                 >
-                  {formatUsdExact(trade.usdcAmount)}{" "}
-                  {failed
-                    ? "FAILED"
-                    : trade.orderSide === "SELL"
-                      ? `SELL ${trade.side}`
-                      : trade.side}
+                  {formatUsdExact(trade.usdcAmount)} {outcomeLabel}
                 </p>
               </div>
             </div>

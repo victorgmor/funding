@@ -121,6 +121,8 @@ export type MandateTrade = {
   detail?: string;
   /** Mark-to-market PnL when settlement/live price is known (API only). */
   pnlUsdc?: number | null;
+  /** Oracle outcome for this trade's token when market is resolved (API only). */
+  resolution?: "won" | "lost" | null;
 };
 
 export type FanoutSlice = {
