@@ -13,6 +13,8 @@ import type { MandateTrade } from "@/lib/funds/types";
 
 type Props = {
   trades: MandateTrade[];
+  /** Current fund-list Σ trade PnL — series tip only (not historical fills). */
+  currentPnl?: number | null;
   fundCreatedAt?: string;
   embedded?: boolean;
 };
@@ -198,13 +200,14 @@ function yOnPolyline(pts: Pt[], x: number): number {
 
 export default function FundPnlChart({
   trades,
+  currentPnl,
   fundCreatedAt,
   embedded = false,
 }: Props) {
   const gradientId = useId().replace(/:/g, "");
   const series = useMemo(
-    () => buildPnlSeries(trades, fundCreatedAt),
-    [trades, fundCreatedAt],
+    () => buildPnlSeries(trades, fundCreatedAt, currentPnl),
+    [trades, fundCreatedAt, currentPnl],
   );
   const [range, setRange] = useState<PnlRange>(() => defaultPnlRange(series));
   const [hover, setHover] = useState<{ x: number; t: number } | null>(null);

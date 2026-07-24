@@ -467,6 +467,7 @@ function FundActivityTabs({
             <FundPnlChart
               embedded
               trades={chartTrades}
+              currentPnl={pool.performance?.profitUsdc ?? null}
               fundCreatedAt={fund.createdAt}
             />
           ) : (

@@ -47,10 +47,51 @@ function rangeCutoff(range: Exclude<PnlRange, "All">): number {
   return Date.now() - RANGE_MS[range];
 }
 
-/** Cumulative trade PnL over fill time (current marks per slice). */
+type Lot = { shares: number; costUsdc: number };
+
+/**
+ * Realized PnL locked in at a fill. Buys open lots (0). Sells consume FIFO cost.
+ * Never uses live marks — those belong only on the series tip.
+ */
+export function realizedPnlAtFill(
+  trade: MandateTrade,
+  lotsByToken: Map<string, Lot[]>,
+): number {
+  if (trade.status !== "filled") return 0;
+  const orderSide = trade.orderSide ?? "BUY";
+  const lots = lotsByToken.get(trade.tokenId) ?? [];
+  if (!lotsByToken.has(trade.tokenId)) lotsByToken.set(trade.tokenId, lots);
+
+  if (orderSide !== "SELL") {
+    lots.push({ shares: trade.shares, costUsdc: trade.usdcAmount });
+    return 0;
+  }
+
+  let remaining = trade.shares;
+  let cost = 0;
+  while (remaining > 1e-9 && lots.length > 0) {
+    const lot = lots[0]!;
+    const take = Math.min(lot.shares, remaining);
+    const frac = lot.shares > 0 ? take / lot.shares : 0;
+    cost += lot.costUsdc * frac;
+    lot.shares = round(lot.shares - take, 6);
+    lot.costUsdc = round(lot.costUsdc * (1 - frac), 6);
+    remaining = round(remaining - take, 6);
+    if (lot.shares <= 1e-9) lots.shift();
+  }
+  return round(trade.usdcAmount - cost, 2);
+}
+
+/**
+ * Pool PnL series: cumulative realized at fills, hold-forward, tip = current mark.
+ *
+ * Do not plot live MTM on historical fill timestamps — that invents moving peaks.
+ * Tip uses currentPnl (fund-list Σ) when provided, else Σ trade.pnlUsdc.
+ */
 export function buildPnlSeries(
   trades: MandateTrade[],
   fundCreatedAt?: string,
+  currentPnl?: number | null,
 ): PnlPoint[] {
   const filled = trades
     .filter((trade) => trade.status === "filled")
@@ -70,34 +111,50 @@ export function buildPnlSeries(
     },
   ];
 
-  let cumulative = 0;
+  const lotsByToken = new Map<string, Lot[]>();
+  let realized = 0;
   for (const trade of filled) {
-    cumulative = round(cumulative + (trade.pnlUsdc ?? 0), 2);
+    realized = round(realized + realizedPnlAtFill(trade, lotsByToken), 2);
     const t = tradeTime(trade);
     const last = points[points.length - 1]!;
     if (last.t === t) {
       points[points.length - 1] = {
         t,
-        pnl: cumulative,
+        pnl: realized,
         iso: trade.filledAt ?? trade.createdAt,
       };
     } else {
       points.push({
         t,
-        pnl: cumulative,
+        pnl: realized,
         iso: trade.filledAt ?? trade.createdAt,
       });
     }
   }
 
-  // Hold last level to now so range windows keep a full time axis.
-  // Ending on the last fill glues the step to the right edge (flat → cliff).
+  const marked =
+    currentPnl != null && Number.isFinite(currentPnl)
+      ? round(currentPnl, 2)
+      : round(
+          filled.reduce((sum, trade) => sum + (trade.pnlUsdc ?? 0), 0),
+          2,
+        );
+
+  // Hold last realized level, then tip at now with current fund mark (open MTM).
   const last = points[points.length - 1]!;
   const now = Date.now();
-  if (now - last.t > 1_000) {
+  if (now - last.t > 1_000 || Math.abs(marked - last.pnl) > 1e-9) {
+    if (now - last.t > 1_000 && Math.abs(marked - last.pnl) > 1e-9) {
+      // Keep a flat realized plateau until "now", then the mark tip.
+      points.push({
+        t: now - 1,
+        pnl: realized,
+        iso: last.iso,
+      });
+    }
     points.push({
       t: now,
-      pnl: cumulative,
+      pnl: marked,
       iso: new Date(now).toISOString(),
     });
   }
@@ -154,4 +211,39 @@ export function defaultPnlRange(points: PnlPoint[]): PnlRange {
   if (span <= RANGE_MS["1M"]) return "1M";
   if (span <= RANGE_MS["1Y"]) return "1Y";
   return "All";
+}
+
+// ponytail: PNL_SERIES_SELFCHECK=1 node --experimental-strip-types --experimental-transform-types src/lib/funds/pnl-series.ts
+if (process.env.PNL_SERIES_SELFCHECK === "1") {
+  const buy: MandateTrade = {
+    id: "b1",
+    mandateId: "m1",
+    instructionId: "i1",
+    fundSlug: "demo",
+    investorWallet: "0x1",
+    tokenId: "tok",
+    question: "q",
+    side: "YES",
+    orderSide: "BUY",
+    usdcAmount: 40,
+    price: 0.4,
+    shares: 100,
+    status: "filled",
+    createdAt: "2026-07-20T12:00:00.000Z",
+    filledAt: "2026-07-20T12:00:00.000Z",
+    // Live mark would invent +$291 on the fill day if plotted historically.
+    pnlUsdc: 291.37,
+  };
+  const series = buildPnlSeries([buy], "2026-07-01T00:00:00.000Z", 291.37);
+  const jul20 = series.find((p) => p.iso.startsWith("2026-07-20"));
+  const tip = series[series.length - 1]!;
+  console.assert(jul20?.pnl === 0, `expected 0 at buy fill, got ${jul20?.pnl}`);
+  console.assert(tip.pnl === 291.37, `expected tip mark 291.37, got ${tip.pnl}`);
+  console.assert(
+    !series.some(
+      (p) => p.iso.startsWith("2026-07-20") && Math.abs(p.pnl - 291.37) < 1e-9,
+    ),
+    "live MTM must not sit on the fill timestamp",
+  );
+  console.log("pnl-series self-check ok");
 }
