@@ -124,24 +124,24 @@ function FundFeedSkeleton() {
       {[0, 1, 2].map((row) => (
         <div
           key={row}
-          className={`${FUND_FEED_GRID} border-primary/10 border-b py-3 last:border-b-0`}
+          className={`${FUND_FEED_GRID} border-primary/10 border-b py-2 last:border-b-0`}
         >
-          <div className="space-y-1.5">
-            <Skeleton className="h-4 w-28 rounded sm:w-36" />
-            <Skeleton className="h-3 w-40 rounded" />
+          <div className="space-y-1">
+            <Skeleton className="h-4 w-28 rounded" />
             <Skeleton className="h-3 w-24 rounded" />
+            <Skeleton className="h-3 w-16 rounded" />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Skeleton className="size-5 shrink-0 rounded-full" />
             <div className="space-y-1">
-              <Skeleton className="h-3.5 w-20 rounded" />
-              <Skeleton className="h-3 w-14 rounded" />
+              <Skeleton className="h-3.5 w-16 rounded" />
+              <Skeleton className="h-3 w-12 rounded" />
             </div>
           </div>
-          <div className="space-y-1.5">
-            <Skeleton className="h-3.5 w-24 rounded" />
-            <Skeleton className="h-3 w-28 rounded" />
-            <Skeleton className="h-3 w-16 rounded" />
+          <div className="space-y-1 text-right">
+            <Skeleton className="ml-auto h-3.5 w-20 rounded" />
+            <Skeleton className="ml-auto h-3 w-24 rounded" />
+            <Skeleton className="ml-auto h-3 w-14 rounded" />
           </div>
         </div>
       ))}
@@ -214,12 +214,17 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
     currentPage * PAGE_SIZE,
   );
 
-  const sortHeaderClass = (field: SortField) =>
-    `justify-self-start border-b-2 pb-2 text-left text-sm transition-colors ${
+  const sortHeaderClass = (field: SortField) => {
+    const align =
+      field === "cap"
+        ? "justify-self-end text-right"
+        : "justify-self-start text-left";
+    return `${align} border-b-2 pb-2 text-sm transition-colors ${
       sortField === field
         ? "border-primary text-primary font-medium"
         : "border-transparent text-primary/45 hover:text-primary/70"
     }`;
+  };
 
   const participatingBusy =
     onlyParticipating &&

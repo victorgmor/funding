@@ -18,7 +18,7 @@ type Props = {
 
 /** Shared with FundListPanel header / skeleton so columns line up. */
 export const FUND_FEED_GRID =
-  "grid items-start gap-x-4 [grid-template-columns:minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.1fr)] sm:gap-x-6";
+  "grid items-center gap-x-3 [grid-template-columns:minmax(0,1fr)_minmax(5.5rem,8.5rem)_minmax(7rem,9.5rem)]";
 
 function feedSnippet(fund: Fund): string {
   const thesis = fund.thesis.trim();
@@ -44,15 +44,17 @@ export default function FundFeedCard({
       : null;
 
   return (
-    <article className="border-primary/10 border-b last:border-b-0">
-      <div className={`${FUND_FEED_GRID} py-3 text-sm`}>
+    <article className="border-primary/10 hover:bg-primary/[0.03] border-b last:border-b-0">
+      <div className={`${FUND_FEED_GRID} py-2 text-sm`}>
         {/* Latest — identity + stage */}
-        <a href={href} className="group min-w-0 space-y-1 leading-tight">
-          <h2 className="text-primary group-hover:text-primary/85 truncate text-sm font-semibold tracking-tight sm:text-base">
+        <a href={href} className="group min-w-0 space-y-0.5 leading-tight">
+          <h2 className="text-primary group-hover:text-primary/85 truncate text-sm font-semibold tracking-tight">
             {fund.name}
           </h2>
           {snippet && (
-            <p className="text-primary/45 truncate text-xs">{snippet}</p>
+            <p className="text-primary/35 max-w-[22ch] truncate text-[11px]">
+              {snippet}
+            </p>
           )}
           <FundLifecycleTrack
             fund={fund}
@@ -62,7 +64,7 @@ export default function FundFeedCard({
         </a>
 
         {/* Managers */}
-        <div className="text-primary/45 flex min-w-0 items-center gap-2 text-xs sm:text-sm">
+        <div className="text-primary/45 flex min-w-0 items-center gap-1.5 text-xs">
           <a href={creatorPath(fund.manager.id)} className="shrink-0">
             <CreatorAvatar
               address={fund.manager.id}
@@ -87,7 +89,7 @@ export default function FundFeedCard({
               )}
             </a>
             {published && (
-              <p className="text-primary/40 mt-0.5 truncate text-xs">
+              <p className="text-primary/40 mt-0.5 truncate text-[11px]">
                 {published}
               </p>
             )}
@@ -97,9 +99,9 @@ export default function FundFeedCard({
         {/* Pool cap — economics */}
         <a
           href={href}
-          className="hover:text-primary min-w-0 space-y-0.5 font-mono text-xs tabular-nums transition-colors sm:text-sm"
+          className="hover:text-primary min-w-0 space-y-0.5 text-right font-mono text-xs tabular-nums transition-colors"
         >
-          <p className="text-primary/70 truncate">
+          <p className="text-primary/80 truncate">
             {formatUsdExact(deposited)}
             {fillPct != null && (
               <span className="text-primary/45"> · {fillPct}%</span>

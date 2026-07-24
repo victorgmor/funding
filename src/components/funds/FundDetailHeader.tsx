@@ -98,9 +98,11 @@ export default function FundDetailHeader({
             {fund.name}
           </h1>
           {fund.thesis.trim() && (
-            <p className="text-primary/45 truncate text-xs">{fund.thesis}</p>
+            <p className="text-primary/35 max-w-[28ch] truncate text-[11px]">
+              {fund.thesis}
+            </p>
           )}
-          <p className="text-primary/35 truncate font-mono text-[11px] tabular-nums">
+          <p className="text-primary/30 max-w-[18ch] truncate font-mono text-[10px] tabular-nums">
             {fund.slug}
           </p>
           <FundLifecycleTrack
@@ -146,16 +148,16 @@ export default function FundDetailHeader({
         </div>
 
         {/* Economics */}
-        <div className="min-w-0 space-y-0.5 font-mono text-xs tabular-nums sm:text-sm">
+        <div className="min-w-0 space-y-0.5 text-right font-mono text-xs tabular-nums">
           {loading && !pool ? (
             <div className="space-y-1.5" aria-hidden>
-              <Skeleton className="h-3.5 w-24 rounded" />
-              <Skeleton className="h-3 w-28 rounded" />
-              <Skeleton className="h-3 w-16 rounded" />
+              <Skeleton className="ml-auto h-3.5 w-24 rounded" />
+              <Skeleton className="ml-auto h-3 w-28 rounded" />
+              <Skeleton className="ml-auto h-3 w-16 rounded" />
             </div>
           ) : (
             <>
-              <p className="text-primary/70 truncate">
+              <p className="text-primary/80 truncate">
                 {formatUsdExact(depositedUsdc)}
                 <span className="text-primary/45"> deposited</span>
               </p>

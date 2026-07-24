@@ -92,7 +92,7 @@ export default function FundLifecycleTrack({
       />
       <p
         className={`text-primary min-w-0 whitespace-nowrap ${
-          compact ? "text-xs font-medium sm:text-sm" : "text-sm font-medium"
+          compact ? "text-[11px] font-medium" : "text-sm font-medium"
         }`}
       >
         {label}

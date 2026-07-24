@@ -26,7 +26,7 @@ export default function CreatorFundList({
       >
         <span>Latest</span>
         <span>Managers</span>
-        <span>Pool cap</span>
+        <span className="text-right">Pool cap</span>
       </div>
       {funds.map((fund) => (
         <FundFeedCard
