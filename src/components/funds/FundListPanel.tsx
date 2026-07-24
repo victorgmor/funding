@@ -21,10 +21,21 @@ type SortDirection = "asc" | "desc";
 
 const PAGE_SIZE = 7;
 
-const SORT_OPTIONS: { field: SortField; label: string }[] = [
-  { field: "published", label: "Latest" },
-  { field: "creator", label: "Managers" },
-  { field: "cap", label: "Pool cap" },
+const COLUMNS: {
+  key: string;
+  label: string;
+  sortField?: SortField;
+  align?: "right";
+}[] = [
+  { key: "fund", label: "Fund" },
+  { key: "stage", label: "Stage" },
+  { key: "manager", label: "Manager", sortField: "creator" },
+  { key: "deposited", label: "Deposited", align: "right" },
+  { key: "committed", label: "Committed %", sortField: "cap", align: "right" },
+  { key: "cap", label: "Cap", align: "right" },
+  { key: "share", label: "Profit share", align: "right" },
+  { key: "pnl", label: "PnL", align: "right" },
+  { key: "published", label: "Published", sortField: "published" },
 ];
 
 function filterFunds(funds: Fund[], query: string): Fund[] {
@@ -117,7 +128,6 @@ function useParticipatingSlugs(enabled: boolean) {
 const defaultDirection = (field: SortField): SortDirection =>
   field === "creator" ? "asc" : "desc";
 
-/** Skeleton rows shaped like compact FundFeedCard. */
 function FundFeedSkeleton() {
   return (
     <div aria-hidden>
@@ -127,22 +137,23 @@ function FundFeedSkeleton() {
           className={`${FUND_FEED_GRID} border-primary/10 border-b py-2 last:border-b-0`}
         >
           <div className="space-y-1">
-            <Skeleton className="h-4 w-28 rounded" />
-            <Skeleton className="h-3 w-24 rounded" />
+            <Skeleton className="h-3.5 w-28 rounded" />
+            <Skeleton className="h-3 w-36 rounded" />
+          </div>
+          <Skeleton className="h-3 w-16 rounded" />
+          <div className="flex items-center gap-1.5">
+            <Skeleton className="size-4 shrink-0 rounded-full" />
             <Skeleton className="h-3 w-16 rounded" />
           </div>
-          <div className="flex items-center gap-1.5">
-            <Skeleton className="size-5 shrink-0 rounded-full" />
-            <div className="space-y-1">
-              <Skeleton className="h-3.5 w-16 rounded" />
-              <Skeleton className="h-3 w-12 rounded" />
-            </div>
+          <Skeleton className="ml-auto h-3 w-12 rounded" />
+          <div className="space-y-1">
+            <Skeleton className="ml-auto h-3 w-8 rounded" />
+            <Skeleton className="h-1 w-full rounded-full" />
           </div>
-          <div className="space-y-1 text-right">
-            <Skeleton className="ml-auto h-3.5 w-20 rounded" />
-            <Skeleton className="ml-auto h-3 w-24 rounded" />
-            <Skeleton className="ml-auto h-3 w-14 rounded" />
-          </div>
+          <Skeleton className="ml-auto h-3 w-12 rounded" />
+          <Skeleton className="ml-auto h-3 w-8 rounded" />
+          <Skeleton className="ml-auto h-3 w-12 rounded" />
+          <Skeleton className="h-3 w-10 rounded" />
         </div>
       ))}
     </div>
@@ -158,7 +169,7 @@ function SortIndicator({
 }) {
   if (!active) return null;
   return (
-    <span className="text-primary/40 ml-1 text-xs">
+    <span className="text-primary/40 ml-0.5">
       {direction === "asc" ? "↑" : "↓"}
     </span>
   );
@@ -166,8 +177,7 @@ function SortIndicator({
 
 export default function FundListPanel({ funds, initialPoolTotals }: Props) {
   const { isConnected, restoring: walletLoading } = useWalletSession();
-  const { totals: poolTotals } =
-    usePoolTotals(initialPoolTotals);
+  const { totals: poolTotals } = usePoolTotals(initialPoolTotals);
   const [query, setQuery] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [onlyParticipating, setOnlyParticipating] = useState(false);
@@ -175,8 +185,11 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [page, setPage] = useState(1);
 
-  const { slugs: participatingSlugs, loading: participatingLoading, walletLoading: participatingWalletLoading } =
-    useParticipatingSlugs(onlyParticipating);
+  const {
+    slugs: participatingSlugs,
+    loading: participatingLoading,
+    walletLoading: participatingWalletLoading,
+  } = useParticipatingSlugs(onlyParticipating);
 
   useEffect(() => {
     setPage(1);
@@ -214,18 +227,6 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
     currentPage * PAGE_SIZE,
   );
 
-  const sortHeaderClass = (field: SortField) => {
-    const align =
-      field === "cap"
-        ? "justify-self-end text-right"
-        : "justify-self-start text-left";
-    return `${align} border-b-2 pb-2 text-sm transition-colors ${
-      sortField === field
-        ? "border-primary text-primary font-medium"
-        : "border-transparent text-primary/45 hover:text-primary/70"
-    }`;
-  };
-
   const participatingBusy =
     onlyParticipating &&
     (walletLoading || participatingWalletLoading || participatingLoading);
@@ -239,8 +240,8 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
   return (
     <div className="min-w-0">
       {/* Pending-trade polling lives in the global InvestorTradeAutopilot. */}
-      <div className="pb-5">
-        <label className="flex items-center gap-2 pb-2">
+      <div className="flex items-center gap-3 pb-5">
+        <label className="flex min-w-0 flex-1 items-center gap-2">
           <SearchIcon className="text-primary/35 size-4 shrink-0" />
           <input
             type="search"
@@ -252,21 +253,60 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
             autoComplete="off"
           />
         </label>
+
+        <div className="flex shrink-0 items-center gap-2">
+          {settingsOpen && (
+            <div className="flex items-center gap-3">
+              <label className="text-primary flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={onlyParticipating}
+                  onChange={(e) => setOnlyParticipating(e.target.checked)}
+                  className="border-primary/20 text-accent ring-0 size-3.5 shrink-0 rounded"
+                />
+                Only funds I&apos;m in
+              </label>
+              {onlyParticipating && walletLoading && (
+                <Skeleton className="h-3.5 w-20 shrink-0 rounded" />
+              )}
+              {onlyParticipating && !walletLoading && !isConnected && (
+                <span className="text-primary/50 text-xs whitespace-nowrap">
+                  Connect wallet
+                </span>
+              )}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setSettingsOpen((open) => !open)}
+            aria-label="Feed settings"
+            aria-expanded={settingsOpen}
+            className={`transition-colors ${
+              settingsOpen
+                ? "text-primary"
+                : "text-primary/45 hover:text-primary/70"
+            }`}
+          >
+            <GearIcon className="size-4" />
+          </button>
+        </div>
       </div>
 
       <div className="overflow-x-auto scrollbar-hide">
-        <div className="min-w-[36rem]">
-          <div className="mb-1 flex items-end gap-3">
-            <div
-              className={`${FUND_FEED_GRID} min-w-0 flex-1`}
-              role="columnheader"
-            >
-              {SORT_OPTIONS.map(({ field, label }) => (
+        <div className="min-w-[56rem]">
+          <div
+            className={`${FUND_FEED_GRID} text-primary/45 border-primary/10 border-b pb-2 text-[10px] font-medium tracking-wide uppercase`}
+            role="row"
+          >
+            {COLUMNS.map(({ key, label, sortField: field, align }) =>
+              field ? (
                 <button
-                  key={field}
+                  key={key}
                   type="button"
                   onClick={() => toggleSort(field)}
-                  className={sortHeaderClass(field)}
+                  className={`hover:text-primary/70 text-left transition-colors ${
+                    align === "right" ? "text-right" : ""
+                  } ${sortField === field ? "text-primary" : ""}`}
                 >
                   {label}
                   <SortIndicator
@@ -274,45 +314,15 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
                     direction={sortDirection}
                   />
                 </button>
-              ))}
-            </div>
-
-            <div className="mb-px flex shrink-0 items-center gap-2 pb-2">
-              {settingsOpen && (
-                <div className="flex items-center gap-3">
-                  <label className="text-primary flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={onlyParticipating}
-                      onChange={(e) => setOnlyParticipating(e.target.checked)}
-                      className="border-primary/20 text-accent ring-0 size-3.5 shrink-0 rounded"
-                    />
-                    Only funds I&apos;m in
-                  </label>
-                  {onlyParticipating && walletLoading && (
-                    <Skeleton className="h-3.5 w-20 shrink-0 rounded" />
-                  )}
-                  {onlyParticipating && !walletLoading && !isConnected && (
-                    <span className="text-primary/50 text-xs whitespace-nowrap">
-                      Connect wallet
-                    </span>
-                  )}
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => setSettingsOpen((open) => !open)}
-                aria-label="Feed settings"
-                aria-expanded={settingsOpen}
-                className={`transition-colors ${
-                  settingsOpen
-                    ? "text-primary"
-                    : "text-primary/45 hover:text-primary/70"
-                }`}
-              >
-                <GearIcon className="size-4" />
-              </button>
-            </div>
+              ) : (
+                <span
+                  key={key}
+                  className={align === "right" ? "text-right" : undefined}
+                >
+                  {label}
+                </span>
+              ),
+            )}
           </div>
 
           {visible.length > 0 ? (
@@ -321,7 +331,7 @@ export default function FundListPanel({ funds, initialPoolTotals }: Props) {
                 key={fund.slug}
                 fund={fund}
                 deposited={poolTotals[fund.slug]?.deposited ?? 0}
-                profitUsdc={poolTotals[fund.slug]?.profitUsdc ?? null}
+                roiPct={poolTotals[fund.slug]?.roiPct ?? null}
               />
             ))
           ) : participatingBusy ? (
